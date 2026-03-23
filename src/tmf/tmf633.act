@@ -222,14 +222,15 @@ def _get_service_specification_json(top_schema: yang.schema.DRoot, sspec_id: ?st
                 if isinstance(child, yang.schema.DLeaf):
                     child_type = child.type_
                     patterns = child_type.patterns if isinstance(child_type, yang.schema.DTypeString) else []
+                    is_key = child.name in schema.key
                     spec_characteristic = CharacteristicSpecification(
                         id=child.name,
                         configurable=True,
                         description=child.description,
                         extensible=False,
-                        isUnique=child.name in schema.key or child.name in schema.unique,  # TODO: deal with composite keys/uniques
+                        isUnique=is_key or child.name in schema.unique,
                         maxCardinality=1,
-                        minCardinality=1 if child.name in schema.key or child.mandatory else 0,
+                        minCardinality=1 if is_key or child.mandatory else 0,
                         name=child.name,
                         regex=patterns[0].get_yang_regex() if patterns else None,  # TODO: What regex flavor does TMF expect?
                         valueType=tmf.cfs.yang_type_to_tmf_type(child_type.builtin_type),
@@ -279,14 +280,15 @@ def _get_service_specification_json(top_schema: yang.schema.DRoot, sspec_id: ?st
                 elif isinstance(child, yang.schema.DLeafList):
                     child_type = child.type_
                     patterns = child_type.patterns if isinstance(child_type, yang.schema.DTypeString) else []
+                    is_key = child.name in schema.key
                     spec_characteristic = CharacteristicSpecification(
                         id=child.name,
                         configurable=True,
                         description=child.description,
                         extensible=False,
-                        isUnique=child.name in schema.key or child.name in schema.unique,  # TODO: deal with composite keys/uniques
+                        isUnique=is_key or child.name in schema.unique,
                         maxCardinality=child.max_elements,
-                        minCardinality=child.min_elements or 1 if child.name in schema.key else 0,
+                        minCardinality=child.min_elements if child.min_elements is not None else (1 if is_key else 0),
                         name=child.name,
                         regex=patterns[0].get_yang_regex() if patterns else None,  # TODO: What regex flavor does TMF expect?
                         valueType="{tmf.cfs.yang_type_to_tmf_type(child_type.builtin_type)}Array",
@@ -1344,5 +1346,38 @@ def _test_service_specification_json():
     }
 }"""
     top_schema = yang.compile([netinfra_schema, edge_schema])
+    data = get_service_specification_list_json(top_schema)
+    return json.encode_list(data, pretty=True)
+
+def _test_service_specification_compound_key_json():
+    netinfra_schema = r"""module netinfra {
+  namespace "http://example.com/netinfra";
+  prefix netinfra;
+
+    container netinfra {
+        list router {
+            key "region name";
+            orchestron:tmf-cfs "Router";
+            description "Network Infrastructure Router";
+            leaf region {
+                type string;
+                description "Router region";
+            }
+            leaf name {
+                type string;
+                description "Name of the router";
+            }
+            leaf vendor {
+                type enumeration {
+                    enum "Cisco";
+                    enum "Juniper";
+                }
+                default "Cisco";
+                description "Vendor of the router";
+            }
+        }
+    }
+}"""
+    top_schema = yang.compile([netinfra_schema])
     data = get_service_specification_list_json(top_schema)
     return json.encode_list(data, pretty=True)

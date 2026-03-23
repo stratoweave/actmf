@@ -1,0 +1,64 @@
+Container({
+  Id('http://example.com/netinfra', 'netinfra'): Container({
+    Id('http://example.com/netinfra', 'router'): List([Id('http://example.com/netinfra', 'region'), Id('http://example.com/netinfra', 'name')], ns='http://example.com/netinfra', module='netinfra', elements=[
+      Container({
+        Id('http://example.com/netinfra', 'region'): Leaf('eu-west'),
+        Id('http://example.com/netinfra', 'name'): Leaf('ams-core-1')
+      })
+    ])
+  }, ns='http://example.com/netinfra', module='netinfra'),
+  Id('http://orchestron.org/yang/orchestron-tmf', 'tmf-store'): Container({
+    Id('http://orchestron.org/yang/orchestron-tmf', 'tmf640'): Container({
+      Id('http://orchestron.org/yang/orchestron-tmf', 'service'): List([Id('http://orchestron.org/yang/orchestron-tmf', 'id')], elements=[
+        Container({
+          Id('http://orchestron.org/yang/orchestron-tmf', 'id'): Leaf("/netinfra/router[region='eu-west'][name='ams-core-1']"),
+          Id('http://orchestron.org/yang/orchestron-tmf', 'href'): Leaf("/tmf-api/ServiceActivationAndConfiguration/v4/service/netinfra/router[region='eu-west'][name='ams-core-1']"),
+          Id('http://orchestron.org/yang/orchestron-tmf', 'hasStarted'): Leaf(True),
+          Id('http://orchestron.org/yang/orchestron-tmf', 'isBundle'): Leaf(False),
+          Id('http://orchestron.org/yang/orchestron-tmf', 'isServiceEnabled'): Leaf(True),
+          Id('http://orchestron.org/yang/orchestron-tmf', 'isStateful'): Leaf(False),
+          Id('http://orchestron.org/yang/orchestron-tmf', 'name'): Leaf('eu-west'),
+          Id('http://orchestron.org/yang/orchestron-tmf', 'startMode'): Leaf('1'),
+          Id('http://orchestron.org/yang/orchestron-tmf', 'state'): Leaf('active'),
+          Id('http://orchestron.org/yang/orchestron-tmf', 'baseType'): Leaf('Service'),
+          Id('http://orchestron.org/yang/orchestron-tmf', 'schemaLocation'): Leaf('/tmf-api/schema/Service/Service.schema.json'),
+          Id('http://orchestron.org/yang/orchestron-tmf', 'type'): Leaf('Service'),
+          Id('http://orchestron.org/yang/orchestron-tmf', 'feature'): List([Id('http://orchestron.org/yang/orchestron-tmf', 'id')]),
+          Id('http://orchestron.org/yang/orchestron-tmf', 'note'): List([Id('http://orchestron.org/yang/orchestron-tmf', 'id')]),
+          Id('http://orchestron.org/yang/orchestron-tmf', 'place'): List([Id('http://orchestron.org/yang/orchestron-tmf', 'id')]),
+          Id('http://orchestron.org/yang/orchestron-tmf', 'relatedEntity'): List([Id('http://orchestron.org/yang/orchestron-tmf', 'id')]),
+          Id('http://orchestron.org/yang/orchestron-tmf', 'relatedParty'): List([Id('http://orchestron.org/yang/orchestron-tmf', 'id')]),
+          Id('http://orchestron.org/yang/orchestron-tmf', 'serviceCharacteristic'): List([Id('http://orchestron.org/yang/orchestron-tmf', 'name')], elements=[
+            Container({
+              Id('http://orchestron.org/yang/orchestron-tmf', 'id'): Leaf('region'),
+              Id('http://orchestron.org/yang/orchestron-tmf', 'name'): Leaf('region'),
+              Id('http://orchestron.org/yang/orchestron-tmf', 'baseType'): Leaf('Characteristic'),
+              Id('http://orchestron.org/yang/orchestron-tmf', 'schemaLocation'): Leaf('/tmf-api/schema/Service/Characteristic.schema.json'),
+              Id('http://orchestron.org/yang/orchestron-tmf', 'type'): Leaf('Characteristic'),
+              Id('http://orchestron.org/yang/orchestron-tmf', 'characteristicRelationship'): List([Id('http://orchestron.org/yang/orchestron-tmf', 'id')])
+            }),
+            Container({
+              Id('http://orchestron.org/yang/orchestron-tmf', 'id'): Leaf('name'),
+              Id('http://orchestron.org/yang/orchestron-tmf', 'name'): Leaf('name'),
+              Id('http://orchestron.org/yang/orchestron-tmf', 'baseType'): Leaf('Characteristic'),
+              Id('http://orchestron.org/yang/orchestron-tmf', 'schemaLocation'): Leaf('/tmf-api/schema/Service/Characteristic.schema.json'),
+              Id('http://orchestron.org/yang/orchestron-tmf', 'type'): Leaf('Characteristic'),
+              Id('http://orchestron.org/yang/orchestron-tmf', 'characteristicRelationship'): List([Id('http://orchestron.org/yang/orchestron-tmf', 'id')])
+            })
+          ]),
+          Id('http://orchestron.org/yang/orchestron-tmf', 'serviceOrderItem'): List([Id('http://orchestron.org/yang/orchestron-tmf', 'id')]),
+          Id('http://orchestron.org/yang/orchestron-tmf', 'serviceRelationship'): List([Id('http://orchestron.org/yang/orchestron-tmf', 'id')]),
+          Id('http://orchestron.org/yang/orchestron-tmf', 'serviceSpecification'): Container({
+            Id('http://orchestron.org/yang/orchestron-tmf', 'id'): Leaf('netinfra.router'),
+            Id('http://orchestron.org/yang/orchestron-tmf', 'baseType'): Leaf('ServiceSpecificationRef'),
+            Id('http://orchestron.org/yang/orchestron-tmf', 'schemaLocation'): Leaf('/tmf-api/schema/Service/ServiceSpecificationRef.schema.json'),
+            Id('http://orchestron.org/yang/orchestron-tmf', 'type'): Leaf('ServiceSpecificationRef'),
+            Id('http://orchestron.org/yang/orchestron-tmf', 'referredType'): Leaf('ServiceSpecification')
+          }),
+          Id('http://orchestron.org/yang/orchestron-tmf', 'supportingResource'): List([Id('http://orchestron.org/yang/orchestron-tmf', 'id')]),
+          Id('http://orchestron.org/yang/orchestron-tmf', 'supportingService'): List([Id('http://orchestron.org/yang/orchestron-tmf', 'id')])
+        })
+      ])
+    })
+  }, ns='http://orchestron.org/yang/orchestron-tmf', module='orchestron-tmf')
+})

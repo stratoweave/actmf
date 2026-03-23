@@ -16,6 +16,88 @@ _NS_TMF = "http://orchestron.org/yang/orchestron-tmf"
 def _q(n):
     return yang.gdata.Id(_NS_TMF, n)
 
+def _xpath_escape(v: str) -> str:
+    return v.replace("\\", "\\\\").replace("'", "\\'")
+
+def _xpath_unescape(v: str) -> str:
+    return v.replace("\\'", "'").replace("\\\\", "\\")
+
+def _append_xpath_segment(path: str, segment: str) -> str:
+    if path == "":
+        return "/{segment}"
+    return "{path}/{segment}"
+
+def _split_xpath_segments(path: str) -> list[str]:
+    segments = []
+    current = ""
+    bracket_depth = 0
+    in_single = False
+    in_double = False
+    escaped = False
+
+    for ch in path:
+        if escaped:
+            current += ch
+            escaped = False
+            continue
+        if ch == "\\":
+            current += ch
+            escaped = True
+            continue
+
+        if ch == "'" and not in_double:
+            in_single = not in_single
+            current += ch
+            continue
+        if ch == '"' and not in_single:
+            in_double = not in_double
+            current += ch
+            continue
+
+        if not in_single and not in_double:
+            if ch == "[":
+                bracket_depth += 1
+            elif ch == "]" and bracket_depth > 0:
+                bracket_depth -= 1
+            elif ch == "/" and bracket_depth == 0:
+                if current != "":
+                    segments.append(current)
+                    current = ""
+                continue
+
+        current += ch
+
+    if current != "":
+        segments.append(current)
+    return segments
+
+def _parse_xpath_segment(segment: str) -> (name: str, key_name: ?str, key_value: ?str):
+    bracket_start = segment.find("[")
+    bracket_end = segment.rfind("]")
+    if bracket_start == -1 or bracket_end == -1 or bracket_end < bracket_start:
+        return (name=segment, key_name=None, key_value=None)
+
+    name = segment[:bracket_start]
+    predicate = segment[bracket_start + 1: bracket_end]
+    eq_pos = predicate.find("=")
+    if eq_pos == -1:
+        return (name=name, key_name=None, key_value=None)
+
+    key_name = predicate[:eq_pos]
+    raw_value = predicate[eq_pos + 1:]
+    if len(raw_value) >= 2 and ((raw_value.startswith("'") and raw_value.endswith("'")) or (raw_value.startswith('"') and raw_value.endswith('"'))):
+        raw_value = raw_value[1:-1]
+    return (name=name, key_name=key_name, key_value=_xpath_unescape(raw_value))
+
+def _xpath_segment_for_list_entry(schema: yang.schema.DNode, gd: yang.gdata.Node) -> str:
+    if isinstance(schema, yang.schema.DList):
+        if len(schema.key) != 1:
+            raise NotImplementedError("Service specification with multiple keys not supported")
+        key_name = schema.key[0]
+        key_value = _xpath_escape(get_key_value(gd, schema))
+        return "{schema.name}[{key_name}='{key_value}']"
+    raise NotImplementedError("Expected DList schema for service specification")
+
 
 extension list[Characteristic] (yang.data.YangData):
     def take_container(self, schema: yang.schema.DContainer, name: str, ns_qualified: bool, is_unique: bool, path: list[yang.data.PathElement]=[]) -> ?(op: ?str, val: ?value):
@@ -77,23 +159,26 @@ def _get_service_json(layer_config: yang.gdata.Node, top_schema: yang.schema.DRo
                 continue
             service = Service.from_gdata(s)
             config = layer_config
-            for path_element in sid.split(".")[:-1]:
+            sid_segments = _split_xpath_segments(sid)
+            for path_element in sid_segments[:-1]:
+                parsed = _parse_xpath_segment(path_element)
+                key_value = parsed.key_value
                 # TODO: include namespace qualifier in service id path (like in JSON, module name)
-                schema = schema.get(path_element.split("(")[0])
+                schema = schema.get(parsed.name)
                 fqname = yang.data.fqname(schema)
-                if "(" in path_element:
+                if isinstance(key_value, str):
                     config = config.children[fqname]
-                    key = path_element.split("(")[1].split(")")[0]
                     entry = None
                     if isinstance(config, yang.gdata.List):
-                        entry = config.get_opt_list_entry(key)
+                        entry = config.get_opt_list_entry(key_value)
                     if entry is not None:
                         config = entry
                 else:
                     config = config.children[fqname]
 
-            last_path_element = sid.split(".")[-1]
-            schema = schema.get(last_path_element.split("(")[0])
+            last_path_element = sid_segments[-1]
+            last_parsed = _parse_xpath_segment(last_path_element)
+            schema = schema.get(last_parsed.name)
             fqname = yang.data.fqname(schema)
             config = config.children[fqname]
             if isinstance(config, yang.gdata.List):
@@ -103,7 +188,7 @@ def _get_service_json(layer_config: yang.gdata.Node, top_schema: yang.schema.DRo
                         services_json.append(service.to_json())
                 else:
                     for element in config.elements:
-                        if element.get_str(config.keys[0]) == last_path_element.split("(")[1].split(")")[0]:
+                        if last_parsed.key_value is not None and element.get_str(config.keys[0]) == last_parsed.key_value:
                             add_leaf_properties_to_service_characteristics(element, service)
                             return service.to_json()
 
@@ -161,22 +246,20 @@ def get_key_value(gd: yang.gdata.Node, schema: yang.schema.DNode) -> str:
             raise ValueError("Service characteristic key {key} not found in transform data")
     raise NotImplementedError("Expected DList schema for service specification")
 
-def add_key_properties_to_service(service: ?object, gd: yang.gdata.Node, schema: yang.schema.DNode, aggregate_tmf_id: str, path_element: str) -> str:
+def add_key_properties_to_service(service: ?object, gd: yang.gdata.Node, schema: yang.schema.DNode, aggregate_tmf_id: str) -> str:
     if isinstance(service, Service):
-        key_value = get_key_value(gd, schema)
-        tmf_id = "{path_element}({key_value})"
-        aggregate_tmf_id = "{aggregate_tmf_id}.{tmf_id}" if aggregate_tmf_id != "" else tmf_id
+        tmf_id = _xpath_segment_for_list_entry(schema, gd)
+        aggregate_tmf_id = _append_xpath_segment(aggregate_tmf_id, tmf_id)
         service.id = aggregate_tmf_id
-        service.name = key_value
-        service.href = "/tmf-api/ServiceActivationAndConfiguration/v4/service/{aggregate_tmf_id}"
+        service.name = get_key_value(gd, schema)
+        service.href = "/tmf-api/ServiceActivationAndConfiguration/v4/service{aggregate_tmf_id}"
         return aggregate_tmf_id
     if isinstance(service, ServiceRefOrValue):
-        key_value = get_key_value(gd, schema)
-        tmf_id = "{path_element}({key_value})"
-        aggregate_tmf_id = "{aggregate_tmf_id}.{tmf_id}" if aggregate_tmf_id != "" else tmf_id
+        tmf_id = _xpath_segment_for_list_entry(schema, gd)
+        aggregate_tmf_id = _append_xpath_segment(aggregate_tmf_id, tmf_id)
         service.id = aggregate_tmf_id
-        service.name = key_value
-        service.href = "/tmf-api/ServiceActivationAndConfiguration/v4/service/{aggregate_tmf_id}"
+        service.name = get_key_value(gd, schema)
+        service.href = "/tmf-api/ServiceActivationAndConfiguration/v4/service{aggregate_tmf_id}"
         return aggregate_tmf_id
     raise ValueError("Unsupported service type for adding key properties")
 
@@ -214,7 +297,7 @@ def json_to_gdata(data: dict[str, ?value], top_schema: yang.schema.DRoot) -> (ya
         if isinstance(schema, yang.schema.DContainer):
             current_node.children[fqname] = yang.gdata.Container(ns=schema.namespace, module=schema.module)
             current_node = current_node.children[fqname]
-            aggregate_tmf_id = "{aggregate_tmf_id}.{path_element}" if aggregate_tmf_id != "" else path_element
+            aggregate_tmf_id = _append_xpath_segment(aggregate_tmf_id, path_element)
         elif isinstance(schema, yang.schema.DList):
             current_node.children[fqname] = yang.gdata.List(
                 yang.data.fq_list_keys(schema), [], ns=schema.namespace, module=schema.module)
@@ -228,14 +311,14 @@ def json_to_gdata(data: dict[str, ?value], top_schema: yang.schema.DRoot) -> (ya
             if gd is not None:
                 if isinstance(current_node, yang.gdata.List):
                     current_node.elements.append(gd)
-                aggregate_tmf_id = add_key_properties_to_service(ss, gd, schema, aggregate_tmf_id, path_element)
+                aggregate_tmf_id = add_key_properties_to_service(ss, gd, schema, aggregate_tmf_id)
                 current_node = gd
 
     gd = from_characteristic(top_schema, service.serviceCharacteristic, root_path=root_path)
     if isinstance(current_node, yang.gdata.List):
         current_node.elements.append(gd)
 
-    aggregate_tmf_id = add_key_properties_to_service(service, gd, schema, aggregate_tmf_id, service.serviceSpecification.id.split(".")[-1])
+    aggregate_tmf_id = add_key_properties_to_service(service, gd, schema, aggregate_tmf_id)
     ret.children[_q("tmf-store")] = yang.gdata.Container({
             _q("tmf640"): yang.gdata.Container({
                 _q("service"): yang.gdata.List([_q("id")], [service.to_gdata()])})
@@ -2349,8 +2432,8 @@ def _test_get_json_netinfra_router():
                 _q("service"): yang.gdata.List(
                     [_q("id")], elements=[
                         yang.gdata.Container({
-                            _q("id"): yang.gdata.Leaf('netinfra.router(ams-core-1)'),
-                            _q("href"): yang.gdata.Leaf('/tmf-api/ServiceActivationAndConfiguration/v4/service/netinfra.router(ams-core-1)'),
+                            _q("id"): yang.gdata.Leaf("/netinfra/router[name='ams-core-1']"),
+                            _q("href"): yang.gdata.Leaf("/tmf-api/ServiceActivationAndConfiguration/v4/service/netinfra/router[name='ams-core-1']"),
                             _q("hasStarted"): yang.gdata.Leaf(True),
                             _q("isBundle"): yang.gdata.Leaf(False),
                             _q("isServiceEnabled"): yang.gdata.Leaf(True),
@@ -2620,8 +2703,8 @@ def _test_get_json_edge_device_access_interface_vlan():
                 _q("service"): yang.gdata.List(
                     [_q("id")], elements=[
                         yang.gdata.Container({
-                            _q("id"): yang.gdata.Leaf('edge-device(AM-CORE-1).access-interface(GigabitEthernet0/1).vlan(100)'),
-                            _q("href"): yang.gdata.Leaf('/tmf-api/ServiceActivationAndConfiguration/v4/service/edge-device(AM-CORE-1).access-interface(GigabitEthernet0/1).vlan(100)'),
+                            _q("id"): yang.gdata.Leaf("/edge-device[device-name='AM-CORE-1']/access-interface[interface-name='GigabitEthernet0/1']/vlan[vlan-id='100']"),
+                            _q("href"): yang.gdata.Leaf("/tmf-api/ServiceActivationAndConfiguration/v4/service/edge-device[device-name='AM-CORE-1']/access-interface[interface-name='GigabitEthernet0/1']/vlan[vlan-id='100']"),
                             _q("hasStarted"): yang.gdata.Leaf(True),
                             _q("isBundle"): yang.gdata.Leaf(False),
                             _q("isServiceEnabled"): yang.gdata.Leaf(True),
@@ -2663,8 +2746,8 @@ def _test_get_json_edge_device_access_interface_vlan():
                             _q("supportingService"): yang.gdata.List(
                                 [_q("id")], elements=[
                                     yang.gdata.Container({
-                                        _q("id"): yang.gdata.Leaf('edge-device(AM-CORE-1).access-interface(GigabitEthernet0/1)'),
-                                        _q("href"): yang.gdata.Leaf('/tmf-api/ServiceActivationAndConfiguration/v4/service/edge-device(AM-CORE-1).access-interface(GigabitEthernet0/1)'),
+                                        _q("id"): yang.gdata.Leaf("/edge-device[device-name='AM-CORE-1']/access-interface[interface-name='GigabitEthernet0/1']"),
+                                        _q("href"): yang.gdata.Leaf("/tmf-api/ServiceActivationAndConfiguration/v4/service/edge-device[device-name='AM-CORE-1']/access-interface[interface-name='GigabitEthernet0/1']"),
                                         _q("name"): yang.gdata.Leaf('GigabitEthernet0/1'),
                                         _q("baseType"): yang.gdata.Leaf('ServiceRefOrValue'),
                                         _q("schemaLocation"): yang.gdata.Leaf('/tmf-api/schema/Service/ServiceRefOrValue.schema.json'),
@@ -2706,8 +2789,8 @@ def _test_get_json_edge_device_access_interface_vlan():
                                         _q("supportingService"): yang.gdata.List(
                                             [_q("id")], elements=[
                                                 yang.gdata.Container({
-                                                    _q("id"): yang.gdata.Leaf('edge-device(AM-CORE-1)'),
-                                                    _q("href"): yang.gdata.Leaf('/tmf-api/ServiceActivationAndConfiguration/v4/service/edge-device(AM-CORE-1)'),
+                                                    _q("id"): yang.gdata.Leaf("/edge-device[device-name='AM-CORE-1']"),
+                                                    _q("href"): yang.gdata.Leaf("/tmf-api/ServiceActivationAndConfiguration/v4/service/edge-device[device-name='AM-CORE-1']"),
                                                     _q("name"): yang.gdata.Leaf('AM-CORE-1'),
                                                     _q("baseType"): yang.gdata.Leaf('ServiceRefOrValue'),
                                                     _q("schemaLocation"): yang.gdata.Leaf('/tmf-api/schema/Service/ServiceRefOrValue.schema.json'),

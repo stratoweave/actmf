@@ -1,7 +1,7 @@
 [
     {
-        "id": "netinfra.router(ams-core-1)",
-        "href": "/tmf-api/ServiceActivationAndConfiguration/v4/service/netinfra.router(ams-core-1)",
+        "id": "/netinfra/router[name='ams-core-1']",
+        "href": "/tmf-api/ServiceActivationAndConfiguration/v4/service/netinfra/router[name='ams-core-1']",
         "category": null,
         "description": null,
         "endDate": null,

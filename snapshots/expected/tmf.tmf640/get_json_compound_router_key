@@ -1,6 +1,6 @@
 {
     "id": "/netinfra/router[region='eu-west'][name='ams-core-1']",
-    "href": "/tmf-api/ServiceActivationAndConfiguration/v4/service/netinfra/router[region='eu-west'][name='ams-core-1']",
+    "href": "/tmf-api/ServiceActivationAndConfiguration/v4/service/%2Fnetinfra%2Frouter%5Bregion%3D%27eu-west%27%5D%5Bname%3D%27ams-core-1%27%5D",
     "category": null,
     "description": null,
     "endDate": null,

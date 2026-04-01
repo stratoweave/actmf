@@ -33,18 +33,16 @@
         ],
         "serviceOrderItem": [],
         "serviceRelationship": [],
-        "serviceSpecification": [
-            {
-                "id": "edge-device.access-interface.vlan",
-                "href": null,
-                "name": null,
-                "version": null,
-                "@baseType": "ServiceSpecificationRef",
-                "@schemaLocation": "/tmf-api/schema/Service/ServiceSpecificationRef.schema.json",
-                "@type": "ServiceSpecificationRef",
-                "@referredType": "ServiceSpecification"
-            }
-        ],
+        "serviceSpecification": {
+            "id": "edge-device.access-interface.vlan",
+            "href": null,
+            "name": null,
+            "version": null,
+            "@baseType": "ServiceSpecificationRef",
+            "@schemaLocation": "/tmf-api/schema/Service/ServiceSpecificationRef.schema.json",
+            "@type": "ServiceSpecificationRef",
+            "@referredType": "ServiceSpecification"
+        },
         "state": "active",
         "supportingResource": [],
         "supportingService": [
@@ -154,12 +152,14 @@
                         "supportingService": [],
                         "@baseType": "ServiceRefOrValue",
                         "@schemaLocation": "/tmf-api/schema/Service/ServiceRefOrValue.schema.json",
-                        "@type": "ServiceRefOrValue"
+                        "@type": "ServiceRefOrValue",
+                        "@referredType": "Service"
                     }
                 ],
                 "@baseType": "ServiceRefOrValue",
                 "@schemaLocation": "/tmf-api/schema/Service/ServiceRefOrValue.schema.json",
-                "@type": "ServiceRefOrValue"
+                "@type": "ServiceRefOrValue",
+                "@referredType": "Service"
             }
         ],
         "@baseType": "Service",

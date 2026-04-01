@@ -62,8 +62,8 @@ otmf = r"""module orchestron-tmf {
   yang-version "1.1";
   namespace "http://orchestron.org/yang/orchestron-tmf";
   prefix "otmf";
-  import orchestron {
-    prefix orchestron;
+  import stratoweave {
+    prefix sw;
   }
   import orchestron-tmf640 {
     prefix otmf640;
@@ -79,7 +79,7 @@ otmf = r"""module orchestron-tmf {
       description "TMF640 - Service Activation and Configuration";
       list service {
         key id;
-        orchestron:transform TMF640_STORE_TRANSFORM;
+        sw:transform TMF640_STORE_TRANSFORM;
         uses otmf640:Service;
       }
     }

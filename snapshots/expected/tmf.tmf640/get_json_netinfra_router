@@ -33,18 +33,16 @@
         ],
         "serviceOrderItem": [],
         "serviceRelationship": [],
-        "serviceSpecification": [
-            {
-                "id": "netinfra.router",
-                "href": null,
-                "name": null,
-                "version": null,
-                "@baseType": "ServiceSpecificationRef",
-                "@schemaLocation": "/tmf-api/schema/Service/ServiceSpecificationRef.schema.json",
-                "@type": "ServiceSpecificationRef",
-                "@referredType": "ServiceSpecification"
-            }
-        ],
+        "serviceSpecification": {
+            "id": "netinfra.router",
+            "href": null,
+            "name": null,
+            "version": null,
+            "@baseType": "ServiceSpecificationRef",
+            "@schemaLocation": "/tmf-api/schema/Service/ServiceSpecificationRef.schema.json",
+            "@type": "ServiceSpecificationRef",
+            "@referredType": "ServiceSpecification"
+        },
         "state": "active",
         "supportingResource": [],
         "supportingService": [],

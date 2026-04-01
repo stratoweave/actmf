@@ -488,11 +488,22 @@ def get_service_specification_ref(d: dict[str, ?value], key: str) -> ServiceSpec
         return ServiceSpecificationRef.from_json(v)
     raise ValueError("Expected dict for key {key}")
 
+def get_opt_service_specification_ref(d: dict[str, ?value], key: str) -> ?ServiceSpecificationRef:
+    v = d.get(key)
+    if isinstance(v, dict):
+        return ServiceSpecificationRef.from_json(v)
+
 def get_child_service_specification_ref(node: yang.gdata.Node, child_name: yang.gdata.Id) -> ServiceSpecificationRef:
     child = node.children.get(child_name)
     if isinstance(child, yang.gdata.Container):
         return ServiceSpecificationRef.from_gdata(child)
     raise ValueError("Expected container child {child_name}")
+
+def get_opt_child_service_specification_ref(node: yang.gdata.Node, child_name: yang.gdata.Id) -> ?ServiceSpecificationRef:
+    child = node.children.get(child_name)
+    if isinstance(child, yang.gdata.Container):
+        return ServiceSpecificationRef.from_gdata(child)
+    return None
 
 def get_service_ref_or_value(d: dict[str, ?value], key: str) -> ServiceRefOrValue:
     v = d.get(key)
@@ -651,7 +662,7 @@ class Service(object):
             list(map(ServiceRefOrValue.from_json, get_list(data.get("supportingService")))),
             get_opt_str(data, "@baseType"),
             get_opt_str(data, "@schemaLocation"),
-            get_opt_str(data, "@type")
+            get_opt_str(data, "@type"),
         )
 
     def to_json(self) -> dict[str, ?value]:
@@ -670,21 +681,21 @@ class Service(object):
             "serviceType": self.serviceType,
             "startDate": self.startDate,
             "startMode": self.startMode,
-            "feature": [f.to_json() for f in self.feature],
-            "note": [n.to_json() for n in self.note],
-            "place": [p.to_json() for p in self.place],
-            "relatedEntity": [re.to_json() for re in self.relatedEntity],
-            "relatedParty": [rp.to_json() for rp in self.relatedParty],
-            "serviceCharacteristic": [sc.to_json() for sc in self.serviceCharacteristic],
-            "serviceOrderItem": [soi.to_json() for soi in self.serviceOrderItem],
-            "serviceRelationship": [sr.to_json() for sr in self.serviceRelationship],
-            "serviceSpecification": [self.serviceSpecification.to_json()],
+            "feature": [entry.to_json() for entry in self.feature],
+            "note": [entry.to_json() for entry in self.note],
+            "place": [entry.to_json() for entry in self.place],
+            "relatedEntity": [entry.to_json() for entry in self.relatedEntity],
+            "relatedParty": [entry.to_json() for entry in self.relatedParty],
+            "serviceCharacteristic": [entry.to_json() for entry in self.serviceCharacteristic],
+            "serviceOrderItem": [entry.to_json() for entry in self.serviceOrderItem],
+            "serviceRelationship": [entry.to_json() for entry in self.serviceRelationship],
+            "serviceSpecification": self.serviceSpecification.to_json(),
             "state": self.state,
-            "supportingResource": [sres.to_json() for sres in self.supportingResource],
-            "supportingService": [ss.to_json() for ss in self.supportingService],
+            "supportingResource": [entry.to_json() for entry in self.supportingResource],
+            "supportingService": [entry.to_json() for entry in self.supportingService],
             "@baseType": self.baseType,
             "@schemaLocation": self.schemaLocation,
-            "@type": self.type
+            "@type": self.type,
         }
 
     @staticmethod
@@ -719,14 +730,14 @@ class Service(object):
                 list(map(ServiceRefOrValue.from_gdata, get_yang_list_elements(gd.children.get(_q("supportingService"))))),
                 get_opt_child_str(gd, _q("baseType")),
                 get_opt_child_str(gd, _q("schemaLocation")),
-                get_opt_child_str(gd, _q("type"))
+                get_opt_child_str(gd, _q("type")),
             )
         raise ValueError("Unsupported gdata node type")
 
     def to_gdata(self) -> yang.gdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
-            (_q("id"), self.id, "string")
+            (_q("id"), self.id, "string"),
         ])
         add_opt_leafs_to_gdata(elements, [
             (_q("href"), self.href, "string"),
@@ -745,20 +756,20 @@ class Service(object):
             (_q("state"), self.state, "string"),
             (_q("baseType"), self.baseType, "string"),
             (_q("schemaLocation"), self.schemaLocation, "string"),
-            (_q("type"), self.type, "string")
+            (_q("type"), self.type, "string"),
         ])
 
-        elements[_q("feature")] = yang.gdata.List([_q("id")], [f.to_gdata() for f in self.feature])
-        elements[_q("note")] = yang.gdata.List([_q("id")], [n.to_gdata() for n in self.note])
-        elements[_q("place")] = yang.gdata.List([_q("id")], [p.to_gdata() for p in self.place])
-        elements[_q("relatedEntity")] = yang.gdata.List([_q("id")], [re.to_gdata() for re in self.relatedEntity])
-        elements[_q("relatedParty")] = yang.gdata.List([_q("id")], [rp.to_gdata() for rp in self.relatedParty])
-        elements[_q("serviceCharacteristic")] = yang.gdata.List([_q("name")], [sc.to_gdata() for sc in self.serviceCharacteristic])
-        elements[_q("serviceOrderItem")] = yang.gdata.List([_q("id")], [so.to_gdata() for so in self.serviceOrderItem])
-        elements[_q("serviceRelationship")] = yang.gdata.List([_q("id")], [sr.to_gdata() for sr in self.serviceRelationship])
         elements[_q("serviceSpecification")] = self.serviceSpecification.to_gdata()
-        elements[_q("supportingResource")] = yang.gdata.List([_q("id")], [sr.to_gdata() for sr in self.supportingResource])
-        elements[_q("supportingService")] = yang.gdata.List([_q("id")], [ss.to_gdata() for ss in self.supportingService])
+        elements[_q("feature")] = yang.gdata.List([_q("id")], [entry.to_gdata() for entry in self.feature])
+        elements[_q("note")] = yang.gdata.List([_q("id")], [entry.to_gdata() for entry in self.note])
+        elements[_q("place")] = yang.gdata.List([_q("id")], [entry.to_gdata() for entry in self.place])
+        elements[_q("relatedEntity")] = yang.gdata.List([_q("id")], [entry.to_gdata() for entry in self.relatedEntity])
+        elements[_q("relatedParty")] = yang.gdata.List([_q("id")], [entry.to_gdata() for entry in self.relatedParty])
+        elements[_q("serviceCharacteristic")] = yang.gdata.List([_q("name")], [entry.to_gdata() for entry in self.serviceCharacteristic])
+        elements[_q("serviceOrderItem")] = yang.gdata.List([_q("itemId")], [entry.to_gdata() for entry in self.serviceOrderItem])
+        elements[_q("serviceRelationship")] = yang.gdata.List([_q("relationshipType")], [entry.to_gdata() for entry in self.serviceRelationship])
+        elements[_q("supportingResource")] = yang.gdata.List([_q("id")], [entry.to_gdata() for entry in self.supportingResource])
+        elements[_q("supportingService")] = yang.gdata.List([_q("id")], [entry.to_gdata() for entry in self.supportingService])
 
         return yang.gdata.Container(elements)
 
@@ -792,7 +803,7 @@ class ConstraintRef(object):
             get_opt_str(data, "@baseType"),
             get_opt_str(data, "@schemaLocation"),
             get_opt_str(data, "@type"),
-            get_opt_str(data, "@referredType")
+            get_opt_str(data, "@referredType"),
         )
 
     def to_json(self) -> dict[str, ?value]:
@@ -804,7 +815,7 @@ class ConstraintRef(object):
             "@baseType": self.baseType,
             "@schemaLocation": self.schemaLocation,
             "@type": self.type,
-            "@referredType": self.referredType
+            "@referredType": self.referredType,
         }
 
     @staticmethod
@@ -818,14 +829,14 @@ class ConstraintRef(object):
                 get_opt_child_str(gd, _q("baseType")),
                 get_opt_child_str(gd, _q("schemaLocation")),
                 get_opt_child_str(gd, _q("type")),
-                get_opt_child_str(gd, _q("referredType"))
+                get_opt_child_str(gd, _q("referredType")),
             )
         raise ValueError("Unsupported gdata node type")
 
     def to_gdata(self) -> yang.gdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
-            (_q("id"), self.id, "string")
+            (_q("id"), self.id, "string"),
         ])
         add_opt_leafs_to_gdata(elements, [
             (_q("href"), self.href, "string"),
@@ -834,7 +845,7 @@ class ConstraintRef(object):
             (_q("baseType"), self.baseType, "string"),
             (_q("schemaLocation"), self.schemaLocation, "string"),
             (_q("type"), self.type, "string"),
-            (_q("referredType"), self.referredType, "string")
+            (_q("referredType"), self.referredType, "string"),
         ])
 
         return yang.gdata.Container(elements)
@@ -866,7 +877,7 @@ class FeatureRelationship(object):
             get_opt_time_period(data, "validFor"),
             get_opt_str(data, "@baseType"),
             get_opt_str(data, "@schemaLocation"),
-            get_opt_str(data, "@type")
+            get_opt_str(data, "@type"),
         )
 
     def to_json(self) -> dict[str, ?value]:
@@ -877,7 +888,7 @@ class FeatureRelationship(object):
             "validFor": get_opt_obj_to_json(self.validFor),
             "@baseType": self.baseType,
             "@schemaLocation": self.schemaLocation,
-            "@type": self.type
+            "@type": self.type,
         }
 
     @staticmethod
@@ -890,22 +901,23 @@ class FeatureRelationship(object):
                 get_opt_child_time_period(gd, _q("validFor")),
                 get_opt_child_str(gd, _q("baseType")),
                 get_opt_child_str(gd, _q("schemaLocation")),
-                get_opt_child_str(gd, _q("type"))
+                get_opt_child_str(gd, _q("type")),
             )
         raise ValueError("Unsupported gdata node type")
 
     def to_gdata(self) -> yang.gdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
-            (_q("id"), self.id, "string")
+            (_q("id"), self.id, "string"),
         ])
         add_opt_leafs_to_gdata(elements, [
             (_q("name"), self.name, "string"),
             (_q("relationshipType"), self.relationshipType, "string"),
             (_q("baseType"), self.baseType, "string"),
             (_q("schemaLocation"), self.schemaLocation, "string"),
-            (_q("type"), self.type, "string")
+            (_q("type"), self.type, "string"),
         ])
+
         add_opt_obj_to_gdata(elements, _q("validFor"), self.validFor)
 
         return yang.gdata.Container(elements)
@@ -931,7 +943,7 @@ class TimePeriod(object):
             get_opt_str(data, "startDateTime"),
             get_opt_str(data, "@baseType"),
             get_opt_str(data, "@schemaLocation"),
-            get_opt_str(data, "@type")
+            get_opt_str(data, "@type"),
         )
 
     def to_json(self) -> dict[str, ?value]:
@@ -940,7 +952,7 @@ class TimePeriod(object):
             "startDateTime": self.startDateTime,
             "@baseType": self.baseType,
             "@schemaLocation": self.schemaLocation,
-            "@type": self.type
+            "@type": self.type,
         }
 
     @staticmethod
@@ -951,7 +963,7 @@ class TimePeriod(object):
                 get_opt_child_str(gd, _q("startDateTime")),
                 get_opt_child_str(gd, _q("baseType")),
                 get_opt_child_str(gd, _q("schemaLocation")),
-                get_opt_child_str(gd, _q("type"))
+                get_opt_child_str(gd, _q("type")),
             )
         raise ValueError("Unsupported gdata node type")
 
@@ -962,7 +974,7 @@ class TimePeriod(object):
             (_q("startDateTime"), self.startDateTime, "string"),
             (_q("baseType"), self.baseType, "string"),
             (_q("schemaLocation"), self.schemaLocation, "string"),
-            (_q("type"), self.type, "string")
+            (_q("type"), self.type, "string"),
         ])
 
         return yang.gdata.Container(elements)
@@ -1003,7 +1015,7 @@ class Feature(object):
             list(map(FeatureRelationship.from_json, get_list(data.get("featureRelationship")))),
             get_opt_str(data, "@baseType"),
             get_opt_str(data, "@schemaLocation"),
-            get_opt_str(data, "@type")
+            get_opt_str(data, "@type"),
         )
 
     def to_json(self) -> dict[str, ?value]:
@@ -1012,12 +1024,12 @@ class Feature(object):
             "isBundle": self.isBundle,
             "isEnabled": self.isEnabled,
             "name": self.name,
-            "constraint": [c.to_json() for c in self.constraint],
-            "featureCharacteristic": [fc.to_json() for fc in self.featureCharacteristic],
-            "featureRelationship": [fr.to_json() for fr in self.featureRelationship],
+            "constraint": [entry.to_json() for entry in self.constraint],
+            "featureCharacteristic": [entry.to_json() for entry in self.featureCharacteristic],
+            "featureRelationship": [entry.to_json() for entry in self.featureRelationship],
             "@baseType": self.baseType,
             "@schemaLocation": self.schemaLocation,
-            "@type": self.type
+            "@type": self.type,
         }
 
     @staticmethod
@@ -1033,14 +1045,14 @@ class Feature(object):
                 list(map(FeatureRelationship.from_gdata, get_yang_list_elements(gd.children.get(_q("featureRelationship"))))),
                 get_opt_child_str(gd, _q("baseType")),
                 get_opt_child_str(gd, _q("schemaLocation")),
-                get_opt_child_str(gd, _q("type"))
+                get_opt_child_str(gd, _q("type")),
             )
         raise ValueError("Unsupported gdata node type")
 
     def to_gdata(self) -> yang.gdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
-            (_q("id"), self.id, "string")
+            (_q("id"), self.id, "string"),
         ])
         add_opt_leafs_to_gdata(elements, [
             (_q("isBundle"), self.isBundle, "boolean"),
@@ -1048,12 +1060,12 @@ class Feature(object):
             (_q("name"), self.name, "string"),
             (_q("baseType"), self.baseType, "string"),
             (_q("schemaLocation"), self.schemaLocation, "string"),
-            (_q("type"), self.type, "string")
+            (_q("type"), self.type, "string"),
         ])
 
-        elements[_q("constraint")] = yang.gdata.List([_q("id")], [c.to_gdata() for c in self.constraint])
-        elements[_q("featureCharacteristic")] = yang.gdata.List([_q("name")], [fc.to_gdata() for fc in self.featureCharacteristic])
-        elements[_q("featureRelationship")] = yang.gdata.List([_q("id")], [fr.to_gdata() for fr in self.featureRelationship])
+        elements[_q("constraint")] = yang.gdata.List([_q("id")], [entry.to_gdata() for entry in self.constraint])
+        elements[_q("featureCharacteristic")] = yang.gdata.List([_q("name")], [entry.to_gdata() for entry in self.featureCharacteristic])
+        elements[_q("featureRelationship")] = yang.gdata.List([_q("id")], [entry.to_gdata() for entry in self.featureRelationship])
 
         return yang.gdata.Container(elements)
 
@@ -1084,7 +1096,7 @@ class Note(object):
             get_opt_str(data, "text"),
             get_opt_str(data, "@baseType"),
             get_opt_str(data, "@schemaLocation"),
-            get_opt_str(data, "@type")
+            get_opt_str(data, "@type"),
         )
 
     def to_json(self) -> dict[str, ?value]:
@@ -1095,7 +1107,7 @@ class Note(object):
             "text": self.text,
             "@baseType": self.baseType,
             "@schemaLocation": self.schemaLocation,
-            "@type": self.type
+            "@type": self.type,
         }
 
     @staticmethod
@@ -1108,7 +1120,7 @@ class Note(object):
                 get_opt_child_str(gd, _q("text")),
                 get_opt_child_str(gd, _q("baseType")),
                 get_opt_child_str(gd, _q("schemaLocation")),
-                get_opt_child_str(gd, _q("type"))
+                get_opt_child_str(gd, _q("type")),
             )
         raise ValueError("Unsupported gdata node type")
 
@@ -1123,7 +1135,7 @@ class Note(object):
             (_q("text"), self.text, "string"),
             (_q("baseType"), self.baseType, "string"),
             (_q("schemaLocation"), self.schemaLocation, "string"),
-            (_q("type"), self.type, "string")
+            (_q("type"), self.type, "string"),
         ])
 
         return yang.gdata.Container(elements)
@@ -1158,7 +1170,7 @@ class RelatedPlaceRefOrValue(object):
             get_opt_str(data, "@baseType"),
             get_opt_str(data, "@schemaLocation"),
             get_opt_str(data, "@type"),
-            get_opt_str(data, "@referredType")
+            get_opt_str(data, "@referredType"),
         )
 
     def to_json(self) -> dict[str, ?value]:
@@ -1170,7 +1182,7 @@ class RelatedPlaceRefOrValue(object):
             "@baseType": self.baseType,
             "@schemaLocation": self.schemaLocation,
             "@type": self.type,
-            "@referredType": self.referredType
+            "@referredType": self.referredType,
         }
 
     @staticmethod
@@ -1184,14 +1196,14 @@ class RelatedPlaceRefOrValue(object):
                 get_opt_child_str(gd, _q("baseType")),
                 get_opt_child_str(gd, _q("schemaLocation")),
                 get_opt_child_str(gd, _q("type")),
-                get_opt_child_str(gd, _q("referredType"))
+                get_opt_child_str(gd, _q("referredType")),
             )
         raise ValueError("Unsupported gdata node type")
 
     def to_gdata(self) -> yang.gdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
-            (_q("id"), self.id, "string")
+            (_q("id"), self.id, "string"),
         ])
         add_opt_leafs_to_gdata(elements, [
             (_q("href"), self.href, "string"),
@@ -1200,7 +1212,7 @@ class RelatedPlaceRefOrValue(object):
             (_q("baseType"), self.baseType, "string"),
             (_q("schemaLocation"), self.schemaLocation, "string"),
             (_q("type"), self.type, "string"),
-            (_q("referredType"), self.referredType, "string")
+            (_q("referredType"), self.referredType, "string"),
         ])
 
         return yang.gdata.Container(elements)
@@ -1235,7 +1247,7 @@ class RelatedEntityRefOrValue(object):
             get_opt_str(data, "@baseType"),
             get_opt_str(data, "@schemaLocation"),
             get_opt_str(data, "@type"),
-            get_opt_str(data, "@referredType")
+            get_opt_str(data, "@referredType"),
         )
 
     def to_json(self) -> dict[str, ?value]:
@@ -1247,7 +1259,7 @@ class RelatedEntityRefOrValue(object):
             "@baseType": self.baseType,
             "@schemaLocation": self.schemaLocation,
             "@type": self.type,
-            "@referredType": self.referredType
+            "@referredType": self.referredType,
         }
 
     @staticmethod
@@ -1261,14 +1273,14 @@ class RelatedEntityRefOrValue(object):
                 get_opt_child_str(gd, _q("baseType")),
                 get_opt_child_str(gd, _q("schemaLocation")),
                 get_opt_child_str(gd, _q("type")),
-                get_opt_child_str(gd, _q("referredType"))
+                get_opt_child_str(gd, _q("referredType")),
             )
         raise ValueError("Unsupported gdata node type")
 
     def to_gdata(self) -> yang.gdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
-            (_q("id"), self.id, "string")
+            (_q("id"), self.id, "string"),
         ])
         add_opt_leafs_to_gdata(elements, [
             (_q("href"), self.href, "string"),
@@ -1277,7 +1289,7 @@ class RelatedEntityRefOrValue(object):
             (_q("baseType"), self.baseType, "string"),
             (_q("schemaLocation"), self.schemaLocation, "string"),
             (_q("type"), self.type, "string"),
-            (_q("referredType"), self.referredType, "string")
+            (_q("referredType"), self.referredType, "string"),
         ])
 
         return yang.gdata.Container(elements)
@@ -1312,7 +1324,7 @@ class RelatedParty(object):
             get_opt_str(data, "@baseType"),
             get_opt_str(data, "@schemaLocation"),
             get_opt_str(data, "@type"),
-            get_opt_str(data, "@referredType")
+            get_opt_str(data, "@referredType"),
         )
 
     def to_json(self) -> dict[str, ?value]:
@@ -1324,7 +1336,7 @@ class RelatedParty(object):
             "@baseType": self.baseType,
             "@schemaLocation": self.schemaLocation,
             "@type": self.type,
-            "@referredType": self.referredType
+            "@referredType": self.referredType,
         }
 
     @staticmethod
@@ -1338,14 +1350,14 @@ class RelatedParty(object):
                 get_opt_child_str(gd, _q("baseType")),
                 get_opt_child_str(gd, _q("schemaLocation")),
                 get_opt_child_str(gd, _q("type")),
-                get_opt_child_str(gd, _q("referredType"))
+                get_opt_child_str(gd, _q("referredType")),
             )
         raise ValueError("Unsupported gdata node type")
 
     def to_gdata(self) -> yang.gdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
-            (_q("id"), self.id, "string")
+            (_q("id"), self.id, "string"),
         ])
         add_opt_leafs_to_gdata(elements, [
             (_q("href"), self.href, "string"),
@@ -1354,7 +1366,7 @@ class RelatedParty(object):
             (_q("baseType"), self.baseType, "string"),
             (_q("schemaLocation"), self.schemaLocation, "string"),
             (_q("type"), self.type, "string"),
-            (_q("referredType"), self.referredType, "string")
+            (_q("referredType"), self.referredType, "string"),
         ])
 
         return yang.gdata.Container(elements)
@@ -1389,7 +1401,7 @@ class Characteristic(object):
             get_opt_value(data, "value"),
             get_opt_str(data, "@baseType"),
             get_opt_str(data, "@schemaLocation"),
-            get_opt_str(data, "@type")
+            get_opt_str(data, "@type"),
         )
 
     def to_json(self) -> dict[str, ?value]:
@@ -1397,11 +1409,11 @@ class Characteristic(object):
             "id": self.id,
             "name": self.name,
             "valueType": self.valueType,
-            "characteristicRelationship": [cr.to_json() for cr in self.characteristicRelationship],
+            "characteristicRelationship": [entry.to_json() for entry in self.characteristicRelationship],
             "value": self.value,
             "@baseType": self.baseType,
             "@schemaLocation": self.schemaLocation,
-            "@type": self.type
+            "@type": self.type,
         }
 
     @staticmethod
@@ -1415,7 +1427,7 @@ class Characteristic(object):
                 None,   # The value is stored on the destination leaf
                 get_opt_child_str(gd, _q("baseType")),
                 get_opt_child_str(gd, _q("schemaLocation")),
-                get_opt_child_str(gd, _q("type"))
+                get_opt_child_str(gd, _q("type")),
             )
         raise ValueError("Unsupported gdata node type")
 
@@ -1423,7 +1435,7 @@ class Characteristic(object):
         elements = {}
         add_leafs_to_gdata(elements, [
             (_q("id"), self.id, "string"),
-            (_q("name"), self.name, "string")
+            (_q("name"), self.name, "string"),
         ])
         add_opt_leafs_to_gdata(elements, [
             # NOTE: The value and valueType are not stored in the TMF Store
@@ -1431,10 +1443,10 @@ class Characteristic(object):
             # of the destination transform.
             (_q("baseType"), self.baseType, "string"),
             (_q("schemaLocation"), self.schemaLocation, "string"),
-            (_q("type"), self.type, "string")
+            (_q("type"), self.type, "string"),
         ])
 
-        elements[_q("characteristicRelationship")] = yang.gdata.List([_q("id")], [cr.to_gdata() for cr in self.characteristicRelationship])
+        elements[_q("characteristicRelationship")] = yang.gdata.List([_q("id")], [entry.to_gdata() for entry in self.characteristicRelationship])
 
         return yang.gdata.Container(elements)
 
@@ -1459,7 +1471,7 @@ class CharacteristicRelationship(object):
             get_opt_str(data, "relationshipType"),
             get_opt_str(data, "@baseType"),
             get_opt_str(data, "@schemaLocation"),
-            get_opt_str(data, "@type")
+            get_opt_str(data, "@type"),
         )
 
     def to_json(self) -> dict[str, ?value]:
@@ -1468,7 +1480,7 @@ class CharacteristicRelationship(object):
             "relationshipType": self.relationshipType,
             "@baseType": self.baseType,
             "@schemaLocation": self.schemaLocation,
-            "@type": self.type
+            "@type": self.type,
         }
 
     @staticmethod
@@ -1479,20 +1491,20 @@ class CharacteristicRelationship(object):
                 get_opt_child_str(gd, _q("relationshipType")),
                 get_opt_child_str(gd, _q("baseType")),
                 get_opt_child_str(gd, _q("schemaLocation")),
-                get_opt_child_str(gd, _q("type"))
+                get_opt_child_str(gd, _q("type")),
             )
         raise ValueError("Unsupported gdata node type")
 
     def to_gdata(self) -> yang.gdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
-            (_q("id"), self.id, "string")
+            (_q("id"), self.id, "string"),
         ])
         add_opt_leafs_to_gdata(elements, [
             (_q("relationshipType"), self.relationshipType, "string"),
             (_q("baseType"), self.baseType, "string"),
             (_q("schemaLocation"), self.schemaLocation, "string"),
-            (_q("type"), self.type, "string")
+            (_q("type"), self.type, "string"),
         ])
 
         return yang.gdata.Container(elements)
@@ -1527,7 +1539,7 @@ class ServiceSpecificationRef(object):
             get_opt_str(data, "@baseType"),
             get_opt_str(data, "@schemaLocation"),
             get_opt_str(data, "@type"),
-            get_opt_str(data, "@referredType")
+            get_opt_str(data, "@referredType"),
         )
 
     def to_json(self) -> dict[str, ?value]:
@@ -1539,7 +1551,7 @@ class ServiceSpecificationRef(object):
             "@baseType": self.baseType,
             "@schemaLocation": self.schemaLocation,
             "@type": self.type,
-            "@referredType": self.referredType
+            "@referredType": self.referredType,
         }
 
     @staticmethod
@@ -1553,14 +1565,14 @@ class ServiceSpecificationRef(object):
                 get_opt_child_str(gd, _q("baseType")),
                 get_opt_child_str(gd, _q("schemaLocation")),
                 get_opt_child_str(gd, _q("type")),
-                get_opt_child_str(gd, _q("referredType"))
+                get_opt_child_str(gd, _q("referredType")),
             )
         raise ValueError("Unsupported gdata node type")
 
     def to_gdata(self) -> yang.gdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
-            (_q("id"), self.id, "string")
+            (_q("id"), self.id, "string"),
         ])
         add_opt_leafs_to_gdata(elements, [
             (_q("href"), self.href, "string"),
@@ -1569,7 +1581,7 @@ class ServiceSpecificationRef(object):
             (_q("baseType"), self.baseType, "string"),
             (_q("schemaLocation"), self.schemaLocation, "string"),
             (_q("type"), self.type, "string"),
-            (_q("referredType"), self.referredType, "string")
+            (_q("referredType"), self.referredType, "string"),
         ])
 
         return yang.gdata.Container(elements)
@@ -1601,7 +1613,7 @@ class ResourceRef(object):
             get_opt_str(data, "@baseType"),
             get_opt_str(data, "@schemaLocation"),
             get_opt_str(data, "@type"),
-            get_opt_str(data, "@referredType")
+            get_opt_str(data, "@referredType"),
         )
 
     def to_json(self) -> dict[str, ?value]:
@@ -1612,7 +1624,7 @@ class ResourceRef(object):
             "@baseType": self.baseType,
             "@schemaLocation": self.schemaLocation,
             "@type": self.type,
-            "@referredType": self.referredType
+            "@referredType": self.referredType,
         }
 
     @staticmethod
@@ -1625,14 +1637,14 @@ class ResourceRef(object):
                 get_opt_child_str(gd, _q("baseType")),
                 get_opt_child_str(gd, _q("schemaLocation")),
                 get_opt_child_str(gd, _q("type")),
-                get_opt_child_str(gd, _q("referredType"))
+                get_opt_child_str(gd, _q("referredType")),
             )
         raise ValueError("Unsupported gdata node type")
 
     def to_gdata(self) -> yang.gdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
-            (_q("id"), self.id, "string")
+            (_q("id"), self.id, "string"),
         ])
         add_opt_leafs_to_gdata(elements, [
             (_q("href"), self.href, "string"),
@@ -1640,11 +1652,10 @@ class ResourceRef(object):
             (_q("baseType"), self.baseType, "string"),
             (_q("schemaLocation"), self.schemaLocation, "string"),
             (_q("type"), self.type, "string"),
-            (_q("referredType"), self.referredType, "string")
+            (_q("referredType"), self.referredType, "string"),
         ])
 
         return yang.gdata.Container(elements)
-
 
 class RelatedServiceOrderItem(object):
     itemId: ?str
@@ -1679,7 +1690,7 @@ class RelatedServiceOrderItem(object):
             get_opt_str(data, "@baseType"),
             get_opt_str(data, "@schemaLocation"),
             get_opt_str(data, "@type"),
-            get_opt_str(data, "@referredType")
+            get_opt_str(data, "@referredType"),
         )
 
     def to_json(self) -> dict[str, ?value]:
@@ -1692,7 +1703,7 @@ class RelatedServiceOrderItem(object):
             "@baseType": self.baseType,
             "@schemaLocation": self.schemaLocation,
             "@type": self.type,
-            "@referredType": self.referredType
+            "@referredType": self.referredType,
         }
 
     @staticmethod
@@ -1707,14 +1718,14 @@ class RelatedServiceOrderItem(object):
                 get_opt_child_str(gd, _q("baseType")),
                 get_opt_child_str(gd, _q("schemaLocation")),
                 get_opt_child_str(gd, _q("type")),
-                get_opt_child_str(gd, _q("referredType"))
+                get_opt_child_str(gd, _q("referredType")),
             )
         raise ValueError("Unsupported gdata node type")
 
     def to_gdata(self) -> yang.gdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
-            (_q("itemId"), self.itemId, "string")
+            (_q("itemId"), self.itemId, "string"),
         ])
         add_opt_leafs_to_gdata(elements, [
             (_q("role"), self.role, "string"),
@@ -1724,11 +1735,10 @@ class RelatedServiceOrderItem(object):
             (_q("baseType"), self.baseType, "string"),
             (_q("schemaLocation"), self.schemaLocation, "string"),
             (_q("type"), self.type, "string"),
-            (_q("referredType"), self.referredType, "string")
+            (_q("referredType"), self.referredType, "string"),
         ])
 
         return yang.gdata.Container(elements)
-
 
 class ServiceRelationship(object):
     relationshipType: ?str
@@ -1750,21 +1760,21 @@ class ServiceRelationship(object):
     def from_json(data: dict[str, ?value]) -> ServiceRelationship:
         return ServiceRelationship(
             get_opt_str(data, "relationshipType"),
-            list(map(Characteristic.from_json, get_list(data.get("serviceRelationshipCharacteristic")))),
+            list(map(Characteristic.from_json, get_list(data.get("ServiceRelationshipCharacteristic")))),
             get_service_ref_or_value(data, "service"),
             get_opt_str(data, "@baseType"),
             get_opt_str(data, "@schemaLocation"),
-            get_opt_str(data, "@type")
+            get_opt_str(data, "@type"),
         )
 
     def to_json(self) -> dict[str, ?value]:
         return {
             "relationshipType": self.relationshipType,
-            "serviceRelationshipCharacteristic": [src.to_json() for src in self.serviceRelationshipCharacteristic],
+            "ServiceRelationshipCharacteristic": [entry.to_json() for entry in self.serviceRelationshipCharacteristic],
             "service": self.service.to_json(),
             "@baseType": self.baseType,
             "@schemaLocation": self.schemaLocation,
-            "@type": self.type
+            "@type": self.type,
         }
 
     @staticmethod
@@ -1776,7 +1786,7 @@ class ServiceRelationship(object):
                 get_child_service_ref_or_value(gd, _q("service")),
                 get_opt_child_str(gd, _q("baseType")),
                 get_opt_child_str(gd, _q("schemaLocation")),
-                get_opt_child_str(gd, _q("type"))
+                get_opt_child_str(gd, _q("type")),
             )
         raise ValueError("Unsupported gdata node type")
 
@@ -1786,11 +1796,11 @@ class ServiceRelationship(object):
             (_q("relationshipType"), self.relationshipType, "string"),
             (_q("baseType"), self.baseType, "string"),
             (_q("schemaLocation"), self.schemaLocation, "string"),
-            (_q("type"), self.type, "string")
+            (_q("type"), self.type, "string"),
         ])
 
-        elements[_q("serviceRelationshipCharacteristic")] = yang.gdata.List([_q("id")], [src.to_gdata() for src in self.serviceRelationshipCharacteristic])
         elements[_q("service")] = self.service.to_gdata()
+        elements[_q("serviceRelationshipCharacteristic")] = yang.gdata.List([_q("name")], [entry.to_gdata() for entry in self.serviceRelationshipCharacteristic])
 
         return yang.gdata.Container(elements)
 
@@ -1860,12 +1870,6 @@ class ServiceRefOrValue(object):
 
     @staticmethod
     def from_json(data: dict[str, ?value]) -> ServiceRefOrValue:
-
-        service_specification = None
-        sspec = data.get("serviceSpecification")
-        if isinstance(sspec, dict):
-            service_specification = ServiceSpecificationRef.from_json(sspec)
-
         return ServiceRefOrValue(
             get_opt_str(data, "id"),
             get_opt_str(data, "href"),
@@ -1889,14 +1893,14 @@ class ServiceRefOrValue(object):
             list(map(Characteristic.from_json, get_list(data.get("serviceCharacteristic")))),
             list(map(RelatedServiceOrderItem.from_json, get_list(data.get("serviceOrderItem")))),
             list(map(ServiceRelationship.from_json, get_list(data.get("serviceRelationship")))),
-            service_specification,
+            get_opt_service_specification_ref(data, "serviceSpecification"),
             get_opt_str(data, "state"),
             list(map(ResourceRef.from_json, get_list(data.get("supportingResource")))),
             list(map(ServiceRefOrValue.from_json, get_list(data.get("supportingService")))),
             get_opt_str(data, "@baseType"),
             get_opt_str(data, "@schemaLocation"),
             get_opt_str(data, "@type"),
-            get_opt_str(data, "@referredType")
+            get_opt_str(data, "@referredType"),
         )
 
     def to_json(self) -> dict[str, ?value]:
@@ -1915,23 +1919,23 @@ class ServiceRefOrValue(object):
             "serviceType": self.serviceType,
             "startDate": self.startDate,
             "startMode": self.startMode,
-            "feature": [f.to_json() for f in self.feature],
-            "note": [n.to_json() for n in self.note],
-            "place": [n.to_json() for n in self.place],
-            "relatedEntity": [re.to_json() for re in self.relatedEntity],
-            "relatedParty": [rp.to_json() for rp in self.relatedParty],
-            "serviceCharacteristic": [sc.to_json() for sc in self.serviceCharacteristic],
-            "serviceOrderItem": [soi.to_json() for soi in self.serviceOrderItem],
-            "serviceRelationship": [sr.to_json() for sr in self.serviceRelationship],
+            "feature": [entry.to_json() for entry in self.feature],
+            "note": [entry.to_json() for entry in self.note],
+            "place": [entry.to_json() for entry in self.place],
+            "relatedEntity": [entry.to_json() for entry in self.relatedEntity],
+            "relatedParty": [entry.to_json() for entry in self.relatedParty],
+            "serviceCharacteristic": [entry.to_json() for entry in self.serviceCharacteristic],
+            "serviceOrderItem": [entry.to_json() for entry in self.serviceOrderItem],
+            "serviceRelationship": [entry.to_json() for entry in self.serviceRelationship],
             "serviceSpecification": get_opt_obj_to_json(self.serviceSpecification),
             "state": self.state,
-            "supportingResource": [sres.to_json() for sres in self.supportingResource],
-            "supportingService": [ss.to_json() for ss in self.supportingService],
+            "supportingResource": [entry.to_json() for entry in self.supportingResource],
+            "supportingService": [entry.to_json() for entry in self.supportingService],
             "@baseType": self.baseType,
             "@schemaLocation": self.schemaLocation,
             "@type": self.type,
+            "@referredType": self.referredType,
         }
-
 
     @staticmethod
     def from_gdata(gd: yang.gdata.Node) -> ServiceRefOrValue:
@@ -1966,14 +1970,14 @@ class ServiceRefOrValue(object):
                 get_opt_child_str(gd, _q("baseType")),
                 get_opt_child_str(gd, _q("schemaLocation")),
                 get_opt_child_str(gd, _q("type")),
-                get_opt_child_str(gd, _q("referredType"))
+                get_opt_child_str(gd, _q("referredType")),
             )
         raise ValueError("Unsupported gdata node type")
 
     def to_gdata(self) -> yang.gdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
-            (_q("id"), self.id, "string")
+            (_q("id"), self.id, "string"),
         ])
         add_opt_leafs_to_gdata(elements, [
             (_q("href"), self.href, "string"),
@@ -1992,20 +1996,21 @@ class ServiceRefOrValue(object):
             (_q("state"), self.state, "string"),
             (_q("baseType"), self.baseType, "string"),
             (_q("schemaLocation"), self.schemaLocation, "string"),
-            (_q("type"), self.type, "string")
+            (_q("type"), self.type, "string"),
+            (_q("referredType"), self.referredType, "string"),
         ])
-        add_opt_obj_to_gdata(elements, _q("serviceSpecification"), self.serviceSpecification)
 
-        elements[_q("feature")] = yang.gdata.List([_q("id")], [f.to_gdata() for f in self.feature])
-        elements[_q("note")] = yang.gdata.List([_q("id")], [n.to_gdata() for n in self.note])
-        elements[_q("place")] = yang.gdata.List([_q("id")], [p.to_gdata() for p in self.place])
-        elements[_q("relatedEntity")] = yang.gdata.List([_q("id")], [re.to_gdata() for re in self.relatedEntity])
-        elements[_q("relatedParty")] = yang.gdata.List([_q("id")], [rp.to_gdata() for rp in self.relatedParty])
-        elements[_q("serviceCharacteristic")] = yang.gdata.List([_q("id")], [sc.to_gdata() for sc in self.serviceCharacteristic])
-        elements[_q("serviceOrderItem")] = yang.gdata.List([_q("itemId")], [soi.to_gdata() for soi in self.serviceOrderItem])
-        elements[_q("serviceRelationship")] = yang.gdata.List([_q("id")], [sr.to_gdata() for sr in self.serviceRelationship])
-        elements[_q("supportingResource")] = yang.gdata.List([_q("id")], [sres.to_gdata() for sres in self.supportingResource])
-        elements[_q("supportingService")] = yang.gdata.List([_q("id")], [ss.to_gdata() for ss in self.supportingService])
+        add_opt_obj_to_gdata(elements, _q("serviceSpecification"), self.serviceSpecification)
+        elements[_q("feature")] = yang.gdata.List([_q("id")], [entry.to_gdata() for entry in self.feature])
+        elements[_q("note")] = yang.gdata.List([_q("id")], [entry.to_gdata() for entry in self.note])
+        elements[_q("place")] = yang.gdata.List([_q("id")], [entry.to_gdata() for entry in self.place])
+        elements[_q("relatedEntity")] = yang.gdata.List([_q("id")], [entry.to_gdata() for entry in self.relatedEntity])
+        elements[_q("relatedParty")] = yang.gdata.List([_q("id")], [entry.to_gdata() for entry in self.relatedParty])
+        elements[_q("serviceCharacteristic")] = yang.gdata.List([_q("name")], [entry.to_gdata() for entry in self.serviceCharacteristic])
+        elements[_q("serviceOrderItem")] = yang.gdata.List([_q("itemId")], [entry.to_gdata() for entry in self.serviceOrderItem])
+        elements[_q("serviceRelationship")] = yang.gdata.List([_q("relationshipType")], [entry.to_gdata() for entry in self.serviceRelationship])
+        elements[_q("supportingResource")] = yang.gdata.List([_q("id")], [entry.to_gdata() for entry in self.supportingResource])
+        elements[_q("supportingService")] = yang.gdata.List([_q("id")], [entry.to_gdata() for entry in self.supportingService])
 
         return yang.gdata.Container(elements)
 

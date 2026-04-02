@@ -37,7 +37,7 @@
                 "@baseType": "CharacteristicSpecification",
                 "@schemaLocation": "/tmf-api/schema/Service/CharacteristicSpecification.schema.json",
                 "@type": "CharacteristicSpecification",
-                "valueSchemaLocation": null
+                "@valueSchemaLocation": null
             },
             {
                 "id": "speed",
@@ -59,7 +59,7 @@
                 "@baseType": "CharacteristicSpecification",
                 "@schemaLocation": "/tmf-api/schema/Service/CharacteristicSpecification.schema.json",
                 "@type": "CharacteristicSpecification",
-                "valueSchemaLocation": null
+                "@valueSchemaLocation": null
             }
         ],
         "targetEntitySchema": null,
@@ -109,7 +109,7 @@
                 "@baseType": "CharacteristicSpecification",
                 "@schemaLocation": "/tmf-api/schema/Service/CharacteristicSpecification.schema.json",
                 "@type": "CharacteristicSpecification",
-                "valueSchemaLocation": null
+                "@valueSchemaLocation": null
             },
             {
                 "id": "model",
@@ -131,7 +131,7 @@
                 "@baseType": "CharacteristicSpecification",
                 "@schemaLocation": "/tmf-api/schema/Service/CharacteristicSpecification.schema.json",
                 "@type": "CharacteristicSpecification",
-                "valueSchemaLocation": null
+                "@valueSchemaLocation": null
             },
             {
                 "id": "capacity",
@@ -153,7 +153,7 @@
                 "@baseType": "CharacteristicSpecification",
                 "@schemaLocation": "/tmf-api/schema/Service/CharacteristicSpecification.schema.json",
                 "@type": "CharacteristicSpecification",
-                "valueSchemaLocation": null
+                "@valueSchemaLocation": null
             },
             {
                 "id": "vendor",
@@ -181,9 +181,9 @@
                             "startDateTime": "1970-01-01T00:00:00"
                         },
                         "value": "Cisco",
-                        "baseType": "CharacteristicValueSpecification",
-                        "schemaLocation": "/tmf-api/schema/Service/CharacteristicValueSpecification.schema.json",
-                        "type": "CharacteristicValueSpecification"
+                        "@baseType": "CharacteristicValueSpecification",
+                        "@schemaLocation": "/tmf-api/schema/Service/CharacteristicValueSpecification.schema.json",
+                        "@type": "CharacteristicValueSpecification"
                     },
                     {
                         "isDefault": false,
@@ -198,9 +198,9 @@
                             "startDateTime": "1970-01-01T00:00:00"
                         },
                         "value": "Juniper",
-                        "baseType": "CharacteristicValueSpecification",
-                        "schemaLocation": "/tmf-api/schema/Service/CharacteristicValueSpecification.schema.json",
-                        "type": "CharacteristicValueSpecification"
+                        "@baseType": "CharacteristicValueSpecification",
+                        "@schemaLocation": "/tmf-api/schema/Service/CharacteristicValueSpecification.schema.json",
+                        "@type": "CharacteristicValueSpecification"
                     },
                     {
                         "isDefault": false,
@@ -215,9 +215,9 @@
                             "startDateTime": "1970-01-01T00:00:00"
                         },
                         "value": "Nokia",
-                        "baseType": "CharacteristicValueSpecification",
-                        "schemaLocation": "/tmf-api/schema/Service/CharacteristicValueSpecification.schema.json",
-                        "type": "CharacteristicValueSpecification"
+                        "@baseType": "CharacteristicValueSpecification",
+                        "@schemaLocation": "/tmf-api/schema/Service/CharacteristicValueSpecification.schema.json",
+                        "@type": "CharacteristicValueSpecification"
                     }
                 ],
                 "validFor": {
@@ -227,7 +227,7 @@
                 "@baseType": "CharacteristicSpecification",
                 "@schemaLocation": "/tmf-api/schema/Service/CharacteristicSpecification.schema.json",
                 "@type": "CharacteristicSpecification",
-                "valueSchemaLocation": null
+                "@valueSchemaLocation": null
             },
             {
                 "id": "qos-profiles",
@@ -249,7 +249,7 @@
                 "@baseType": "CharacteristicSpecification",
                 "@schemaLocation": "/tmf-api/schema/Service/CharacteristicSpecification.schema.json",
                 "@type": "CharacteristicSpecification",
-                "valueSchemaLocation": null
+                "@valueSchemaLocation": null
             }
         ],
         "targetEntitySchema": null,

@@ -416,12 +416,12 @@ class ServiceCatalog(object):
             "lifecycleStatus": self.lifecycleStatus,
             "name": self.name,
             "version": self.version,
-            "category": [c.to_json() for c in self.category],
-            "relatedParty": [rp.to_json() for rp in self.relatedParty],
+            "category": [entry.to_json() for entry in self.category],
+            "relatedParty": [entry.to_json() for entry in self.relatedParty],
             "validFor": get_opt_obj_to_json(self.validFor),
             "@baseType": self.baseType,
             "@schemaLocation": self.schemaLocation,
-            "@type": self.type
+            "@type": self.type,
         }
 
 class ServiceCategory(object):
@@ -469,12 +469,12 @@ class ServiceCategory(object):
             "name": self.name,
             "parentId": self.parentId,
             "version": self.version,
-            "category": [c.to_json() for c in self.category],
-            "serviceCandidate": [sc.to_json() for sc in self.serviceCandidate],
+            "category": [entry.to_json() for entry in self.category],
+            "serviceCandidate": [entry.to_json() for entry in self.serviceCandidate],
             "validFor": get_opt_obj_to_json(self.validFor),
             "@baseType": self.baseType,
             "@schemaLocation": self.schemaLocation,
-            "@type": self.type
+            "@type": self.type,
         }
 
 class ServiceCandidate(object):
@@ -516,23 +516,23 @@ class ServiceCandidate(object):
             "lifecycleStatus": self.lifecycleStatus,
             "name": self.name,
             "version": self.version,
-            "category": [c.to_json() for c in self.category],
+            "category": [entry.to_json() for entry in self.category],
             "serviceSpecification": get_opt_obj_to_json(self.serviceSpecification),
             "validFor": get_opt_obj_to_json(self.validFor),
             "@baseType": self.baseType,
             "@schemaLocation": self.schemaLocation,
-            "@type": self.type
+            "@type": self.type,
         }
 
 class CharacteristicSpecification(object):
-    id: str
+    id: ?str
     configurable: ?bool
     description: ?str
     extensible: ?bool
     isUnique: ?bool
     maxCardinality: ?int
     minCardinality: ?int
-    name: str
+    name: ?str
     regex: ?str
     valueType: ?str
     charSpecRelationship: list  [CharacteristicSpecificationRelationship]
@@ -543,7 +543,7 @@ class CharacteristicSpecification(object):
     type: ?str
     valueSchemaLocation: ?str
 
-    def __init__(self, id: str, configurable: ?bool, description: ?str, extensible: ?bool, isUnique: ?bool, maxCardinality: ?int, minCardinality: ?int, name: str, regex: ?str, valueType: ?str, charSpecRelationship: list  [CharacteristicSpecificationRelationship], characteristicValueSpecification: list  [CharacteristicValueSpecification], validFor: ?TimePeriod, baseType: ?str, schemaLocation: ?str, type: ?str, valueSchemaLocation: ?str):
+    def __init__(self, id: ?str, configurable: ?bool, description: ?str, extensible: ?bool, isUnique: ?bool, maxCardinality: ?int, minCardinality: ?int, name: ?str, regex: ?str, valueType: ?str, charSpecRelationship: list  [CharacteristicSpecificationRelationship], characteristicValueSpecification: list  [CharacteristicValueSpecification], validFor: ?TimePeriod, baseType: ?str, schemaLocation: ?str, type: ?str, valueSchemaLocation: ?str):
         self.id = id
         self.configurable = configurable
         self.description = description
@@ -574,23 +574,23 @@ class CharacteristicSpecification(object):
             "name": self.name,
             "regex": self.regex,
             "valueType": self.valueType,
-            "charSpecRelationship": [csr.to_json() for csr in self.charSpecRelationship],
-            "characteristicValueSpecification": [cvs.to_json() for cvs in self.characteristicValueSpecification],
+            "charSpecRelationship": [entry.to_json() for entry in self.charSpecRelationship],
+            "characteristicValueSpecification": [entry.to_json() for entry in self.characteristicValueSpecification],
             "validFor": get_opt_obj_to_json(self.validFor),
             "@baseType": self.baseType,
             "@schemaLocation": self.schemaLocation,
             "@type": self.type,
-            "valueSchemaLocation": self.valueSchemaLocation
+            "@valueSchemaLocation": self.valueSchemaLocation,
         }
 
 class ServiceSpecification(object):
-    id: str
+    id: ?str
     href: ?str
     description: ?str
     isBundle: ?bool
     lastUpdate: ?str
     lifecycleStatus: ?str
-    name: str
+    name: ?str
     version: ?str
     attachment: list  [AttachmentRefOrValue]
     constraint: list  [ConstraintRef]
@@ -607,7 +607,7 @@ class ServiceSpecification(object):
     schemaLocation: ?str
     type: ?str
 
-    def __init__(self, id: str, href: ?str, description: ?str, isBundle: ?bool, lastUpdate: ?str, lifecycleStatus: ?str, name: str, version: ?str, attachment: list  [AttachmentRefOrValue], constraint: list  [ConstraintRef], entitySpecRelationship: list  [EntitySpecificationRelationship], featureSpecification: list  [FeatureSpecification], relatedParty: list  [RelatedParty], resourceSpecification: list  [ResourceSpecificationRef], serviceLevelSpecification: list  [ServiceLevelSpecificationRef], serviceSpecRelationship: list  [ServiceSpecRelationship], specCharacteristic: list  [CharacteristicSpecification], targetEntitySchema: ?TargetEntitySchema, validFor: ?TimePeriod, baseType: ?str, schemaLocation: ?str, type: ?str):
+    def __init__(self, id: ?str, href: ?str, description: ?str, isBundle: ?bool, lastUpdate: ?str, lifecycleStatus: ?str, name: ?str, version: ?str, attachment: list  [AttachmentRefOrValue], constraint: list  [ConstraintRef], entitySpecRelationship: list  [EntitySpecificationRelationship], featureSpecification: list  [FeatureSpecification], relatedParty: list  [RelatedParty], resourceSpecification: list  [ResourceSpecificationRef], serviceLevelSpecification: list  [ServiceLevelSpecificationRef], serviceSpecRelationship: list  [ServiceSpecRelationship], specCharacteristic: list  [CharacteristicSpecification], targetEntitySchema: ?TargetEntitySchema, validFor: ?TimePeriod, baseType: ?str, schemaLocation: ?str, type: ?str):
         self.id = id
         self.href = href
         self.description = description
@@ -641,23 +641,58 @@ class ServiceSpecification(object):
             "lifecycleStatus": self.lifecycleStatus,
             "name": self.name,
             "version": self.version,
-            "attachment": [a.to_json() for a in self.attachment],
-            "constraint": [c.to_json() for c in self.constraint],
-            "entitySpecRelationship": [esr.to_json() for esr in self.entitySpecRelationship],
-            "featureSpecification": [fs.to_json() for fs in self.featureSpecification],
-            "relatedParty": [rp.to_json() for rp in self.relatedParty],
-            "resourceSpecification": [rs.to_json() for rs in self.resourceSpecification],
-            "serviceLevelSpecification": [sls.to_json() for sls in self.serviceLevelSpecification],
-            "serviceSpecRelationship": [ssr.to_json() for ssr in self.serviceSpecRelationship],
-            "specCharacteristic": [sc.to_json() for sc in self.specCharacteristic],
+            "attachment": [entry.to_json() for entry in self.attachment],
+            "constraint": [entry.to_json() for entry in self.constraint],
+            "entitySpecRelationship": [entry.to_json() for entry in self.entitySpecRelationship],
+            "featureSpecification": [entry.to_json() for entry in self.featureSpecification],
+            "relatedParty": [entry.to_json() for entry in self.relatedParty],
+            "resourceSpecification": [entry.to_json() for entry in self.resourceSpecification],
+            "serviceLevelSpecification": [entry.to_json() for entry in self.serviceLevelSpecification],
+            "serviceSpecRelationship": [entry.to_json() for entry in self.serviceSpecRelationship],
+            "specCharacteristic": [entry.to_json() for entry in self.specCharacteristic],
             "targetEntitySchema": get_opt_obj_to_json(self.targetEntitySchema),
             "validFor": get_opt_obj_to_json(self.validFor),
             "@baseType": self.baseType,
             "@schemaLocation": self.schemaLocation,
-            "@type": self.type
+            "@type": self.type,
         }
 
 class FeatureSpecification(object):
+    id: ?str
+    isBundle: ?bool
+    isEnabled: ?bool
+    name: ?str
+    version: ?str
+    constraint: list  [ConstraintRef]
+    featureSpecCharacteristic: list  [FeatureSpecificationCharacteristic]
+    featureSpecRelationship: list  [FeatureSpecificationRelationship]
+    validFor: ?TimePeriod
+
+    def __init__(self, id: ?str, isBundle: ?bool, isEnabled: ?bool, name: ?str, version: ?str, constraint: list  [ConstraintRef], featureSpecCharacteristic: list  [FeatureSpecificationCharacteristic], featureSpecRelationship: list  [FeatureSpecificationRelationship], validFor: ?TimePeriod):
+        self.id = id
+        self.isBundle = isBundle
+        self.isEnabled = isEnabled
+        self.name = name
+        self.version = version
+        self.constraint = constraint
+        self.featureSpecCharacteristic = featureSpecCharacteristic
+        self.featureSpecRelationship = featureSpecRelationship
+        self.validFor = validFor
+
+    def to_json(self) -> dict[str, ?value]:
+        return {
+            "id": self.id,
+            "isBundle": self.isBundle,
+            "isEnabled": self.isEnabled,
+            "name": self.name,
+            "version": self.version,
+            "constraint": [entry.to_json() for entry in self.constraint],
+            "featureSpecCharacteristic": [entry.to_json() for entry in self.featureSpecCharacteristic],
+            "featureSpecRelationship": [entry.to_json() for entry in self.featureSpecRelationship],
+            "validFor": get_opt_obj_to_json(self.validFor),
+        }
+
+class FeatureSpecificationCharacteristic(object):
     id: ?str
     configurable: ?bool
     description: ?str
@@ -665,7 +700,7 @@ class FeatureSpecification(object):
     isUnique: ?bool
     maxCardinality: ?int
     minCardinality: ?int
-    name: ?str
+    name: str
     regex: ?str
     valueType: ?str
     featureSpecCharRelationship: list  [FeatureSpecificationCharacteristicRelationship]
@@ -676,7 +711,7 @@ class FeatureSpecification(object):
     type: ?str
     valueSchemaLocation: ?str
 
-    def __init__(self, id: ?str, configurable: ?bool, description: ?str, extensible: ?bool, isUnique: ?bool, maxCardinality: ?int, minCardinality: ?int, name: ?str, regex: ?str, valueType: ?str, featureSpecCharRelationship: list  [FeatureSpecificationCharacteristicRelationship], featureSpecCharacteristicValue: list  [CharacteristicValueSpecification], validFor: ?TimePeriod, baseType: ?str, schemaLocation: ?str, type: ?str, valueSchemaLocation: ?str):
+    def __init__(self, id: ?str, configurable: ?bool, description: ?str, extensible: ?bool, isUnique: ?bool, maxCardinality: ?int, minCardinality: ?int, name: str, regex: ?str, valueType: ?str, featureSpecCharRelationship: list  [FeatureSpecificationCharacteristicRelationship], featureSpecCharacteristicValue: list  [CharacteristicValueSpecification], validFor: ?TimePeriod, baseType: ?str, schemaLocation: ?str, type: ?str, valueSchemaLocation: ?str):
         self.id = id
         self.configurable = configurable
         self.description = description
@@ -707,13 +742,13 @@ class FeatureSpecification(object):
             "name": self.name,
             "regex": self.regex,
             "valueType": self.valueType,
-            "featureSpecCharRelationship": [fscr.to_json() for fscr in self.featureSpecCharRelationship],
-            "featureSpecCharacteristicValue": [fscv.to_json() for fscv in self.featureSpecCharacteristicValue],
+            "featureSpecCharRelationship": [entry.to_json() for entry in self.featureSpecCharRelationship],
+            "featureSpecCharacteristicValue": [entry.to_json() for entry in self.featureSpecCharacteristicValue],
             "validFor": get_opt_obj_to_json(self.validFor),
             "@baseType": self.baseType,
             "@schemaLocation": self.schemaLocation,
             "@type": self.type,
-            "valueSchemaLocation": self.valueSchemaLocation
+            "@valueSchemaLocation": self.valueSchemaLocation,
         }
 
 class CharacteristicValueSpecification(object):
@@ -755,9 +790,9 @@ class CharacteristicValueSpecification(object):
             "valueType": self.valueType,
             "validFor": get_opt_obj_to_json(self.validFor),
             "value": self.value,
-            "baseType": self.baseType,
-            "schemaLocation": self.schemaLocation,
-            "type": self.type
+            "@baseType": self.baseType,
+            "@schemaLocation": self.schemaLocation,
+            "@type": self.type,
         }
 
 class CharacteristicSpecificationRelationship(object):
@@ -783,14 +818,14 @@ class CharacteristicSpecificationRelationship(object):
             "parentSpecificationHref": self.parentSpecificationHref,
             "parentSpecificationId": self.parentSpecificationId,
             "relationshipType": self.relationshipType,
-            "validFor": get_opt_obj_to_json(self.validFor)
+            "validFor": get_opt_obj_to_json(self.validFor),
         }
 
 class ServiceSpecRelationship(object):
     id: ?str
     href: ?str
     name: ?str
-    relationshipType: ?str
+    relationshipType: str
     role: ?str
     validFor: ?TimePeriod
     baseType: ?str
@@ -798,7 +833,7 @@ class ServiceSpecRelationship(object):
     type: ?str
     referredType: ?str
 
-    def __init__(self, id: ?str, href: ?str, name: ?str, relationshipType: ?str, role: ?str, validFor: ?TimePeriod, baseType: ?str, schemaLocation: ?str, type: ?str, referredType: ?str):
+    def __init__(self, id: ?str, href: ?str, name: ?str, relationshipType: str, role: ?str, validFor: ?TimePeriod, baseType: ?str, schemaLocation: ?str, type: ?str, referredType: ?str):
         self.id = id
         self.href = href
         self.name = name
@@ -821,14 +856,14 @@ class ServiceSpecRelationship(object):
             "@baseType": self.baseType,
             "@schemaLocation": self.schemaLocation,
             "@type": self.type,
-            "@referredType": self.referredType
+            "@referredType": self.referredType,
         }
 
 class EntitySpecificationRelationship(object):
     id: ?str
     href: ?str
     name: ?str
-    relationshipType: ?str
+    relationshipType: str
     role: ?str
     associationSpec: ?AssociationSpecificationRef
     validFor: ?TimePeriod
@@ -837,7 +872,7 @@ class EntitySpecificationRelationship(object):
     type: ?str
     referredType: ?str
 
-    def __init__(self, id: ?str, href: ?str, name: ?str, relationshipType: ?str, role: ?str, associationSpec: ?AssociationSpecificationRef, validFor: ?TimePeriod, baseType: ?str, schemaLocation: ?str, type: ?str, referredType: ?str):
+    def __init__(self, id: ?str, href: ?str, name: ?str, relationshipType: str, role: ?str, associationSpec: ?AssociationSpecificationRef, validFor: ?TimePeriod, baseType: ?str, schemaLocation: ?str, type: ?str, referredType: ?str):
         self.id = id
         self.href = href
         self.name = name
@@ -862,7 +897,33 @@ class EntitySpecificationRelationship(object):
             "@baseType": self.baseType,
             "@schemaLocation": self.schemaLocation,
             "@type": self.type,
-            "@referredType": self.referredType
+            "@referredType": self.referredType,
+        }
+
+class FeatureSpecificationRelationship(object):
+    featureId: ?str
+    name: str
+    parentSpecificationHref: ?str
+    parentSpecificationId: ?str
+    relationshipType: str
+    validFor: ?TimePeriod
+
+    def __init__(self, featureId: ?str, name: str, parentSpecificationHref: ?str, parentSpecificationId: ?str, relationshipType: str, validFor: ?TimePeriod):
+        self.featureId = featureId
+        self.name = name
+        self.parentSpecificationHref = parentSpecificationHref
+        self.parentSpecificationId = parentSpecificationId
+        self.relationshipType = relationshipType
+        self.validFor = validFor
+
+    def to_json(self) -> dict[str, ?value]:
+        return {
+            "featureId": self.featureId,
+            "name": self.name,
+            "parentSpecificationHref": self.parentSpecificationHref,
+            "parentSpecificationId": self.parentSpecificationId,
+            "relationshipType": self.relationshipType,
+            "validFor": get_opt_obj_to_json(self.validFor),
         }
 
 class FeatureSpecificationCharacteristicRelationship(object):
@@ -891,11 +952,11 @@ class FeatureSpecificationCharacteristicRelationship(object):
             "relationshipType": self.relationshipType,
             "resourceSpecificationHref": self.resourceSpecificationHref,
             "resourceSpecificationId": self.resourceSpecificationId,
-            "validFor": get_opt_obj_to_json(self.validFor)
+            "validFor": get_opt_obj_to_json(self.validFor),
         }
 
 class ServiceCategoryRef(object):
-    id: ?str
+    id: str
     href: ?str
     name: ?str
     version: ?str
@@ -904,7 +965,7 @@ class ServiceCategoryRef(object):
     type: ?str
     referredType: ?str
 
-    def __init__(self, id: ?str, href: ?str, name: ?str, version: ?str, baseType: ?str, schemaLocation: ?str, type: ?str, referredType: ?str):
+    def __init__(self, id: str, href: ?str, name: ?str, version: ?str, baseType: ?str, schemaLocation: ?str, type: ?str, referredType: ?str):
         self.id = id
         self.href = href
         self.name = name
@@ -923,11 +984,11 @@ class ServiceCategoryRef(object):
             "@baseType": self.baseType,
             "@schemaLocation": self.schemaLocation,
             "@type": self.type,
-            "@referredType": self.referredType
+            "@referredType": self.referredType,
         }
 
 class ServiceCandidateRef(object):
-    id: ?str
+    id: str
     href: ?str
     name: ?str
     version: ?str
@@ -936,7 +997,7 @@ class ServiceCandidateRef(object):
     type: ?str
     referredType: ?str
 
-    def __init__(self, id: ?str, href: ?str, name: ?str, version: ?str, baseType: ?str, schemaLocation: ?str, type: ?str, referredType: ?str):
+    def __init__(self, id: str, href: ?str, name: ?str, version: ?str, baseType: ?str, schemaLocation: ?str, type: ?str, referredType: ?str):
         self.id = id
         self.href = href
         self.name = name
@@ -955,11 +1016,11 @@ class ServiceCandidateRef(object):
             "@baseType": self.baseType,
             "@schemaLocation": self.schemaLocation,
             "@type": self.type,
-            "@referredType": self.referredType
+            "@referredType": self.referredType,
         }
 
 class ServiceSpecificationRef(object):
-    id: ?str
+    id: str
     href: ?str
     name: ?str
     version: ?str
@@ -968,7 +1029,7 @@ class ServiceSpecificationRef(object):
     type: ?str
     referredType: ?str
 
-    def __init__(self, id: ?str, href: ?str, name: ?str, version: ?str, baseType: ?str, schemaLocation: ?str, type: ?str, referredType: ?str):
+    def __init__(self, id: str, href: ?str, name: ?str, version: ?str, baseType: ?str, schemaLocation: ?str, type: ?str, referredType: ?str):
         self.id = id
         self.href = href
         self.name = name
@@ -987,11 +1048,11 @@ class ServiceSpecificationRef(object):
             "@baseType": self.baseType,
             "@schemaLocation": self.schemaLocation,
             "@type": self.type,
-            "@referredType": self.referredType
+            "@referredType": self.referredType,
         }
 
 class ResourceSpecificationRef(object):
-    id: ?str
+    id: str
     href: ?str
     name: ?str
     version: ?str
@@ -1000,7 +1061,7 @@ class ResourceSpecificationRef(object):
     type: ?str
     referredType: ?str
 
-    def __init__(self, id: ?str, href: ?str, name: ?str, version: ?str, baseType: ?str, schemaLocation: ?str, type: ?str, referredType: ?str):
+    def __init__(self, id: str, href: ?str, name: ?str, version: ?str, baseType: ?str, schemaLocation: ?str, type: ?str, referredType: ?str):
         self.id = id
         self.href = href
         self.name = name
@@ -1019,11 +1080,11 @@ class ResourceSpecificationRef(object):
             "@baseType": self.baseType,
             "@schemaLocation": self.schemaLocation,
             "@type": self.type,
-            "@referredType": self.referredType
+            "@referredType": self.referredType,
         }
 
 class AssociationSpecificationRef(object):
-    id: ?str
+    id: str
     href: ?str
     name: ?str
     baseType: ?str
@@ -1031,7 +1092,7 @@ class AssociationSpecificationRef(object):
     type: ?str
     referredType: ?str
 
-    def __init__(self, id: ?str, href: ?str, name: ?str, baseType: ?str, schemaLocation: ?str, type: ?str, referredType: ?str):
+    def __init__(self, id: str, href: ?str, name: ?str, baseType: ?str, schemaLocation: ?str, type: ?str, referredType: ?str):
         self.id = id
         self.href = href
         self.name = name
@@ -1048,11 +1109,11 @@ class AssociationSpecificationRef(object):
             "@baseType": self.baseType,
             "@schemaLocation": self.schemaLocation,
             "@type": self.type,
-            "@referredType": self.referredType
+            "@referredType": self.referredType,
         }
 
 class ServiceLevelSpecificationRef(object):
-    id: ?str
+    id: str
     href: ?str
     name: ?str
     baseType: ?str
@@ -1060,7 +1121,7 @@ class ServiceLevelSpecificationRef(object):
     type: ?str
     referredType: ?str
 
-    def __init__(self, id: ?str, href: ?str, name: ?str, baseType: ?str, schemaLocation: ?str, type: ?str, referredType: ?str):
+    def __init__(self, id: str, href: ?str, name: ?str, baseType: ?str, schemaLocation: ?str, type: ?str, referredType: ?str):
         self.id = id
         self.href = href
         self.name = name
@@ -1077,11 +1138,11 @@ class ServiceLevelSpecificationRef(object):
             "@baseType": self.baseType,
             "@schemaLocation": self.schemaLocation,
             "@type": self.type,
-            "@referredType": self.referredType
+            "@referredType": self.referredType,
         }
 
 class ConstraintRef(object):
-    id: ?str
+    id: str
     href: ?str
     name: ?str
     version: ?str
@@ -1090,7 +1151,7 @@ class ConstraintRef(object):
     type: ?str
     referredType: ?str
 
-    def __init__(self, id: ?str, href: ?str, name: ?str, version: ?str, baseType: ?str, schemaLocation: ?str, type: ?str, referredType: ?str):
+    def __init__(self, id: str, href: ?str, name: ?str, version: ?str, baseType: ?str, schemaLocation: ?str, type: ?str, referredType: ?str):
         self.id = id
         self.href = href
         self.name = name
@@ -1109,7 +1170,7 @@ class ConstraintRef(object):
             "@baseType": self.baseType,
             "@schemaLocation": self.schemaLocation,
             "@type": self.type,
-            "@referredType": self.referredType
+            "@referredType": self.referredType,
         }
 
 class AttachmentRefOrValue(object):
@@ -1159,7 +1220,7 @@ class AttachmentRefOrValue(object):
             "@baseType": self.baseType,
             "@schemaLocation": self.schemaLocation,
             "@type": self.type,
-            "@referredType": self.referredType
+            "@referredType": self.referredType,
         }
 
 class Quantity(object):
@@ -1173,20 +1234,20 @@ class Quantity(object):
     def to_json(self) -> dict[str, ?value]:
         return {
             "amount": self.amount,
-            "units": self.units
+            "units": self.units,
         }
 
 class RelatedParty(object):
-    id: ?str
+    id: str
     href: ?str
     name: ?str
     role: ?str
     baseType: ?str
     schemaLocation: ?str
     type: ?str
-    referredType: ?str
+    referredType: str
 
-    def __init__(self, id: ?str, href: ?str, name: ?str, role: ?str, baseType: ?str, schemaLocation: ?str, type: ?str, referredType: ?str):
+    def __init__(self, id: str, href: ?str, name: ?str, role: ?str, baseType: ?str, schemaLocation: ?str, type: ?str, referredType: str):
         self.id = id
         self.href = href
         self.name = name
@@ -1205,7 +1266,7 @@ class RelatedParty(object):
             "@baseType": self.baseType,
             "@schemaLocation": self.schemaLocation,
             "@type": self.type,
-            "@referredType": self.referredType
+            "@referredType": self.referredType,
         }
 
 class TimePeriod(object):
@@ -1219,7 +1280,7 @@ class TimePeriod(object):
     def to_json(self) -> dict[str, ?value]:
         return {
             "endDateTime": self.endDateTime,
-            "startDateTime": self.startDateTime
+            "startDateTime": self.startDateTime,
         }
 
 class TargetEntitySchema(object):
@@ -1233,9 +1294,8 @@ class TargetEntitySchema(object):
     def to_json(self) -> dict[str, ?value]:
         return {
             "@schemaLocation": self.schemaLocation,
-            "@type": self.type
+            "@type": self.type,
         }
-
 
 def _test_service_catalog_json():
     data = get_service_catalog_list_json()

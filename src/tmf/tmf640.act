@@ -13,7 +13,7 @@ import yang.schema
 import tmf.cfs
 import tmf.yang
 
-_NS_TMF = "http://orchestron.org/yang/orchestron-tmf"
+_NS_TMF = "http://stratoweave.org/yang/stratoweave-tmf"
 def _q(n):
     return yang.gdata.Id(_NS_TMF, n)
 
@@ -385,7 +385,7 @@ def json_to_gdata(data: dict[str, ?value], top_schema: yang.schema.DRoot) -> (ya
     ret.children[_q("tmf-store")] = yang.gdata.Container({
             _q("tmf640"): yang.gdata.Container({
                 _q("service"): yang.gdata.List([_q("id")], [service.to_gdata()])})
-                }, ns="http://orchestron.org/yang/orchestron-tmf", module="orchestron-tmf")
+                }, ns="http://stratoweave.org/yang/stratoweave-tmf", module="stratoweave-tmf")
 
     return (ret, aggregate_tmf_id)
 
@@ -2546,7 +2546,7 @@ def _test_get_json_netinfra_router():
                             _q("supportingService"): yang.gdata.List([_q("id")])
                         })
                     ])
-            }, ns=_NS_TMF, module='orchestron-tmf')
+            }, ns=_NS_TMF, module='stratoweave-tmf')
         })
     })
     data = get_service_list_json(layer_config, top_schema)
@@ -2905,7 +2905,7 @@ def _test_get_json_edge_device_access_interface_vlan():
                                 ])
                         })
                     ])
-            }, ns=_NS_TMF, module='orchestron-tmf')
+            }, ns=_NS_TMF, module='stratoweave-tmf')
         })
     })
     data = get_service_list_json(layer_config, top_schema)
@@ -3053,7 +3053,7 @@ def _test_get_json_compound_router_key():
                             _q("supportingService"): yang.gdata.List([_q("id")])
                         })
                     ])
-            }, ns=_NS_TMF, module='orchestron-tmf')
+            }, ns=_NS_TMF, module='stratoweave-tmf')
         })
     })
     data = get_service_json(layer_config, top_schema, service_id)

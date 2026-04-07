@@ -7,58 +7,58 @@ Container({
       })
     ])
   }, ns='http://example.com/netinfra', module='netinfra'),
-  Id('http://orchestron.org/yang/orchestron-tmf', 'tmf-store'): Container({
-    Id('http://orchestron.org/yang/orchestron-tmf', 'tmf640'): Container({
-      Id('http://orchestron.org/yang/orchestron-tmf', 'service'): List([Id('http://orchestron.org/yang/orchestron-tmf', 'id')], elements=[
+  Id('http://stratoweave.org/yang/stratoweave-tmf', 'tmf-store'): Container({
+    Id('http://stratoweave.org/yang/stratoweave-tmf', 'tmf640'): Container({
+      Id('http://stratoweave.org/yang/stratoweave-tmf', 'service'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')], elements=[
         Container({
-          Id('http://orchestron.org/yang/orchestron-tmf', 'id'): Leaf("/netinfra/router[region='eu-west'][name='ams-core-1']"),
-          Id('http://orchestron.org/yang/orchestron-tmf', 'href'): Leaf("/tmf-api/ServiceActivationAndConfiguration/v4/service/netinfra/router[region='eu-west'][name='ams-core-1']"),
-          Id('http://orchestron.org/yang/orchestron-tmf', 'hasStarted'): Leaf(True),
-          Id('http://orchestron.org/yang/orchestron-tmf', 'isBundle'): Leaf(False),
-          Id('http://orchestron.org/yang/orchestron-tmf', 'isServiceEnabled'): Leaf(True),
-          Id('http://orchestron.org/yang/orchestron-tmf', 'isStateful'): Leaf(False),
-          Id('http://orchestron.org/yang/orchestron-tmf', 'name'): Leaf('eu-west'),
-          Id('http://orchestron.org/yang/orchestron-tmf', 'startMode'): Leaf('1'),
-          Id('http://orchestron.org/yang/orchestron-tmf', 'state'): Leaf('active'),
-          Id('http://orchestron.org/yang/orchestron-tmf', 'baseType'): Leaf('Service'),
-          Id('http://orchestron.org/yang/orchestron-tmf', 'schemaLocation'): Leaf('/tmf-api/schema/Service/Service.schema.json'),
-          Id('http://orchestron.org/yang/orchestron-tmf', 'type'): Leaf('Service'),
-          Id('http://orchestron.org/yang/orchestron-tmf', 'serviceSpecification'): Container({
-            Id('http://orchestron.org/yang/orchestron-tmf', 'id'): Leaf('netinfra.router'),
-            Id('http://orchestron.org/yang/orchestron-tmf', 'baseType'): Leaf('ServiceSpecificationRef'),
-            Id('http://orchestron.org/yang/orchestron-tmf', 'schemaLocation'): Leaf('/tmf-api/schema/Service/ServiceSpecificationRef.schema.json'),
-            Id('http://orchestron.org/yang/orchestron-tmf', 'type'): Leaf('ServiceSpecificationRef'),
-            Id('http://orchestron.org/yang/orchestron-tmf', 'referredType'): Leaf('ServiceSpecification')
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'id'): Leaf("/netinfra/router[region='eu-west'][name='ams-core-1']"),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'href'): Leaf("/tmf-api/ServiceActivationAndConfiguration/v4/service/netinfra/router[region='eu-west'][name='ams-core-1']"),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'hasStarted'): Leaf(True),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'isBundle'): Leaf(False),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'isServiceEnabled'): Leaf(True),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'isStateful'): Leaf(False),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'name'): Leaf('eu-west'),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'startMode'): Leaf('1'),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'state'): Leaf('active'),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'baseType'): Leaf('Service'),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'schemaLocation'): Leaf('/tmf-api/schema/Service/Service.schema.json'),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'type'): Leaf('Service'),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'serviceSpecification'): Container({
+            Id('http://stratoweave.org/yang/stratoweave-tmf', 'id'): Leaf('netinfra.router'),
+            Id('http://stratoweave.org/yang/stratoweave-tmf', 'baseType'): Leaf('ServiceSpecificationRef'),
+            Id('http://stratoweave.org/yang/stratoweave-tmf', 'schemaLocation'): Leaf('/tmf-api/schema/Service/ServiceSpecificationRef.schema.json'),
+            Id('http://stratoweave.org/yang/stratoweave-tmf', 'type'): Leaf('ServiceSpecificationRef'),
+            Id('http://stratoweave.org/yang/stratoweave-tmf', 'referredType'): Leaf('ServiceSpecification')
           }),
-          Id('http://orchestron.org/yang/orchestron-tmf', 'feature'): List([Id('http://orchestron.org/yang/orchestron-tmf', 'id')]),
-          Id('http://orchestron.org/yang/orchestron-tmf', 'note'): List([Id('http://orchestron.org/yang/orchestron-tmf', 'id')]),
-          Id('http://orchestron.org/yang/orchestron-tmf', 'place'): List([Id('http://orchestron.org/yang/orchestron-tmf', 'id')]),
-          Id('http://orchestron.org/yang/orchestron-tmf', 'relatedEntity'): List([Id('http://orchestron.org/yang/orchestron-tmf', 'id')]),
-          Id('http://orchestron.org/yang/orchestron-tmf', 'relatedParty'): List([Id('http://orchestron.org/yang/orchestron-tmf', 'id')]),
-          Id('http://orchestron.org/yang/orchestron-tmf', 'serviceCharacteristic'): List([Id('http://orchestron.org/yang/orchestron-tmf', 'name')], elements=[
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'feature'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')]),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'note'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')]),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'place'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')]),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'relatedEntity'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')]),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'relatedParty'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')]),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'serviceCharacteristic'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'name')], elements=[
             Container({
-              Id('http://orchestron.org/yang/orchestron-tmf', 'id'): Leaf('region'),
-              Id('http://orchestron.org/yang/orchestron-tmf', 'name'): Leaf('region'),
-              Id('http://orchestron.org/yang/orchestron-tmf', 'baseType'): Leaf('Characteristic'),
-              Id('http://orchestron.org/yang/orchestron-tmf', 'schemaLocation'): Leaf('/tmf-api/schema/Service/Characteristic.schema.json'),
-              Id('http://orchestron.org/yang/orchestron-tmf', 'type'): Leaf('Characteristic'),
-              Id('http://orchestron.org/yang/orchestron-tmf', 'characteristicRelationship'): List([Id('http://orchestron.org/yang/orchestron-tmf', 'id')])
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'id'): Leaf('region'),
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'name'): Leaf('region'),
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'baseType'): Leaf('Characteristic'),
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'schemaLocation'): Leaf('/tmf-api/schema/Service/Characteristic.schema.json'),
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'type'): Leaf('Characteristic'),
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'characteristicRelationship'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')])
             }),
             Container({
-              Id('http://orchestron.org/yang/orchestron-tmf', 'id'): Leaf('name'),
-              Id('http://orchestron.org/yang/orchestron-tmf', 'name'): Leaf('name'),
-              Id('http://orchestron.org/yang/orchestron-tmf', 'baseType'): Leaf('Characteristic'),
-              Id('http://orchestron.org/yang/orchestron-tmf', 'schemaLocation'): Leaf('/tmf-api/schema/Service/Characteristic.schema.json'),
-              Id('http://orchestron.org/yang/orchestron-tmf', 'type'): Leaf('Characteristic'),
-              Id('http://orchestron.org/yang/orchestron-tmf', 'characteristicRelationship'): List([Id('http://orchestron.org/yang/orchestron-tmf', 'id')])
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'id'): Leaf('name'),
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'name'): Leaf('name'),
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'baseType'): Leaf('Characteristic'),
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'schemaLocation'): Leaf('/tmf-api/schema/Service/Characteristic.schema.json'),
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'type'): Leaf('Characteristic'),
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'characteristicRelationship'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')])
             })
           ]),
-          Id('http://orchestron.org/yang/orchestron-tmf', 'serviceOrderItem'): List([Id('http://orchestron.org/yang/orchestron-tmf', 'itemId')]),
-          Id('http://orchestron.org/yang/orchestron-tmf', 'serviceRelationship'): List([Id('http://orchestron.org/yang/orchestron-tmf', 'relationshipType')]),
-          Id('http://orchestron.org/yang/orchestron-tmf', 'supportingResource'): List([Id('http://orchestron.org/yang/orchestron-tmf', 'id')]),
-          Id('http://orchestron.org/yang/orchestron-tmf', 'supportingService'): List([Id('http://orchestron.org/yang/orchestron-tmf', 'id')])
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'serviceOrderItem'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'itemId')]),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'serviceRelationship'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'relationshipType')]),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'supportingResource'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')]),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'supportingService'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')])
         })
       ])
     })
-  }, ns='http://orchestron.org/yang/orchestron-tmf', module='orchestron-tmf')
+  }, ns='http://stratoweave.org/yang/stratoweave-tmf', module='stratoweave-tmf')
 })

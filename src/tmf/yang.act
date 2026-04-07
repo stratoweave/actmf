@@ -58,17 +58,17 @@ ietf_yang_tmf_map = r"""module ietf-yang-tmf-map {
   }
 }"""
 
-otmf = r"""module orchestron-tmf {
+swtmf = r"""module stratoweave-tmf {
   yang-version "1.1";
-  namespace "http://orchestron.org/yang/orchestron-tmf";
-  prefix "otmf";
+  namespace "http://stratoweave.org/yang/stratoweave-tmf";
+  prefix "sw-tmf";
   import stratoweave {
     prefix sw;
   }
-  import orchestron-tmf640 {
-    prefix otmf640;
+  import stratoweave-tmf640 {
+    prefix sw-tmf640;
   }
-  description "Orchestron TMF";
+  description "Stratoweave TMF";
   revision 2025-10-26 {
     description "Initial revision";
   }
@@ -80,17 +80,17 @@ otmf = r"""module orchestron-tmf {
       list service {
         key id;
         sw:transform TMF640_STORE_TRANSFORM;
-        uses otmf640:Service;
+        uses sw-tmf640:Service;
       }
     }
   }
 }
 """
 
-otmf640 = r"""module orchestron-tmf640 {
+swtmf640 = r"""module stratoweave-tmf640 {
   yang-version "1.1";
-  namespace "http://orchestron.org/yang/orchestron-tmf640";
-  prefix "otmf640";
+  namespace "http://stratoweave.org/yang/stratoweave-tmf640";
+  prefix "sw-tmf640";
   import ietf-inet-types {
     prefix inet;
   }

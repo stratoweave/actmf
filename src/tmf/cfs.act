@@ -1,6 +1,25 @@
 import yang.gdata
 import yang.schema
 
+def service_specification_id_from_path(path: list[str]) -> str:
+    if len(path) == 0:
+        raise ValueError("Expected non-empty schema path")
+    return "/" + "/".join(path)
+
+def append_service_specification_id(path: str, segment: str) -> str:
+    if path == "":
+        return "/{segment}"
+    return "{path}/{segment}"
+
+def split_service_specification_id(service_specification_id: str) -> list[str]:
+    if service_specification_id == "":
+        return []
+    if not service_specification_id.startswith("/"):
+        raise ValueError("Invalid service specification id {service_specification_id}")
+    if len(service_specification_id) == 1:
+        return []
+    return service_specification_id[1:].split("/")
+
 def services_from_schema(top_schema: yang.schema.DRoot) -> dict[str, (name: str, description: str)]:
     """Extract TMF CFS services from compiled schema by walking the tree and finding tmf:cfs-service extensions."""
     result: dict[str, (name: str, description: str)] = {}
@@ -12,7 +31,7 @@ def services_from_schema(top_schema: yang.schema.DRoot) -> dict[str, (name: str,
                 if ext.namespace == "urn:ietf:params:xml:ns:yang:ietf-yang-tmf-map" and ext.name == "cfs-service":
                     ext_arg = ext.arg
                     if ext_arg is not None and len(path) > 0:
-                        path_key = ".".join(path)
+                        path_key = service_specification_id_from_path(path)
                         node_desc = node.description
                         desc = node_desc if node_desc is not None else ""
                         result[path_key] = (name=ext_arg, description=desc)

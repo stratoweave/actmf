@@ -1,7 +1,7 @@
 [
     {
-        "id": "edge-device.access-interface",
-        "href": "/tmf-api/serviceCatalogManagement/v4/serviceSpecification/edge-device.access-interface",
+        "id": "/edge-device/access-interface",
+        "href": "/tmf-api/serviceCatalogManagement/v4/serviceSpecification/%2Fedge-device%2Faccess-interface",
         "description": "Access Interface of Edge Device Service Specification",
         "isBundle": false,
         "lastUpdate": "2025-11-01T00:00:00",
@@ -72,8 +72,8 @@
         "@type": "CustomerFacingServiceSpecification"
     },
     {
-        "id": "netinfra.router",
-        "href": "/tmf-api/serviceCatalogManagement/v4/serviceSpecification/netinfra.router",
+        "id": "/netinfra/router",
+        "href": "/tmf-api/serviceCatalogManagement/v4/serviceSpecification/%2Fnetinfra%2Frouter",
         "description": "Network Infrastructure Router Service Specification",
         "isBundle": false,
         "lastUpdate": "2025-11-01T00:00:00",

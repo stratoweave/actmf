@@ -34,7 +34,7 @@
         "serviceOrderItem": [],
         "serviceRelationship": [],
         "serviceSpecification": {
-            "id": "edge-device.access-interface.vlan",
+            "id": "/edge-device/access-interface/vlan",
             "href": null,
             "name": null,
             "version": null,
@@ -91,7 +91,7 @@
                 "serviceOrderItem": [],
                 "serviceRelationship": [],
                 "serviceSpecification": {
-                    "id": "edge-device.access-interface",
+                    "id": "/edge-device/access-interface",
                     "href": null,
                     "name": null,
                     "version": null,
@@ -138,7 +138,7 @@
                         "serviceOrderItem": [],
                         "serviceRelationship": [],
                         "serviceSpecification": {
-                            "id": "edge-device",
+                            "id": "/edge-device",
                             "href": null,
                             "name": null,
                             "version": null,

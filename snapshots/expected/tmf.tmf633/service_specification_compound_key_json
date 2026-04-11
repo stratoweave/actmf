@@ -1,7 +1,7 @@
 [
     {
-        "id": "netinfra.router",
-        "href": "/tmf-api/serviceCatalogManagement/v4/serviceSpecification/netinfra.router",
+        "id": "/netinfra/router",
+        "href": "/tmf-api/serviceCatalogManagement/v4/serviceSpecification/%2Fnetinfra%2Frouter",
         "description": "Network Infrastructure Router Service Specification",
         "isBundle": false,
         "lastUpdate": "2025-11-01T00:00:00",

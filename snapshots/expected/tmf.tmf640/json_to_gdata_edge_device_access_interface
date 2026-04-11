@@ -15,7 +15,7 @@ Container({
       Id('http://stratoweave.org/yang/stratoweave-tmf', 'service'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')], elements=[
         Container({
           Id('http://stratoweave.org/yang/stratoweave-tmf', 'id'): Leaf("/edge-device[device-name='AM-CORE-1']/access-interface[interface-name='GigabitEthernet0/1']"),
-          Id('http://stratoweave.org/yang/stratoweave-tmf', 'href'): Leaf("/tmf-api/ServiceActivationAndConfiguration/v4/service/edge-device[device-name='AM-CORE-1']/access-interface[interface-name='GigabitEthernet0/1']"),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'href'): Leaf('/tmf-api/ServiceActivationAndConfiguration/v4/service/%2Fedge-device%5Bdevice-name%3D%27AM-CORE-1%27%5D%2Faccess-interface%5Binterface-name%3D%27GigabitEthernet0%2F1%27%5D'),
           Id('http://stratoweave.org/yang/stratoweave-tmf', 'hasStarted'): Leaf(True),
           Id('http://stratoweave.org/yang/stratoweave-tmf', 'isBundle'): Leaf(False),
           Id('http://stratoweave.org/yang/stratoweave-tmf', 'isServiceEnabled'): Leaf(True),
@@ -62,7 +62,7 @@ Container({
           Id('http://stratoweave.org/yang/stratoweave-tmf', 'supportingService'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')], elements=[
             Container({
               Id('http://stratoweave.org/yang/stratoweave-tmf', 'id'): Leaf("/edge-device[device-name='AM-CORE-1']"),
-              Id('http://stratoweave.org/yang/stratoweave-tmf', 'href'): Leaf("/tmf-api/ServiceActivationAndConfiguration/v4/service/edge-device[device-name='AM-CORE-1']"),
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'href'): Leaf('/tmf-api/ServiceActivationAndConfiguration/v4/service/%2Fedge-device%5Bdevice-name%3D%27AM-CORE-1%27%5D'),
               Id('http://stratoweave.org/yang/stratoweave-tmf', 'name'): Leaf('AM-CORE-1'),
               Id('http://stratoweave.org/yang/stratoweave-tmf', 'baseType'): Leaf('ServiceRefOrValue'),
               Id('http://stratoweave.org/yang/stratoweave-tmf', 'schemaLocation'): Leaf('/tmf-api/schema/Service/ServiceRefOrValue.schema.json'),

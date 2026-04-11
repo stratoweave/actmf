@@ -1,5 +1,6 @@
 import json
 import testing
+import uri
 
 import tmf.cfs
 import tmf.yang
@@ -85,7 +86,7 @@ def _get_service_category_json(top_schema: yang.schema.DRoot, category_id: ?str 
     for k, v in tmf_spec.items():
         category.serviceCandidate.append(ServiceCandidateRef(
             id=k,
-            href="/tmf-api/serviceCatalogManagement/v4/serviceCandidate/{k}",
+            href="/tmf-api/serviceCatalogManagement/v4/serviceCandidate/{uri.quote(k, safe='')}",
             name="{v.name} Service Candidate",
             version="2025-11-01",
             baseType="ServiceCandidateRef",
@@ -121,7 +122,7 @@ def _get_service_candidate_json(top_schema: yang.schema.DRoot, candidate_id: ?st
 
         candidate = ServiceCandidate(
             id=k,
-            href="/tmf-api/serviceCatalogManagement/v4/serviceCandidate/{k}",
+            href="/tmf-api/serviceCatalogManagement/v4/serviceCandidate/{uri.quote(k, safe='')}",
             description="{v.description} Service Candidate",
             lastUpdate="2025-11-01T00:00:00",
             lifecycleStatus="active",
@@ -139,7 +140,7 @@ def _get_service_candidate_json(top_schema: yang.schema.DRoot, candidate_id: ?st
             )],
             serviceSpecification=ServiceSpecificationRef(
                 id=k,
-                href="/tmf-api/serviceCatalogManagement/v4/serviceSpecification/{k}",
+                href="/tmf-api/serviceCatalogManagement/v4/serviceSpecification/{uri.quote(k, safe='')}",
                 name="{v.name} Service Specification",
                 version="2025-11-01",
                 baseType="ServiceSpecificationRef",
@@ -189,7 +190,7 @@ def _get_service_specification_json(top_schema: yang.schema.DRoot, sspec_id: ?st
 
         sspec = ServiceSpecification(
             id=k,
-            href="/tmf-api/serviceCatalogManagement/v4/serviceSpecification/{k}",
+            href="/tmf-api/serviceCatalogManagement/v4/serviceSpecification/{uri.quote(k, safe='')}",
             description="{v.description} Service Specification",
             isBundle=False,
             lastUpdate="2025-11-01T00:00:00",

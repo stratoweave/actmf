@@ -2,6 +2,7 @@ import base64
 import json
 import testing
 import time
+import uri
 
 import yang
 import yang.gdata
@@ -22,6 +23,9 @@ def _xpath_escape(v: str) -> str:
 
 def _xpath_unescape(v: str) -> str:
     return v.replace("\\'", "'").replace("\\\\", "\\")
+
+def _service_href(service_id: str) -> str:
+    return "/tmf-api/ServiceActivationAndConfiguration/v4/service/{uri.quote(service_id, safe='')}"
 
 def _append_xpath_segment(path: str, segment: str) -> str:
     if path == "":
@@ -200,6 +204,7 @@ def from_characteristic(root: yang.schema.DRoot, data: list[Characteristic], loo
 
 def _get_service_json(layer_config: yang.gdata.Node, top_schema: yang.schema.DRoot, service_id: ?str = None) -> ?value:
     multiple = service_id is None
+    requested_service_id = service_id
     services_json = []
 
     services = layer_config.children[_q("tmf-store")].children[_q("tmf640")].children[_q("service")]
@@ -207,7 +212,7 @@ def _get_service_json(layer_config: yang.gdata.Node, top_schema: yang.schema.DRo
         for s in services.elements:
             schema = top_schema
             sid = get_child_str(s, _q("id"))
-            if not multiple and service_id != sid:
+            if not multiple and requested_service_id != sid:
                 continue
             service = Service.from_gdata(s)
             config = layer_config
@@ -239,11 +244,13 @@ def _get_service_json(layer_config: yang.gdata.Node, top_schema: yang.schema.DRo
                 if multiple:
                     for element in config.elements:
                         add_leaf_properties_to_service_characteristics(element, service)
+                        _normalize_service_hrefs(service)
                         services_json.append(service.to_json())
                 else:
                     for element in config.elements:
                         if _list_entry_matches_xpath_keys(element, config.keys, last_parsed.key_values):
                             add_leaf_properties_to_service_characteristics(element, service)
+                            _normalize_service_hrefs(service)
                             return service.to_json()
 
     if multiple:
@@ -277,6 +284,24 @@ def get_service_specification_id(s: ?object) -> str:
                 return s_spec_id
     raise ValueError("Service specification ID not found in Service(RefOrValue)")
 
+def _normalize_service_hrefs(service: ?object) -> None:
+    if isinstance(service, Service):
+        sid = service.id
+        if sid is not None:
+            service.href = _service_href(sid)
+        for relationship in service.serviceRelationship:
+            _normalize_service_hrefs(relationship.service)
+        for supporting_service in service.supportingService:
+            _normalize_service_hrefs(supporting_service)
+    elif isinstance(service, ServiceRefOrValue):
+        sid = service.id
+        if sid is not None:
+            service.href = _service_href(sid)
+        for relationship in service.serviceRelationship:
+            _normalize_service_hrefs(relationship.service)
+        for supporting_service in service.supportingService:
+            _normalize_service_hrefs(supporting_service)
+
 def get_key_values(gd: yang.gdata.Node, schema: yang.schema.DNode) -> dict[str, str]:
     if isinstance(schema, yang.schema.DList):
         result = {}
@@ -293,9 +318,9 @@ def get_key_values(gd: yang.gdata.Node, schema: yang.schema.DNode) -> dict[str, 
                     elif isinstance(val, u64):
                         result[key_name] = str(val)
                     else:
-                        raise NotImplementedError(f"Service characteristic key {key} is of type {type(val)}, expected str, int or u64")
+                        raise NotImplementedError("Service characteristic key {key} is of type {type(val)}, expected str, int or u64")
                 else:
-                    raise NotImplementedError(f"Service characteristic key {key} is of type {type(v)}, expected Leaf")
+                    raise NotImplementedError("Service characteristic key {key} is of type {type(v)}, expected Leaf")
             except KeyError:
                 raise ValueError("Service characteristic key {key} not found in transform data")
         return result
@@ -315,14 +340,14 @@ def add_key_properties_to_service(service: ?object, gd: yang.gdata.Node, schema:
         aggregate_tmf_id = _append_xpath_segment(aggregate_tmf_id, tmf_id)
         service.id = aggregate_tmf_id
         service.name = get_key_value(gd, schema)
-        service.href = "/tmf-api/ServiceActivationAndConfiguration/v4/service{aggregate_tmf_id}"
+        service.href = _service_href(aggregate_tmf_id)
         return aggregate_tmf_id
     if isinstance(service, ServiceRefOrValue):
         tmf_id = _xpath_segment_for_list_entry(schema, gd)
         aggregate_tmf_id = _append_xpath_segment(aggregate_tmf_id, tmf_id)
         service.id = aggregate_tmf_id
         service.name = get_key_value(gd, schema)
-        service.href = "/tmf-api/ServiceActivationAndConfiguration/v4/service{aggregate_tmf_id}"
+        service.href = _service_href(aggregate_tmf_id)
         return aggregate_tmf_id
     raise ValueError("Unsupported service type for adding key properties")
 
@@ -366,7 +391,7 @@ def json_to_gdata(data: dict[str, ?value], top_schema: yang.schema.DRoot) -> (ya
                 yang.data.fq_list_keys(schema), [], ns=schema.namespace, module=schema.module)
             current_node = current_node.children[fqname]
         else:
-            raise NotImplementedError(f"Unexpected GData class {schema.gname} in path resolution")
+            raise NotImplementedError("Unexpected GData class {schema.gname} in path resolution")
 
         ss = find_supporting_service_by_path(service, current_path)
         if ss is not None:

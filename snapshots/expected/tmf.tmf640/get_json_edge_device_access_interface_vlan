@@ -1,7 +1,7 @@
 [
     {
         "id": "/edge-device[device-name='AM-CORE-1']/access-interface[interface-name='GigabitEthernet0/1']/vlan[vlan-id='100']",
-        "href": "/tmf-api/ServiceActivationAndConfiguration/v4/service/edge-device[device-name='AM-CORE-1']/access-interface[interface-name='GigabitEthernet0/1']/vlan[vlan-id='100']",
+        "href": "/tmf-api/ServiceActivationAndConfiguration/v4/service/%2Fedge-device%5Bdevice-name%3D%27AM-CORE-1%27%5D%2Faccess-interface%5Binterface-name%3D%27GigabitEthernet0%2F1%27%5D%2Fvlan%5Bvlan-id%3D%27100%27%5D",
         "category": null,
         "description": null,
         "endDate": null,
@@ -48,7 +48,7 @@
         "supportingService": [
             {
                 "id": "/edge-device[device-name='AM-CORE-1']/access-interface[interface-name='GigabitEthernet0/1']",
-                "href": "/tmf-api/ServiceActivationAndConfiguration/v4/service/edge-device[device-name='AM-CORE-1']/access-interface[interface-name='GigabitEthernet0/1']",
+                "href": "/tmf-api/ServiceActivationAndConfiguration/v4/service/%2Fedge-device%5Bdevice-name%3D%27AM-CORE-1%27%5D%2Faccess-interface%5Binterface-name%3D%27GigabitEthernet0%2F1%27%5D",
                 "category": null,
                 "description": null,
                 "endDate": null,
@@ -105,7 +105,7 @@
                 "supportingService": [
                     {
                         "id": "/edge-device[device-name='AM-CORE-1']",
-                        "href": "/tmf-api/ServiceActivationAndConfiguration/v4/service/edge-device[device-name='AM-CORE-1']",
+                        "href": "/tmf-api/ServiceActivationAndConfiguration/v4/service/%2Fedge-device%5Bdevice-name%3D%27AM-CORE-1%27%5D",
                         "category": null,
                         "description": null,
                         "endDate": null,

@@ -11,7 +11,7 @@ Container({
       Id('http://stratoweave.org/yang/stratoweave-tmf', 'service'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')], elements=[
         Container({
           Id('http://stratoweave.org/yang/stratoweave-tmf', 'id'): Leaf("/netinfra/router[name='ams-core-1']"),
-          Id('http://stratoweave.org/yang/stratoweave-tmf', 'href'): Leaf("/tmf-api/ServiceActivationAndConfiguration/v4/service/netinfra/router[name='ams-core-1']"),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'href'): Leaf('/tmf-api/ServiceActivationAndConfiguration/v4/service/%2Fnetinfra%2Frouter%5Bname%3D%27ams-core-1%27%5D'),
           Id('http://stratoweave.org/yang/stratoweave-tmf', 'hasStarted'): Leaf(True),
           Id('http://stratoweave.org/yang/stratoweave-tmf', 'isBundle'): Leaf(False),
           Id('http://stratoweave.org/yang/stratoweave-tmf', 'isServiceEnabled'): Leaf(True),

@@ -155,52 +155,123 @@ def _xpath_segment_for_list_entry(schema: yang.schema.DNode, gd: yang.gdata.Node
     raise NotImplementedError("Expected DList schema for service specification")
 
 
-extension list[Characteristic] (yang.data.YangData):
+def _split_feature_id_segments(feature_id: str) -> list[str]:
+    if feature_id == "":
+        return []
+    return _split_xpath_segments(feature_id)
+
+def _feature_matches_parent(feature: Feature, parent_id: str) -> bool:
+    has_parent_relationship = False
+    for relationship in feature.featureRelationship:
+        if relationship.relationshipType == "parent":
+            has_parent_relationship = True
+            if relationship.id == parent_id:
+                return True
+    return not has_parent_relationship
+
+class FeatureYangData(object):
+    currentPathId: str
+    characteristics: list[Characteristic]
+    features: list[Feature]
+
+    def __init__(self, currentPathId: str, characteristics: list[Characteristic], features: list[Feature]):
+        self.currentPathId = currentPathId
+        self.characteristics = characteristics
+        self.features = features
+
+    def _get_direct_feature(self, name: str) -> ?Feature:
+        parent_segments = _split_feature_id_segments(self.currentPathId)
+        for feature in self.features:
+            feature_id = feature.id
+            if feature_id is not None:
+                feature_segments = _split_feature_id_segments(feature_id)
+                if len(feature_segments) != len(parent_segments) + 1:
+                    continue
+                if feature_segments[:-1] != parent_segments:
+                    continue
+                parsed = _parse_xpath_segment(feature_segments[-1])
+                if parsed.name != name or len(parsed.key_values) > 0:
+                    continue
+                if _feature_matches_parent(feature, self.currentPathId):
+                    return feature
+        return None
+
+    def _get_direct_list_features(self, name: str) -> list[(key: dict[str, value], feature: Feature)]:
+        parent_segments = _split_feature_id_segments(self.currentPathId)
+        direct_features: list[(key: dict[str, value], feature: Feature)] = []
+        for feature in self.features:
+            feature_id = feature.id
+            if feature_id is not None:
+                feature_segments = _split_feature_id_segments(feature_id)
+                if len(feature_segments) != len(parent_segments) + 1:
+                    continue
+                if feature_segments[:-1] != parent_segments:
+                    continue
+                parsed = _parse_xpath_segment(feature_segments[-1])
+                if parsed.name != name or len(parsed.key_values) == 0:
+                    continue
+                if _feature_matches_parent(feature, self.currentPathId):
+                    direct_features.append((key=parsed.key_values, feature=feature))
+        return direct_features
+
+
+extension FeatureYangData (yang.data.YangData):
     def take_container(self, schema: yang.schema.DContainer, name: str, ns_qualified: bool, is_unique: bool, path: list[yang.data.PathElement]=[]) -> ?(op: ?str, val: ?value):
+        feature = self._get_direct_feature(name)
+        if feature is not None:
+            feature_id = feature.id
+            if feature_id is not None:
+                return (op=None, val=FeatureYangData(feature_id, feature.featureCharacteristic, self.features))
         return None
 
     def take_list(self, schema: yang.schema.DList, name: str, ns_qualified: bool, is_unique: bool, path: list[yang.data.PathElement]=[]) -> list[(op: ?str, key: dict[str, value], val: value)]:
-        return []
+        direct_features = self._get_direct_list_features(name)
+        list_entries: list[(op: ?str, key: dict[str, value], val: value)] = []
+        for entry in direct_features:
+            feature_id = entry.feature.id
+            current_path_id = feature_id if feature_id is not None else self.currentPathId
+            list_entries.append((op=None, key=entry.key, val=FeatureYangData(current_path_id, entry.feature.featureCharacteristic, self.features)))
+        return list_entries
 
     def take_leaf(self, root: yang.schema.DRoot, schema: yang.schema.DLeaf, name: str, ns_qualified: bool, is_unique: bool, path: list[yang.data.PathElement]=[]) -> ?(op: ?str, t: str, val: ?value):
-        if isinstance(self, list):
-            for entry in self:
-                if isinstance(entry, Characteristic):
-                    leaf_value = entry.value
-                    if entry.name == name and leaf_value is not None:
-                        new_path = path + [yang.data.PathElement(schema)]
-                        if tmf.cfs.json_type_and_yang_type_match(entry.valueType, schema.type_.builtin_type):
-                            tv = yang.json.try_parse_json_value(leaf_value, schema, schema.type_, new_path, root)
-                            if tv is not None:
-                                return (op=None, t=tv.t, val=tv.val)
-                        raise yang.data.YangValidationError(path, schema.type_, leaf_value)
+        for entry in self.characteristics:
+            leaf_value = entry.value
+            if entry.name == name and leaf_value is not None:
+                new_path = path + [yang.data.PathElement(schema)]
+                if tmf.cfs.json_type_and_yang_type_match(entry.valueType, schema.type_.builtin_type):
+                    tv = yang.json.try_parse_json_value(leaf_value, schema, schema.type_, new_path, root)
+                    if tv is not None:
+                        return (op=None, t=tv.t, val=tv.val)
+                raise yang.data.YangValidationError(path, schema.type_, leaf_value)
+        return None
 
     def take_leaflist(self, root: yang.schema.DRoot, schema: yang.schema.DLeafList, name: str, ns_qualified: bool, is_unique: bool, path: list[yang.data.PathElement]=[]) -> list[(op: ?str, t: str, val: ?value)]:
-        if isinstance(self, list):
-            for entry in self:
-                if isinstance(entry, Characteristic):
-                    leaflist_data = entry.value
-                    entry_value_type = entry.valueType
-                    if entry.name == name and leaflist_data is not None and entry_value_type is not None:
-                        if tmf.cfs.json_type_and_yang_type_match(entry_value_type[:-5] if entry_value_type.endswith("Array") else entry_value_type, schema.type_.builtin_type):
-                            if isinstance(leaflist_data, list):
-                                new_path = path + [yang.data.PathElement(schema)]
-                                values: list[(op: ?str, t: str, val: ?value)] = []
-                                for item in leaflist_data:
-                                    tv = yang.json.try_parse_json_value(item, schema, schema.type_, new_path, root)
-                                    if tv is not None:
-                                        values.append((op=None, t=tv.t, val=tv.val))
-                                return values
-                        raise yang.data.YangValidationError(path, schema.type_, leaflist_data)
+        for entry in self.characteristics:
+            leaflist_data = entry.value
+            entry_value_type = entry.valueType
+            if entry.name == name and leaflist_data is not None and entry_value_type is not None:
+                if tmf.cfs.json_type_and_yang_type_match(entry_value_type[:-5] if entry_value_type.endswith("Array") else entry_value_type, schema.type_.builtin_type):
+                    if isinstance(leaflist_data, list):
+                        new_path = path + [yang.data.PathElement(schema)]
+                        values: list[(op: ?str, t: str, val: ?value)] = []
+                        for item in leaflist_data:
+                            tv = yang.json.try_parse_json_value(item, schema, schema.type_, new_path, root)
+                            if tv is not None:
+                                values.append((op=None, t=tv.t, val=tv.val))
+                        return values
+                raise yang.data.YangValidationError(path, schema.type_, leaflist_data)
         return []
 
-def from_characteristic(root: yang.schema.DRoot, data: list[Characteristic], loose: bool=False, root_path: list[str]=[]) -> yang.gdata.Container:
+def from_characteristic(root: yang.schema.DRoot, data: list[Characteristic], features: ?list[Feature]=None, path_id: ?str=None, loose: bool=False, root_path: ?list[str]=None) -> yang.gdata.Container:
     def type_narrower(v):
-        if isinstance(v, list):
+        if isinstance(v, FeatureYangData):
             return v
-        raise ValueError("Value is not a list: {type(v)}")
+        raise ValueError("Value is not FeatureYangData: {type(v)}")
 
-    return yang.data.from_data(root, data, type_narrower, loose, root_path)
+    normalized_features = features if features is not None else []
+    normalized_path_id = path_id if path_id is not None else ""
+    normalized_root_path = root_path if root_path is not None else []
+    return yang.data.from_data(root, FeatureYangData(normalized_path_id, data, normalized_features), type_narrower, loose, normalized_root_path)
 
 def _get_service_json(layer_config: yang.gdata.Node, top_schema: yang.schema.DRoot, service_id: ?str = None) -> ?value:
     multiple = service_id is None
@@ -395,14 +466,14 @@ def json_to_gdata(data: dict[str, ?value], top_schema: yang.schema.DRoot) -> (ya
 
         ss = find_supporting_service_by_path(service, current_path)
         if ss is not None:
-            gd = from_characteristic(top_schema, ss.serviceCharacteristic, root_path=root_path)
+            gd = from_characteristic(top_schema, ss.serviceCharacteristic, ss.feature, root_path=root_path)
             if gd is not None:
                 if isinstance(current_node, yang.gdata.List):
                     current_node.elements.append(gd)
                 aggregate_tmf_id = add_key_properties_to_service(ss, gd, schema, aggregate_tmf_id)
                 current_node = gd
 
-    gd = from_characteristic(top_schema, service.serviceCharacteristic, root_path=root_path)
+    gd = from_characteristic(top_schema, service.serviceCharacteristic, service.feature, root_path=root_path)
     if isinstance(current_node, yang.gdata.List):
         current_node.elements.append(gd)
 
@@ -2496,6 +2567,79 @@ def _test_json_to_gdata_netinfra_router():
             s.children.pop(_q("startDate"))
     return gd.prsrc()
 
+def _test_json_to_gdata_netinfra_router_identityref():
+    json_data = {
+        "serviceCharacteristic": [
+            {
+                "id": "name",
+                "name": "name",
+                "valueType": "string",
+                "value": "ams-core-1"
+            },
+            {
+                "id": "platform-type",
+                "name": "platform-type",
+                "valueType": "string",
+                "value": "netinfra:router-platform"
+            }
+        ],
+        "serviceSpecification": {
+            "id": "/netinfra/router"
+        }
+    }
+    yang_schema = r"""module netinfra {
+    yang-version "1.1";
+    namespace "http://example.com/netinfra";
+    prefix "ni";
+    import ietf-yang-tmf-map {
+        prefix tmf;
+    }
+
+    identity router-platform-base;
+    identity router-platform {
+        base router-platform-base;
+    }
+
+    container netinfra {
+        list router {
+            key "name";
+            tmf:cfs-service "Router";
+            leaf name {
+                type string;
+            }
+            leaf platform-type {
+                type identityref {
+                    base router-platform-base;
+                }
+            }
+        }
+    }
+}
+    """
+    top_schema = yang.compile([tmf.yang.ietf_yang_tmf_map, yang_schema])
+    gd, aggregate_tmf_id = json_to_gdata(json_data, top_schema)
+
+    testing.assertEqual(aggregate_tmf_id, "/netinfra/router[name='ams-core-1']")
+
+    netinfra = gd.children.get(yang.gdata.Id("http://example.com/netinfra", "netinfra"))
+    if isinstance(netinfra, yang.gdata.Container):
+        routers = netinfra.children.get(yang.gdata.Id("http://example.com/netinfra", "router"))
+        if isinstance(routers, yang.gdata.List):
+            testing.assertEqual(len(routers.elements), 1)
+            router = routers.elements[0]
+            if isinstance(router, yang.gdata.Container):
+                platform_leaf = router.children.get(yang.gdata.Id("http://example.com/netinfra", "platform-type"))
+                if isinstance(platform_leaf, yang.gdata.Leaf):
+                    platform_val = platform_leaf.val
+                    if isinstance(platform_val, Identityref):
+                        testing.assertEqual(platform_val.val, "router-platform")
+                        testing.assertEqual(platform_val.ns, "http://example.com/netinfra")
+                        testing.assertEqual(platform_val.mod, "netinfra")
+                        testing.assertEqual(platform_val.pfx, "ni")
+                        return
+
+    testing.error("Expected identityref leaf in router service config")
+
 def _test_get_json_netinfra_router():
     yang_schema = r"""module netinfra {
     yang-version "1.1";
@@ -2972,6 +3116,106 @@ def _test_json_to_gdata_compound_router_key():
             }
             leaf name {
                 type string;
+            }
+        }
+    }
+}
+    """
+    top_schema = yang.compile([tmf.yang.ietf_yang_tmf_map, yang_schema])
+    gd, _ = json_to_gdata(json_data, top_schema)
+    services = gd.children[_q("tmf-store")].children[_q("tmf640")].children[_q("service")]
+    if isinstance(services, yang.gdata.List):
+        for s in services.elements:
+            s.children.pop(_q("serviceDate"))
+            s.children.pop(_q("startDate"))
+    return gd.prsrc()
+
+def _test_json_to_gdata_netinfra_router_nested_features():
+    json_data = {
+        "serviceCharacteristic": [
+            {
+                "id": "name",
+                "name": "name",
+                "valueType": "string",
+                "value": "ams-core-1"
+            }
+        ],
+        "feature": [
+            {
+                "id": "routing-options",
+                "isBundle": True,
+                "isEnabled": True,
+                "name": "routing-options",
+                "featureCharacteristic": [
+                    {
+                        "id": "admin-distance",
+                        "name": "admin-distance",
+                        "valueType": "integer",
+                        "value": 110
+                    }
+                ],
+                "featureRelationship": []
+            },
+            {
+                "id": "routing-options/neighbor-group[group-name='external']",
+                "isBundle": True,
+                "isEnabled": True,
+                "name": "neighbor-group",
+                "featureCharacteristic": [
+                    {
+                        "id": "group-name",
+                        "name": "group-name",
+                        "valueType": "string",
+                        "value": "external"
+                    },
+                    {
+                        "id": "remote-as",
+                        "name": "remote-as",
+                        "valueType": "integer",
+                        "value": 65001
+                    }
+                ],
+                "featureRelationship": [
+                    {
+                        "id": "routing-options",
+                        "name": "routing-options",
+                        "relationshipType": "parent"
+                    }
+                ]
+            }
+        ],
+        "serviceSpecification": {
+            "id": "/netinfra/router"
+        }
+    }
+    yang_schema = r"""module netinfra {
+    yang-version "1.1";
+    namespace "http://example.com/netinfra";
+    prefix "ni";
+    import ietf-yang-tmf-map {
+        prefix tmf;
+    }
+
+    container netinfra {
+        list router {
+            key "name";
+            tmf:cfs-service "Router";
+            leaf name {
+                type string;
+            }
+            container routing-options {
+                leaf admin-distance {
+                    type int32;
+                }
+                list neighbor-group {
+                    key "group-name";
+                    leaf group-name {
+                        type string;
+                    }
+                    leaf remote-as {
+                        type int32;
+                    }
+                }
             }
         }
     }

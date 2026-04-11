@@ -94,8 +94,7 @@ def _get_service_category_json(top_schema: yang.schema.DRoot, category_id: ?str 
             type="ServiceCandidateRef",
             referredType="ServiceCandidate"
         ))
-
-        return [category.to_json()] if multiple else category.to_json()
+    return [category.to_json()] if multiple else category.to_json()
 
 def get_service_category_json(top_schema: yang.schema.DRoot, category_id: str) -> ?dict[str, ?value]:
     category = _get_service_category_json(top_schema, category_id)
@@ -179,13 +178,185 @@ def get_service_candidate_list_json(top_schema: yang.schema.DRoot) -> list[dict[
             return candidates
     return []
 
-def _get_service_specification_json(top_schema: yang.schema.DRoot, sspec_id: ?str = None) -> ?value:
+def _resolve_service_schema(top_schema: yang.schema.DRoot, service_specification_id: str) -> yang.schema.DNodeInner:
+    schema: yang.schema.DNode = top_schema
+    try:
+        for path_element in tmf.cfs.split_service_specification_id(service_specification_id):
+            schema = schema.get(path_element)
+    except Exception as e:
+        raise ValueError("Failed to resolve service specification schema {service_specification_id}: {e}")
+
+    if isinstance(schema, yang.schema.DContainer):
+        return schema
+    if isinstance(schema, yang.schema.DList):
+        return schema
+    raise ValueError("Service specification schema {service_specification_id} must resolve to a container or list")
+
+def _schema_is_key(parent_schema: yang.schema.DNodeInner, child: yang.schema.DNodeLeaf) -> bool:
+    if isinstance(parent_schema, yang.schema.DList):
+        return child.name in parent_schema.key
+    return False
+
+def _schema_is_unique(parent_schema: yang.schema.DNodeInner, child: yang.schema.DNodeLeaf) -> bool:
+    if isinstance(parent_schema, yang.schema.DList):
+        return child.name in parent_schema.key or child.name in parent_schema.unique
+    return False
+
+def _get_type_regex(child_type: yang.schema.DType) -> ?str:
+    if isinstance(child_type, yang.schema.DTypeString):
+        if child_type.patterns:
+            return child_type.patterns[0].get_yang_regex()
+    return None
+
+def _get_feature_spec_characteristic(parent_schema: yang.schema.DNodeInner, child: yang.schema.DNodeLeaf) -> FeatureSpecificationCharacteristic:
+    is_key = _schema_is_key(parent_schema, child)
+    is_unique = _schema_is_unique(parent_schema, child)
+    if isinstance(child, yang.schema.DLeaf):
+        child_type = child.type_
+        return FeatureSpecificationCharacteristic(
+            id=child.name,
+            configurable=True,
+            description=child.description,
+            extensible=False,
+            isUnique=is_unique,
+            maxCardinality=1,
+            minCardinality=1 if is_key or child.mandatory else 0,
+            name=child.name,
+            regex=_get_type_regex(child_type),
+            valueType=tmf.cfs.yang_type_to_tmf_type(child_type.builtin_type),
+            featureSpecCharRelationship=[],
+            featureSpecCharacteristicValue=[],
+            validFor=TimePeriod(
+                endDateTime=None,
+                startDateTime="1970-01-01T00:00:00"
+            ),
+            baseType="FeatureSpecificationCharacteristic",
+            schemaLocation="/tmf-api/schema/Service/FeatureSpecificationCharacteristic.schema.json",
+            type="FeatureSpecificationCharacteristic",
+            valueSchemaLocation=None
+        )
+    if isinstance(child, yang.schema.DLeafList):
+        child_type = child.type_
+        max_cardinality = child.max_elements
+        min_cardinality = child.min_elements if child.min_elements is not None else (1 if is_key else 0)
+        return FeatureSpecificationCharacteristic(
+            id=child.name,
+            configurable=True,
+            description=child.description,
+            extensible=False,
+            isUnique=is_unique,
+            maxCardinality=max_cardinality,
+            minCardinality=min_cardinality,
+            name=child.name,
+            regex=_get_type_regex(child_type),
+            valueType="{tmf.cfs.yang_type_to_tmf_type(child_type.builtin_type)}Array",
+            featureSpecCharRelationship=[],
+            featureSpecCharacteristicValue=[],
+            validFor=TimePeriod(
+                endDateTime=None,
+                startDateTime="1970-01-01T00:00:00"
+            ),
+            baseType="FeatureSpecificationCharacteristic",
+            schemaLocation="/tmf-api/schema/Service/FeatureSpecificationCharacteristic.schema.json",
+            type="FeatureSpecificationCharacteristic",
+            valueSchemaLocation=None
+        )
+    raise ValueError("Expected leaf or leaf-list child for feature specification")
+
+def _append_feature_id(path: str, segment: str) -> str:
+    if path == "":
+        return segment
+    return "{path}/{segment}"
+
+def _feature_spec_relationship_name(feature_id: str) -> str:
+    return feature_id
+
+def _append_feature_spec_characteristics(feature_specification: FeatureSpecification, feature_schema: yang.schema.DNodeInner) -> None:
+    for feature_child in feature_schema.children:
+        if isinstance(feature_child, yang.schema.DLeaf):
+            feature_specification.featureSpecCharacteristic.append(
+                _get_feature_spec_characteristic(feature_schema, feature_child)
+            )
+        elif isinstance(feature_child, yang.schema.DLeafList):
+            feature_specification.featureSpecCharacteristic.append(
+                _get_feature_spec_characteristic(feature_schema, feature_child)
+            )
+
+def _append_nested_feature_specifications(sspec: ServiceSpecification, feature_schema: yang.schema.DNodeInner, service_specification_id: str, parent_feature_id: str) -> None:
+    for nested_child in feature_schema.children:
+        if isinstance(nested_child, yang.schema.DContainer):
+            if tmf.cfs.is_tmf_cfs_service(nested_child):
+                continue
+            feature_id = _append_feature_id(parent_feature_id, nested_child.name)
+            feature_specification = FeatureSpecification(
+                id=feature_id,
+                isBundle=True,
+                isEnabled=True,
+                name=nested_child.description if nested_child.description is not None else nested_child.name,
+                version="2025-11-01",
+                constraint=[],
+                featureSpecCharacteristic=[],
+                featureSpecRelationship=[
+                    FeatureSpecificationRelationship(
+                        featureId=parent_feature_id,
+                        name=_feature_spec_relationship_name(parent_feature_id),
+                        parentSpecificationHref=sspec.href,
+                        parentSpecificationId=service_specification_id,
+                        relationshipType="parent",
+                        validFor=TimePeriod(
+                            endDateTime=None,
+                            startDateTime="1970-01-01T00:00:00"
+                        )
+                    )
+                ],
+                validFor=TimePeriod(
+                    endDateTime=None,
+                    startDateTime="1970-01-01T00:00:00"
+                )
+            )
+            _append_feature_spec_characteristics(feature_specification, nested_child)
+            sspec.featureSpecification.append(feature_specification)
+            _append_nested_feature_specifications(sspec, nested_child, service_specification_id, feature_id)
+        elif isinstance(nested_child, yang.schema.DList):
+            if tmf.cfs.is_tmf_cfs_service(nested_child):
+                continue
+            feature_id = _append_feature_id(parent_feature_id, nested_child.name)
+            feature_specification = FeatureSpecification(
+                id=feature_id,
+                isBundle=True,
+                isEnabled=True,
+                name=nested_child.description if nested_child.description is not None else nested_child.name,
+                version="2025-11-01",
+                constraint=[],
+                featureSpecCharacteristic=[],
+                featureSpecRelationship=[
+                    FeatureSpecificationRelationship(
+                        featureId=parent_feature_id,
+                        name=_feature_spec_relationship_name(parent_feature_id),
+                        parentSpecificationHref=sspec.href,
+                        parentSpecificationId=service_specification_id,
+                        relationshipType="parent",
+                        validFor=TimePeriod(
+                            endDateTime=None,
+                            startDateTime="1970-01-01T00:00:00"
+                        )
+                    )
+                ],
+                validFor=TimePeriod(
+                    endDateTime=None,
+                    startDateTime="1970-01-01T00:00:00"
+                )
+            )
+            _append_feature_spec_characteristics(feature_specification, nested_child)
+            sspec.featureSpecification.append(feature_specification)
+            _append_nested_feature_specifications(sspec, nested_child, service_specification_id, feature_id)
+
+def _build_service_specifications(top_schema: yang.schema.DRoot, sspec_id: ?str = None) -> list[ServiceSpecification]:
     tmf_spec = tmf.cfs.services_from_schema(top_schema)
-    multiple = sspec_id is None
-    sspecs_json = []
+    sspecs = []
 
     for k, v in tmf_spec.items():
-        if not multiple and sspec_id != k:
+        if sspec_id is not None and sspec_id != k:
             continue
 
         sspec = ServiceSpecification(
@@ -216,57 +387,115 @@ def _get_service_specification_json(top_schema: yang.schema.DRoot, sspec_id: ?st
             type="CustomerFacingServiceSpecification"
         )
 
-        schema = top_schema
-        for path_element in tmf.cfs.split_service_specification_id(k):
-            schema = schema.get(path_element)
-        if isinstance(schema, yang.schema.DList):
-            for child in schema.children:
-                if isinstance(child, yang.schema.DLeaf):
-                    child_type = child.type_
-                    patterns = child_type.patterns if isinstance(child_type, yang.schema.DTypeString) else []
-                    is_key = child.name in schema.key
-                    spec_characteristic = CharacteristicSpecification(
-                        id=child.name,
-                        configurable=True,
-                        description=child.description,
-                        extensible=False,
-                        isUnique=is_key or child.name in schema.unique,
-                        maxCardinality=1,
-                        minCardinality=1 if is_key or child.mandatory else 0,
-                        name=child.name,
-                        regex=patterns[0].get_yang_regex() if patterns else None,  # TODO: What regex flavor does TMF expect?
-                        valueType=tmf.cfs.yang_type_to_tmf_type(child_type.builtin_type),
-                        charSpecRelationship=[],
-                        characteristicValueSpecification=[],
-                        validFor=TimePeriod(
-                            endDateTime=None,
-                            startDateTime="1970-01-01T00:00:00"
-                        ),
-                        baseType="CharacteristicSpecification",
-                        schemaLocation="/tmf-api/schema/Service/CharacteristicSpecification.schema.json",
-                        type="CharacteristicSpecification",
-                        valueSchemaLocation=None  # When to set this?
-                    )
-                    if isinstance(child_type, yang.schema.DTypeEnum):
-                        for enum_value in child_type.name_to_val:
-                            spec_characteristic.characteristicValueSpecification.append(
-                                CharacteristicValueSpecification(
-                                    value=enum_value,
-                                    valueType="string",
-                                    isDefault=enum_value == child.default,
-                                    validFor=TimePeriod(
-                                        endDateTime=None,
-                                        startDateTime="1970-01-01T00:00:00"
-                                    ),
-                                    baseType="CharacteristicValueSpecification",
-                                    schemaLocation="/tmf-api/schema/Service/CharacteristicValueSpecification.schema.json",
-                                    type="CharacteristicValueSpecification"
-                                )
-                            )
-                    elif child.default is not None:
+        schema = _resolve_service_schema(top_schema, k)
+
+        for child in schema.children:
+            if isinstance(child, yang.schema.DLeaf):
+                child_type = child.type_
+                is_key = _schema_is_key(schema, child)
+                is_unique = _schema_is_unique(schema, child)
+                spec_characteristic = CharacteristicSpecification(
+                    id=child.name,
+                    configurable=True,
+                    description=child.description,
+                    extensible=False,
+                    isUnique=is_unique,
+                    maxCardinality=1,
+                    minCardinality=1 if is_key or child.mandatory else 0,
+                    name=child.name,
+                    regex=_get_type_regex(child_type),  # TODO: What regex flavor does TMF expect?
+                    valueType=tmf.cfs.yang_type_to_tmf_type(child_type.builtin_type),
+                    charSpecRelationship=[],
+                    characteristicValueSpecification=[],
+                    validFor=TimePeriod(
+                        endDateTime=None,
+                        startDateTime="1970-01-01T00:00:00"
+                    ),
+                    baseType="CharacteristicSpecification",
+                    schemaLocation="/tmf-api/schema/Service/CharacteristicSpecification.schema.json",
+                    type="CharacteristicSpecification",
+                    valueSchemaLocation=None  # When to set this?
+                )
+                if isinstance(child_type, yang.schema.DTypeEnum):
+                    for enum_value in child_type.name_to_val:
                         spec_characteristic.characteristicValueSpecification.append(
                             CharacteristicValueSpecification(
-                                value=child.default,
+                                value=enum_value,
+                                valueType="string",
+                                isDefault=enum_value == child.default,
+                                validFor=TimePeriod(
+                                    endDateTime=None,
+                                    startDateTime="1970-01-01T00:00:00"
+                                ),
+                                baseType="CharacteristicValueSpecification",
+                                schemaLocation="/tmf-api/schema/Service/CharacteristicValueSpecification.schema.json",
+                                type="CharacteristicValueSpecification"
+                            )
+                        )
+                elif child.default is not None:
+                    spec_characteristic.characteristicValueSpecification.append(
+                        CharacteristicValueSpecification(
+                            value=child.default,
+                            valueType=tmf.cfs.yang_type_to_tmf_type(child_type.builtin_type),
+                            isDefault=True,
+                            validFor=TimePeriod(
+                                endDateTime=None,
+                                startDateTime="1970-01-01T00:00:00"
+                            ),
+                            baseType="CharacteristicValueSpecification",
+                            schemaLocation="/tmf-api/schema/Service/CharacteristicValueSpecification.schema.json",
+                            type="CharacteristicValueSpecification"
+                        )
+                    )
+                sspec.specCharacteristic.append(spec_characteristic)
+            elif isinstance(child, yang.schema.DLeafList):
+                child_type = child.type_
+                is_key = _schema_is_key(schema, child)
+                is_unique = _schema_is_unique(schema, child)
+                spec_characteristic = CharacteristicSpecification(
+                    id=child.name,
+                    configurable=True,
+                    description=child.description,
+                    extensible=False,
+                    isUnique=is_unique,
+                    maxCardinality=child.max_elements,
+                    minCardinality=child.min_elements if child.min_elements is not None else (1 if is_key else 0),
+                    name=child.name,
+                    regex=_get_type_regex(child_type),  # TODO: What regex flavor does TMF expect?
+                    valueType="{tmf.cfs.yang_type_to_tmf_type(child_type.builtin_type)}Array",
+                    charSpecRelationship=[],
+                    characteristicValueSpecification=[],
+                    validFor=TimePeriod(
+                        endDateTime=None,
+                        startDateTime="1970-01-01T00:00:00"
+                    ),
+                    baseType="CharacteristicSpecification",
+                    schemaLocation="/tmf-api/schema/Service/CharacteristicSpecification.schema.json",
+                    type="CharacteristicSpecification",
+                    valueSchemaLocation=None  # When to set this?
+                )
+                child_default = child.default
+                if isinstance(child_type, yang.schema.DTypeEnum):
+                    for enum_value in child_type.name_to_val:
+                        spec_characteristic.characteristicValueSpecification.append(
+                            CharacteristicValueSpecification(
+                                value=enum_value,
+                                valueType="string",
+                                isDefault=enum_value in child_default if child_default is not None else False,
+                                validFor=TimePeriod(
+                                    endDateTime=None,
+                                    startDateTime="1970-01-01T00:00:00"
+                                ),
+                                baseType="CharacteristicValueSpecification",
+                                schemaLocation="/tmf-api/schema/Service/CharacteristicValueSpecification.schema.json",
+                                type="CharacteristicValueSpecification"
+                            )
+                        )
+                elif child_default is not None:
+                    for default_value in child_default:
+                        spec_characteristic.characteristicValueSpecification.append(
+                            CharacteristicValueSpecification(
+                                value=default_value,
                                 valueType=tmf.cfs.yang_type_to_tmf_type(child_type.builtin_type),
                                 isDefault=True,
                                 validFor=TimePeriod(
@@ -278,75 +507,65 @@ def _get_service_specification_json(top_schema: yang.schema.DRoot, sspec_id: ?st
                                 type="CharacteristicValueSpecification"
                             )
                         )
-                    sspec.specCharacteristic.append(spec_characteristic)
-                elif isinstance(child, yang.schema.DLeafList):
-                    child_type = child.type_
-                    patterns = child_type.patterns if isinstance(child_type, yang.schema.DTypeString) else []
-                    is_key = child.name in schema.key
-                    spec_characteristic = CharacteristicSpecification(
-                        id=child.name,
-                        configurable=True,
-                        description=child.description,
-                        extensible=False,
-                        isUnique=is_key or child.name in schema.unique,
-                        maxCardinality=child.max_elements,
-                        minCardinality=child.min_elements if child.min_elements is not None else (1 if is_key else 0),
-                        name=child.name,
-                        regex=patterns[0].get_yang_regex() if patterns else None,  # TODO: What regex flavor does TMF expect?
-                        valueType="{tmf.cfs.yang_type_to_tmf_type(child_type.builtin_type)}Array",
-                        charSpecRelationship=[],
-                        characteristicValueSpecification=[],
-                        validFor=TimePeriod(
-                            endDateTime=None,
-                            startDateTime="1970-01-01T00:00:00"
-                        ),
-                        baseType="CharacteristicSpecification",
-                        schemaLocation="/tmf-api/schema/Service/CharacteristicSpecification.schema.json",
-                        type="CharacteristicSpecification",
-                        valueSchemaLocation=None  # When to set this?
+                sspec.specCharacteristic.append(spec_characteristic)
+
+        for child in schema.children:
+            if isinstance(child, yang.schema.DContainer):
+                if tmf.cfs.is_tmf_cfs_service(child):
+                    continue
+
+                feature_id = _append_feature_id("", child.name)
+                feature_specification = FeatureSpecification(
+                    id=feature_id,
+                    isBundle=True,
+                    isEnabled=True,
+                    name=child.description if child.description is not None else child.name,
+                    version="2025-11-01",
+                    constraint=[],
+                    featureSpecCharacteristic=[],
+                    featureSpecRelationship=[],
+                    validFor=TimePeriod(
+                        endDateTime=None,
+                        startDateTime="1970-01-01T00:00:00"
                     )
-                    child_default = child.default
-                    if isinstance(child_type, yang.schema.DTypeEnum):
-                        for enum_value in child_type.name_to_val:
-                            spec_characteristic.characteristicValueSpecification.append(
-                                CharacteristicValueSpecification(
-                                    value=enum_value,
-                                    valueType="string",
-                                    isDefault=enum_value in child_default if child_default is not None else False,
-                                    validFor=TimePeriod(
-                                        endDateTime=None,
-                                        startDateTime="1970-01-01T00:00:00"
-                                    ),
-                                    baseType="CharacteristicValueSpecification",
-                                    schemaLocation="/tmf-api/schema/Service/CharacteristicValueSpecification.schema.json",
-                                    type="CharacteristicValueSpecification"
-                                )
-                            )
-                    elif child_default is not None:
-                        for default_value in child_default:
-                            spec_characteristic.characteristicValueSpecification.append(
-                                CharacteristicValueSpecification(
-                                    value=default_value,
-                                    valueType=tmf.cfs.yang_type_to_tmf_type(child_type.builtin_type),
-                                    isDefault=True,
-                                    validFor=TimePeriod(
-                                        endDateTime=None,
-                                        startDateTime="1970-01-01T00:00:00"
-                                    ),
-                                    baseType="CharacteristicValueSpecification",
-                                    schemaLocation="/tmf-api/schema/Service/CharacteristicValueSpecification.schema.json",
-                                    type="CharacteristicValueSpecification"
-                                )
-                            )
-                    sspec.specCharacteristic.append(spec_characteristic)
+                )
+                _append_feature_spec_characteristics(feature_specification, child)
+                sspec.featureSpecification.append(feature_specification)
+                _append_nested_feature_specifications(sspec, child, k, feature_id)
+            elif isinstance(child, yang.schema.DList):
+                if tmf.cfs.is_tmf_cfs_service(child):
+                    continue
 
-        if multiple:
-            sspecs_json.append(sspec.to_json())
-        else:
-            return sspec.to_json()
+                feature_id = _append_feature_id("", child.name)
+                feature_specification = FeatureSpecification(
+                    id=feature_id,
+                    isBundle=True,
+                    isEnabled=True,
+                    name=child.description if child.description is not None else child.name,
+                    version="2025-11-01",
+                    constraint=[],
+                    featureSpecCharacteristic=[],
+                    featureSpecRelationship=[],
+                    validFor=TimePeriod(
+                        endDateTime=None,
+                        startDateTime="1970-01-01T00:00:00"
+                    )
+                )
+                _append_feature_spec_characteristics(feature_specification, child)
+                sspec.featureSpecification.append(feature_specification)
+                _append_nested_feature_specifications(sspec, child, k, feature_id)
 
-    if multiple:
-        return sspecs_json
+        sspecs.append(sspec)
+
+    return sspecs
+
+def _get_service_specification_json(top_schema: yang.schema.DRoot, sspec_id: ?str = None) -> ?value:
+    sspecs = _build_service_specifications(top_schema, sspec_id)
+    if sspec_id is None:
+        return [sspec.to_json() for sspec in sspecs]
+    if sspecs:
+        return sspecs[0].to_json()
+    return None
 
 def get_service_specification_json(top_schema: yang.schema.DRoot, sspec_id: str) -> ?dict[str, ?value]:
     sspec = _get_service_specification_json(top_schema, sspec_id)
@@ -1387,6 +1606,25 @@ def _test_service_specification_json():
             leaf-list qos-profiles {
                 type string;
                 description "List of QoS profiles supported by the router";
+            }
+            container routing-options {
+                description "Routing options";
+                leaf admin-distance {
+                    type int32;
+                    description "Administrative distance";
+                }
+                list neighbor-group {
+                    key "group-name";
+                    description "Neighbor group";
+                    leaf group-name {
+                        type string;
+                        description "Neighbor group name";
+                    }
+                    leaf remote-as {
+                        type int32;
+                        description "Remote AS number";
+                    }
+                }
             }
         }
     }

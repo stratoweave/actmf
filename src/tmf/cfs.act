@@ -1,6 +1,8 @@
 import yang.gdata
 import yang.schema
 
+_TMF_YANG_MAP_NS = "urn:ietf:params:xml:ns:yang:ietf-yang-tmf-map"
+
 def service_specification_id_from_path(path: list[str]) -> str:
     if len(path) == 0:
         raise ValueError("Expected non-empty schema path")
@@ -20,6 +22,13 @@ def split_service_specification_id(service_specification_id: str) -> list[str]:
         return []
     return service_specification_id[1:].split("/")
 
+def is_tmf_cfs_service(node: yang.schema.DNode) -> bool:
+    if isinstance(node, yang.schema.DNodeInner):
+        for ext in node.exts:
+            if ext.namespace == _TMF_YANG_MAP_NS and ext.name == "cfs-service":
+                return True
+    return False
+
 def services_from_schema(top_schema: yang.schema.DRoot) -> dict[str, (name: str, description: str)]:
     """Extract TMF CFS services from compiled schema by walking the tree and finding tmf:cfs-service extensions."""
     result: dict[str, (name: str, description: str)] = {}
@@ -27,14 +36,15 @@ def services_from_schema(top_schema: yang.schema.DRoot) -> dict[str, (name: str,
     def _walk_schema(node: yang.schema.DNode, path: list[str]) -> None:
         if isinstance(node, yang.schema.DNodeInner):
             # Check for cfs-service extension
-            for ext in node.exts:
-                if ext.namespace == "urn:ietf:params:xml:ns:yang:ietf-yang-tmf-map" and ext.name == "cfs-service":
-                    ext_arg = ext.arg
-                    if ext_arg is not None and len(path) > 0:
-                        path_key = service_specification_id_from_path(path)
-                        node_desc = node.description
-                        desc = node_desc if node_desc is not None else ""
-                        result[path_key] = (name=ext_arg, description=desc)
+            if is_tmf_cfs_service(node):
+                for ext in node.exts:
+                    if ext.namespace == _TMF_YANG_MAP_NS and ext.name == "cfs-service":
+                        ext_arg = ext.arg
+                        if ext_arg is not None and len(path) > 0:
+                            path_key = service_specification_id_from_path(path)
+                            node_desc = node.description
+                            desc = node_desc if node_desc is not None else ""
+                            result[path_key] = (name=ext_arg, description=desc)
             
             for child in node.children:
                 if not isinstance(child, yang.schema.DLeaf):
@@ -47,14 +57,14 @@ def services_from_schema(top_schema: yang.schema.DRoot) -> dict[str, (name: str,
 def yang_type_to_tmf_type(yt: str) -> str:
     if yt == "boolean":
         return "boolean"
-    elif yt == "string":
+    elif yt == "empty":
+        return "boolean"
+    elif yt in ["string", "enumeration", "identityref", "leafref", "instance-identifier", "binary", "bits", "union"]:
         return "string"
     elif yt in ["int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64"]:
         return "integer"
     elif yt == "decimal64":
         return "number"
-    elif yt == "enumeration":
-        return "string"
     raise ValueError("Unsupported YANG type: %s" % yt)
 
 def gdata_type_to_tmf_type(v: value) -> str:
@@ -75,14 +85,12 @@ def gdata_type_to_tmf_type(v: value) -> str:
     raise ValueError("Unsupported GDATA type: {type(v)}")
 
 def json_type_and_yang_type_match(jt: ?str, yt: ?str) -> bool:
-    if jt == "boolean" and yt == "boolean":
+    if jt == "boolean" and yt in ["boolean", "empty"]:
         return True
-    elif jt == "string" and yt == "string":
+    elif jt == "string" and yt in ["string", "enumeration", "identityref", "leafref", "instance-identifier", "binary", "bits", "union"]:
         return True
     elif jt == "integer" and yt in ["int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64"]:
         return True
     elif jt == "number" and yt == "decimal64":
-        return True
-    elif jt == "string" and yt == "enumeration":
         return True
     return False

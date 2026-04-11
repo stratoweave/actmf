@@ -377,8 +377,8 @@ def json_to_gdata(data: dict[str, ?value], top_schema: yang.schema.DRoot) -> (ya
     current_path = ""
     aggregate_tmf_id = ""
 
-    for path_element in service.serviceSpecification.id.split("."):
-        current_path = path_element if current_path == "" else "{current_path}.{path_element}"
+    for path_element in tmf.cfs.split_service_specification_id(service.serviceSpecification.id):
+        current_path = tmf.cfs.append_service_specification_id(current_path, path_element)
         schema = schema.get(path_element)
         root_path.append("{schema.module}:{schema.name}")
         fqname = yang.data.fqname(schema)
@@ -2465,7 +2465,7 @@ def _test_json_to_gdata_netinfra_router():
             }
         ],
         "serviceSpecification": {
-            "id": "netinfra.router"
+            "id": "/netinfra/router"
         }
     }
     yang_schema = r"""module netinfra {
@@ -2561,7 +2561,7 @@ def _test_get_json_netinfra_router():
                             _q("serviceOrderItem"): yang.gdata.List([_q("id")]),
                             _q("serviceRelationship"): yang.gdata.List([_q("id")]),
                             _q("serviceSpecification"): yang.gdata.Container({
-                                _q("id"): yang.gdata.Leaf('netinfra.router'),
+                                _q("id"): yang.gdata.Leaf('/netinfra/router'),
                                 _q("baseType"): yang.gdata.Leaf('ServiceSpecificationRef'),
                                 _q("schemaLocation"): yang.gdata.Leaf('/tmf-api/schema/Service/ServiceSpecificationRef.schema.json'),
                                 _q("type"): yang.gdata.Leaf('ServiceSpecificationRef'),
@@ -2594,23 +2594,23 @@ def _test_json_to_gdata_edge_device_access_interface():
             }
         ],
         "serviceSpecification": {
-            "id": "edge-device.access-interface"
+            "id": "/edge-device/access-interface"
         },
         "supportingService": [
             {
                 "serviceCharacteristic": [
-                        {
-                            "id": "device-name",
-                            "name": "device-name",
-                            "valueType": "string",
-                            "value": "AM-CORE-1"
-                        }
-                    ],
+                    {
+                        "id": "device-name",
+                        "name": "device-name",
+                        "valueType": "string",
+                        "value": "AM-CORE-1"
+                    }
+                ],
                 "serviceSpecification": {
-                    "id": "edge-device"
+                    "id": "/edge-device"
                 }
             }
-        ],
+        ]
     }
     yang_schema = r"""module edge {
   namespace "http://example.com/edge";
@@ -2660,7 +2660,7 @@ def _test_json_to_gdata_edge_device_access_interface_vlan():
             }
         ],
         "serviceSpecification": {
-            "id": "edge-device.access-interface.vlan"
+            "id": "/edge-device/access-interface/vlan"
         },
         "supportingService": [
             {
@@ -2679,27 +2679,26 @@ def _test_json_to_gdata_edge_device_access_interface_vlan():
                     }
                 ],
                 "serviceSpecification": {
-                    "id": "edge-device.access-interface"
+                    "id": "/edge-device/access-interface"
                 },
                 "supportingService": [
                     {
                         "serviceCharacteristic": [
-                                {
-                                    "id": "device-name",
-                                    "name": "device-name",
-                                    "valueType": "string",
-                                    "value": "AM-CORE-1"
-                                }
-                            ],
+                            {
+                                "id": "device-name",
+                                "name": "device-name",
+                                "valueType": "string",
+                                "value": "AM-CORE-1"
+                            }
+                        ],
                         "serviceSpecification": {
-                            "id": "edge-device"
+                            "id": "/edge-device"
                         }
                     }
                 ]
             }
         ]
     }
-
     yang_schema = r"""module edge {
   namespace "http://example.com/edge";
   prefix edge;
@@ -2838,7 +2837,7 @@ def _test_get_json_edge_device_access_interface_vlan():
                             _q("serviceOrderItem"): yang.gdata.List([_q("id")]),
                             _q("serviceRelationship"): yang.gdata.List([_q("id")]),
                             _q("serviceSpecification"): yang.gdata.Container({
-                                _q("id"): yang.gdata.Leaf('edge-device.access-interface.vlan'),
+                                _q("id"): yang.gdata.Leaf('/edge-device/access-interface/vlan'),
                                 _q("baseType"): yang.gdata.Leaf('ServiceSpecificationRef'),
                                 _q("schemaLocation"): yang.gdata.Leaf('/tmf-api/schema/Service/ServiceSpecificationRef.schema.json'),
                                 _q("type"): yang.gdata.Leaf('ServiceSpecificationRef'),
@@ -2855,7 +2854,7 @@ def _test_get_json_edge_device_access_interface_vlan():
                                         _q("schemaLocation"): yang.gdata.Leaf('/tmf-api/schema/Service/ServiceRefOrValue.schema.json'),
                                         _q("type"): yang.gdata.Leaf('ServiceRefOrValue'),
                                         _q("serviceSpecification"): yang.gdata.Container({
-                                            _q("id"): yang.gdata.Leaf('edge-device.access-interface'),
+                                            _q("id"): yang.gdata.Leaf('/edge-device/access-interface'),
                                             _q("baseType"): yang.gdata.Leaf('ServiceSpecificationRef'),
                                             _q("schemaLocation"): yang.gdata.Leaf('/tmf-api/schema/Service/ServiceSpecificationRef.schema.json'),
                                             _q("type"): yang.gdata.Leaf('ServiceSpecificationRef'),
@@ -2898,7 +2897,7 @@ def _test_get_json_edge_device_access_interface_vlan():
                                                     _q("schemaLocation"): yang.gdata.Leaf('/tmf-api/schema/Service/ServiceRefOrValue.schema.json'),
                                                     _q("type"): yang.gdata.Leaf('ServiceRefOrValue'),
                                                     _q("serviceSpecification"): yang.gdata.Container({
-                                                        _q("id"): yang.gdata.Leaf('edge-device'),
+                                                        _q("id"): yang.gdata.Leaf('/edge-device'),
                                                         _q("baseType"): yang.gdata.Leaf('ServiceSpecificationRef'),
                                                         _q("schemaLocation"): yang.gdata.Leaf('/tmf-api/schema/Service/ServiceSpecificationRef.schema.json'),
                                                         _q("type"): yang.gdata.Leaf('ServiceSpecificationRef'),
@@ -2953,7 +2952,7 @@ def _test_json_to_gdata_compound_router_key():
             }
         ],
         "serviceSpecification": {
-            "id": "netinfra.router"
+            "id": "/netinfra/router"
         }
     }
     yang_schema = r"""module netinfra {
@@ -3068,7 +3067,7 @@ def _test_get_json_compound_router_key():
                             _q("serviceOrderItem"): yang.gdata.List([_q("id")]),
                             _q("serviceRelationship"): yang.gdata.List([_q("id")]),
                             _q("serviceSpecification"): yang.gdata.Container({
-                                _q("id"): yang.gdata.Leaf('netinfra.router'),
+                                _q("id"): yang.gdata.Leaf('/netinfra/router'),
                                 _q("baseType"): yang.gdata.Leaf('ServiceSpecificationRef'),
                                 _q("schemaLocation"): yang.gdata.Leaf('/tmf-api/schema/Service/ServiceSpecificationRef.schema.json'),
                                 _q("type"): yang.gdata.Leaf('ServiceSpecificationRef'),

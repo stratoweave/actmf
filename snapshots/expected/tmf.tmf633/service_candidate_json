@@ -1,7 +1,7 @@
 [
     {
-        "id": "netinfra.router",
-        "href": "/tmf-api/serviceCatalogManagement/v4/serviceCandidate/netinfra.router",
+        "id": "/netinfra/router",
+        "href": "/tmf-api/serviceCatalogManagement/v4/serviceCandidate/%2Fnetinfra%2Frouter",
         "description": "Network Infrastructure Router Service Candidate",
         "lastUpdate": "2025-11-01T00:00:00",
         "lifecycleStatus": "active",
@@ -20,8 +20,8 @@
             }
         ],
         "serviceSpecification": {
-            "id": "netinfra.router",
-            "href": "/tmf-api/serviceCatalogManagement/v4/serviceSpecification/netinfra.router",
+            "id": "/netinfra/router",
+            "href": "/tmf-api/serviceCatalogManagement/v4/serviceSpecification/%2Fnetinfra%2Frouter",
             "name": "Router Service Specification",
             "version": "2025-11-01",
             "@baseType": "ServiceSpecificationRef",

@@ -34,7 +34,7 @@
         "serviceOrderItem": [],
         "serviceRelationship": [],
         "serviceSpecification": {
-            "id": "netinfra.router",
+            "id": "/netinfra/router",
             "href": null,
             "name": null,
             "version": null,

@@ -217,7 +217,7 @@ def _get_service_specification_json(top_schema: yang.schema.DRoot, sspec_id: ?st
         )
 
         schema = top_schema
-        for path_element in k.split("."):
+        for path_element in tmf.cfs.split_service_specification_id(k):
             schema = schema.get(path_element)
         if isinstance(schema, yang.schema.DList):
             for child in schema.children:

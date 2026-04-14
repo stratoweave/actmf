@@ -83,7 +83,116 @@
         "attachment": [],
         "constraint": [],
         "entitySpecRelationship": [],
-        "featureSpecification": [],
+        "featureSpecification": [
+            {
+                "id": "routing-options",
+                "isBundle": true,
+                "isEnabled": true,
+                "name": "Routing options",
+                "version": "2025-11-01",
+                "constraint": [],
+                "featureSpecCharacteristic": [
+                    {
+                        "id": "admin-distance",
+                        "configurable": true,
+                        "description": "Administrative distance",
+                        "extensible": false,
+                        "isUnique": false,
+                        "maxCardinality": 1,
+                        "minCardinality": 0,
+                        "name": "admin-distance",
+                        "regex": null,
+                        "valueType": "integer",
+                        "featureSpecCharRelationship": [],
+                        "featureSpecCharacteristicValue": [],
+                        "validFor": {
+                            "endDateTime": null,
+                            "startDateTime": "1970-01-01T00:00:00"
+                        },
+                        "@baseType": "FeatureSpecificationCharacteristic",
+                        "@schemaLocation": "/tmf-api/schema/Service/FeatureSpecificationCharacteristic.schema.json",
+                        "@type": "FeatureSpecificationCharacteristic",
+                        "@valueSchemaLocation": null
+                    }
+                ],
+                "featureSpecRelationship": [],
+                "validFor": {
+                    "endDateTime": null,
+                    "startDateTime": "1970-01-01T00:00:00"
+                }
+            },
+            {
+                "id": "routing-options/neighbor-group",
+                "isBundle": true,
+                "isEnabled": true,
+                "name": "Neighbor group",
+                "version": "2025-11-01",
+                "constraint": [],
+                "featureSpecCharacteristic": [
+                    {
+                        "id": "group-name",
+                        "configurable": true,
+                        "description": "Neighbor group name",
+                        "extensible": false,
+                        "isUnique": true,
+                        "maxCardinality": 1,
+                        "minCardinality": 1,
+                        "name": "group-name",
+                        "regex": null,
+                        "valueType": "string",
+                        "featureSpecCharRelationship": [],
+                        "featureSpecCharacteristicValue": [],
+                        "validFor": {
+                            "endDateTime": null,
+                            "startDateTime": "1970-01-01T00:00:00"
+                        },
+                        "@baseType": "FeatureSpecificationCharacteristic",
+                        "@schemaLocation": "/tmf-api/schema/Service/FeatureSpecificationCharacteristic.schema.json",
+                        "@type": "FeatureSpecificationCharacteristic",
+                        "@valueSchemaLocation": null
+                    },
+                    {
+                        "id": "remote-as",
+                        "configurable": true,
+                        "description": "Remote AS number",
+                        "extensible": false,
+                        "isUnique": false,
+                        "maxCardinality": 1,
+                        "minCardinality": 0,
+                        "name": "remote-as",
+                        "regex": null,
+                        "valueType": "integer",
+                        "featureSpecCharRelationship": [],
+                        "featureSpecCharacteristicValue": [],
+                        "validFor": {
+                            "endDateTime": null,
+                            "startDateTime": "1970-01-01T00:00:00"
+                        },
+                        "@baseType": "FeatureSpecificationCharacteristic",
+                        "@schemaLocation": "/tmf-api/schema/Service/FeatureSpecificationCharacteristic.schema.json",
+                        "@type": "FeatureSpecificationCharacteristic",
+                        "@valueSchemaLocation": null
+                    }
+                ],
+                "featureSpecRelationship": [
+                    {
+                        "featureId": "routing-options",
+                        "name": "routing-options",
+                        "parentSpecificationHref": "/tmf-api/serviceCatalogManagement/v4/serviceSpecification/%2Fnetinfra%2Frouter",
+                        "parentSpecificationId": "/netinfra/router",
+                        "relationshipType": "parent",
+                        "validFor": {
+                            "endDateTime": null,
+                            "startDateTime": "1970-01-01T00:00:00"
+                        }
+                    }
+                ],
+                "validFor": {
+                    "endDateTime": null,
+                    "startDateTime": "1970-01-01T00:00:00"
+                }
+            }
+        ],
         "relatedParty": [],
         "resourceSpecification": [],
         "serviceLevelSpecification": [],

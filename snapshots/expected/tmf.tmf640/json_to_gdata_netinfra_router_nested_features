@@ -1,0 +1,124 @@
+Container({
+  Id('http://example.com/netinfra', 'netinfra'): Container({
+    Id('http://example.com/netinfra', 'router'): List([Id('http://example.com/netinfra', 'name')], ns='http://example.com/netinfra', module='netinfra', elements=[
+      Container({
+        Id('http://example.com/netinfra', 'name'): Leaf('ams-core-1'),
+        Id('http://example.com/netinfra', 'routing-options'): Container({
+          Id('http://example.com/netinfra', 'admin-distance'): Leaf(110),
+          Id('http://example.com/netinfra', 'neighbor-group'): List([Id('http://example.com/netinfra', 'group-name')], elements=[
+            Container({
+              Id('http://example.com/netinfra', 'group-name'): Leaf('external'),
+              Id('http://example.com/netinfra', 'remote-as'): Leaf(65001)
+            })
+          ])
+        })
+      })
+    ])
+  }, ns='http://example.com/netinfra', module='netinfra'),
+  Id('http://stratoweave.org/yang/stratoweave-tmf', 'tmf-store'): Container({
+    Id('http://stratoweave.org/yang/stratoweave-tmf', 'tmf640'): Container({
+      Id('http://stratoweave.org/yang/stratoweave-tmf', 'service'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')], elements=[
+        Container({
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'id'): Leaf("/netinfra/router[name='ams-core-1']"),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'href'): Leaf('/tmf-api/ServiceActivationAndConfiguration/v4/service/%2Fnetinfra%2Frouter%5Bname%3D%27ams-core-1%27%5D'),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'hasStarted'): Leaf(True),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'isBundle'): Leaf(False),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'isServiceEnabled'): Leaf(True),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'isStateful'): Leaf(False),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'name'): Leaf('ams-core-1'),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'startMode'): Leaf('1'),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'state'): Leaf('active'),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'baseType'): Leaf('Service'),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'schemaLocation'): Leaf('/tmf-api/schema/Service/Service.schema.json'),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'type'): Leaf('Service'),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'serviceSpecification'): Container({
+            Id('http://stratoweave.org/yang/stratoweave-tmf', 'id'): Leaf('/netinfra/router'),
+            Id('http://stratoweave.org/yang/stratoweave-tmf', 'baseType'): Leaf('ServiceSpecificationRef'),
+            Id('http://stratoweave.org/yang/stratoweave-tmf', 'schemaLocation'): Leaf('/tmf-api/schema/Service/ServiceSpecificationRef.schema.json'),
+            Id('http://stratoweave.org/yang/stratoweave-tmf', 'type'): Leaf('ServiceSpecificationRef'),
+            Id('http://stratoweave.org/yang/stratoweave-tmf', 'referredType'): Leaf('ServiceSpecification')
+          }),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'feature'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')], elements=[
+            Container({
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'id'): Leaf('routing-options'),
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'isBundle'): Leaf(True),
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'isEnabled'): Leaf(True),
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'name'): Leaf('routing-options'),
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'baseType'): Leaf('Feature'),
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'schemaLocation'): Leaf('/tmf-api/schema/Service/Feature.schema.json'),
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'type'): Leaf('Feature'),
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'constraint'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')]),
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'featureCharacteristic'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'name')], elements=[
+                Container({
+                  Id('http://stratoweave.org/yang/stratoweave-tmf', 'id'): Leaf('admin-distance'),
+                  Id('http://stratoweave.org/yang/stratoweave-tmf', 'name'): Leaf('admin-distance'),
+                  Id('http://stratoweave.org/yang/stratoweave-tmf', 'baseType'): Leaf('Characteristic'),
+                  Id('http://stratoweave.org/yang/stratoweave-tmf', 'schemaLocation'): Leaf('/tmf-api/schema/Service/Characteristic.schema.json'),
+                  Id('http://stratoweave.org/yang/stratoweave-tmf', 'type'): Leaf('Characteristic'),
+                  Id('http://stratoweave.org/yang/stratoweave-tmf', 'characteristicRelationship'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')])
+                })
+              ]),
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'featureRelationship'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')])
+            }),
+            Container({
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'id'): Leaf("routing-options/neighbor-group[group-name='external']"),
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'isBundle'): Leaf(True),
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'isEnabled'): Leaf(True),
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'name'): Leaf('neighbor-group'),
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'baseType'): Leaf('Feature'),
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'schemaLocation'): Leaf('/tmf-api/schema/Service/Feature.schema.json'),
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'type'): Leaf('Feature'),
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'constraint'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')]),
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'featureCharacteristic'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'name')], elements=[
+                Container({
+                  Id('http://stratoweave.org/yang/stratoweave-tmf', 'id'): Leaf('group-name'),
+                  Id('http://stratoweave.org/yang/stratoweave-tmf', 'name'): Leaf('group-name'),
+                  Id('http://stratoweave.org/yang/stratoweave-tmf', 'baseType'): Leaf('Characteristic'),
+                  Id('http://stratoweave.org/yang/stratoweave-tmf', 'schemaLocation'): Leaf('/tmf-api/schema/Service/Characteristic.schema.json'),
+                  Id('http://stratoweave.org/yang/stratoweave-tmf', 'type'): Leaf('Characteristic'),
+                  Id('http://stratoweave.org/yang/stratoweave-tmf', 'characteristicRelationship'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')])
+                }),
+                Container({
+                  Id('http://stratoweave.org/yang/stratoweave-tmf', 'id'): Leaf('remote-as'),
+                  Id('http://stratoweave.org/yang/stratoweave-tmf', 'name'): Leaf('remote-as'),
+                  Id('http://stratoweave.org/yang/stratoweave-tmf', 'baseType'): Leaf('Characteristic'),
+                  Id('http://stratoweave.org/yang/stratoweave-tmf', 'schemaLocation'): Leaf('/tmf-api/schema/Service/Characteristic.schema.json'),
+                  Id('http://stratoweave.org/yang/stratoweave-tmf', 'type'): Leaf('Characteristic'),
+                  Id('http://stratoweave.org/yang/stratoweave-tmf', 'characteristicRelationship'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')])
+                })
+              ]),
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'featureRelationship'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')], elements=[
+                Container({
+                  Id('http://stratoweave.org/yang/stratoweave-tmf', 'id'): Leaf('routing-options'),
+                  Id('http://stratoweave.org/yang/stratoweave-tmf', 'name'): Leaf('routing-options'),
+                  Id('http://stratoweave.org/yang/stratoweave-tmf', 'relationshipType'): Leaf('parent'),
+                  Id('http://stratoweave.org/yang/stratoweave-tmf', 'baseType'): Leaf('FeatureRelationship'),
+                  Id('http://stratoweave.org/yang/stratoweave-tmf', 'schemaLocation'): Leaf('/tmf-api/schema/Service/FeatureRelationship.schema.json'),
+                  Id('http://stratoweave.org/yang/stratoweave-tmf', 'type'): Leaf('FeatureRelationship')
+                })
+              ])
+            })
+          ]),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'note'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')]),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'place'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')]),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'relatedEntity'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')]),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'relatedParty'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')]),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'serviceCharacteristic'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'name')], elements=[
+            Container({
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'id'): Leaf('name'),
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'name'): Leaf('name'),
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'baseType'): Leaf('Characteristic'),
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'schemaLocation'): Leaf('/tmf-api/schema/Service/Characteristic.schema.json'),
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'type'): Leaf('Characteristic'),
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'characteristicRelationship'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')])
+            })
+          ]),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'serviceOrderItem'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'itemId')]),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'serviceRelationship'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'relationshipType')]),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'supportingResource'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')]),
+          Id('http://stratoweave.org/yang/stratoweave-tmf', 'supportingService'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')])
+        })
+      ])
+    })
+  }, ns='http://stratoweave.org/yang/stratoweave-tmf', module='stratoweave-tmf')
+})

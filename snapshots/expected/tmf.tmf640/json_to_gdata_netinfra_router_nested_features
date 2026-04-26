@@ -48,7 +48,7 @@ Container({
               Id('http://stratoweave.org/yang/stratoweave-tmf', 'schemaLocation'): Leaf('/tmf-api/schema/Service/Feature.schema.json'),
               Id('http://stratoweave.org/yang/stratoweave-tmf', 'type'): Leaf('Feature'),
               Id('http://stratoweave.org/yang/stratoweave-tmf', 'constraint'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')]),
-              Id('http://stratoweave.org/yang/stratoweave-tmf', 'featureCharacteristic'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'name')], elements=[
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'featureCharacteristic'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')], elements=[
                 Container({
                   Id('http://stratoweave.org/yang/stratoweave-tmf', 'id'): Leaf('admin-distance'),
                   Id('http://stratoweave.org/yang/stratoweave-tmf', 'name'): Leaf('admin-distance'),
@@ -69,7 +69,7 @@ Container({
               Id('http://stratoweave.org/yang/stratoweave-tmf', 'schemaLocation'): Leaf('/tmf-api/schema/Service/Feature.schema.json'),
               Id('http://stratoweave.org/yang/stratoweave-tmf', 'type'): Leaf('Feature'),
               Id('http://stratoweave.org/yang/stratoweave-tmf', 'constraint'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')]),
-              Id('http://stratoweave.org/yang/stratoweave-tmf', 'featureCharacteristic'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'name')], elements=[
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'featureCharacteristic'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')], elements=[
                 Container({
                   Id('http://stratoweave.org/yang/stratoweave-tmf', 'id'): Leaf('group-name'),
                   Id('http://stratoweave.org/yang/stratoweave-tmf', 'name'): Leaf('group-name'),

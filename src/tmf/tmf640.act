@@ -138,9 +138,10 @@ def _list_entry_matches_xpath_keys(entry: yang.gdata.Node, list_keys: list[yang.
         return False
     for key_id in list_keys:
         expected = xpath_keys.get(key_id.name)
-        if expected is None:
-            return False
-        if entry.get_str(key_id) != expected:
+        if isinstance(expected, str):
+            if not _value_matches_xpath_string(entry.get_leaf(key_id).val, expected):
+                return False
+        else:
             return False
     return True
 
@@ -381,15 +382,7 @@ def get_key_values(gd: yang.gdata.Node, schema: yang.schema.DNode) -> dict[str, 
             try:
                 v = gd.children[key]
                 if isinstance(v, yang.gdata.Leaf):
-                    val = v.val
-                    if isinstance(val, str):
-                        result[key_name] = val
-                    elif isinstance(val, int):
-                        result[key_name] = str(val)
-                    elif isinstance(val, u64):
-                        result[key_name] = str(val)
-                    else:
-                        raise NotImplementedError("Service characteristic key {key} is of type {type(val)}, expected str, int or u64")
+                    result[key_name] = _value_to_xpath_string(v.val)
                 else:
                     raise NotImplementedError("Service characteristic key {key} is of type {type(v)}, expected Leaf")
             except KeyError:
@@ -485,21 +478,105 @@ def json_to_gdata(data: dict[str, ?value], top_schema: yang.schema.DRoot) -> (ya
 
     return (ret, aggregate_tmf_id)
 
-def add_leaf_properties_to_service_characteristics(gd: yang.gdata.Node, service: Service) -> None:
+def _value_to_xpath_string(v) -> str:
+    if isinstance(v, PartialIdentityref):
+        if v.mod is not None:
+            return "{v.mod}:{v.val}"
+        if v.pfx is not None:
+            return "{v.pfx}:{v.val}"
+        return v.val
+    json_value = yang.gdata.json_val(v)
+    if isinstance(json_value, bool):
+        return "true" if json_value else "false"
+    if isinstance(json_value, str):
+        return json_value
+    if isinstance(json_value, int):
+        return str(json_value)
+    if isinstance(json_value, u64):
+        return str(json_value)
+    if isinstance(json_value, float):
+        return str(json_value)
+    raise NotImplementedError("Unsupported xpath key type {type(v)}")
+
+def _value_matches_xpath_string(v, expected: str) -> bool:
+    if isinstance(v, Identityref):
+        return expected in [v.val, "{v.mod}:{v.val}", "{v.pfx}:{v.val}"]
+    if isinstance(v, PartialIdentityref):
+        candidates = [v.val]
+        if v.mod is not None:
+            candidates.append("{v.mod}:{v.val}")
+        if v.pfx is not None:
+            candidates.append("{v.pfx}:{v.val}")
+        return expected in candidates
+    return _value_to_xpath_string(v) == expected
+
+def _json_safe_value(v):
+    if isinstance(v, PartialIdentityref):
+        return _value_to_xpath_string(v)
+    return yang.gdata.json_val(v)
+
+def _add_leaf_properties_to_characteristics(gd: yang.gdata.Node, characteristics: list[Characteristic]) -> None:
+
     if isinstance(gd, yang.gdata.Container):
         for k, v in gd.children.items():
             if isinstance(v, yang.gdata.Leaf):
-                for chr in service.serviceCharacteristic:
+                for chr in characteristics:
                     if chr.name == k.name:
                         chr.valueType = tmf.cfs.gdata_type_to_tmf_type(v.val)
-                        chr.value = v.val
+                        chr.value = _json_safe_value(v.val)
                         break
             elif isinstance(v, yang.gdata.LeafList):
-                for chr in service.serviceCharacteristic:
+                for chr in characteristics:
                     if chr.name == k.name:
                         chr.valueType = "{tmf.cfs.gdata_type_to_tmf_type(v.entries)}Array"
-                        chr.value = [e.val for e in v.entries]
+                        chr.value = [_json_safe_value(e.val) for e in v.entries]
                         break
+
+def _get_feature_gdata(gd: yang.gdata.Node, feature_id: ?str) -> ?yang.gdata.Node:
+    if isinstance(feature_id, str):
+        current: yang.gdata.Node = gd
+        for segment in _split_feature_id_segments(feature_id):
+            if not isinstance(current, yang.gdata.Container):
+                return None
+            parsed = _parse_xpath_segment(segment)
+            child = None
+            for child_id, child_node in current.children.items():
+                if child_id.name == parsed.name:
+                    child = child_node
+                    break
+            if child is None:
+                return None
+            if len(parsed.key_values) > 0:
+                if isinstance(child, yang.gdata.List):
+                    entry = None
+                    for element in child.elements:
+                        if _list_entry_matches_xpath_keys(element, child.keys, parsed.key_values):
+                            entry = element
+                            break
+                    if isinstance(entry, yang.gdata.Container):
+                        current = entry
+                    else:
+                        return None
+                else:
+                    return None
+            elif isinstance(child, yang.gdata.Container):
+                current = child
+            elif isinstance(child, yang.gdata.List):
+                current = child
+            elif isinstance(child, yang.gdata.Leaf):
+                current = child
+            elif isinstance(child, yang.gdata.LeafList):
+                current = child
+            else:
+                return None
+        return current
+
+def add_leaf_properties_to_service_characteristics(gd: yang.gdata.Node, service: Service) -> None:
+    _add_leaf_properties_to_characteristics(gd, service.serviceCharacteristic)
+    for feature in service.feature:
+        feature_gd = _get_feature_gdata(gd, feature.id)
+        if feature_gd is not None:
+            _add_leaf_properties_to_characteristics(feature_gd, feature.featureCharacteristic)
 
 def get_opt_obj(d: dict[str, ?value], key: str) -> ?dict[str, ?value]:
     v = d.get(key)
@@ -1161,7 +1238,7 @@ class Feature(object):
         ])
 
         elements[_q("constraint")] = yang.gdata.List([_q("id")], [entry.to_gdata() for entry in self.constraint])
-        elements[_q("featureCharacteristic")] = yang.gdata.List([_q("name")], [entry.to_gdata() for entry in self.featureCharacteristic])
+        elements[_q("featureCharacteristic")] = yang.gdata.List([_q("id")], [entry.to_gdata() for entry in self.featureCharacteristic])
         elements[_q("featureRelationship")] = yang.gdata.List([_q("id")], [entry.to_gdata() for entry in self.featureRelationship])
 
         return yang.gdata.Container(elements)
@@ -3229,6 +3306,381 @@ def _test_json_to_gdata_netinfra_router_nested_features():
             s.children.pop(_q("serviceDate"))
             s.children.pop(_q("startDate"))
     return gd.prsrc()
+
+def _test_get_json_netinfra_router_nested_features():
+    json_data = {
+        "serviceDate": "2026-01-01T00:00:00Z",
+        "startDate": "2026-01-01T00:00:00Z",
+        "serviceCharacteristic": [
+            {
+                "id": "name",
+                "name": "name",
+                "valueType": "string",
+                "value": "ams-core-1"
+            }
+        ],
+        "feature": [
+            {
+                "id": "routing-options",
+                "isBundle": True,
+                "isEnabled": True,
+                "name": "routing-options",
+                "featureCharacteristic": [
+                    {
+                        "id": "admin-distance",
+                        "name": "admin-distance",
+                        "valueType": "integer",
+                        "value": 110
+                    }
+                ],
+                "featureRelationship": []
+            },
+            {
+                "id": "routing-options/neighbor-group[group-name='external']",
+                "isBundle": True,
+                "isEnabled": True,
+                "name": "neighbor-group",
+                "featureCharacteristic": [
+                    {
+                        "id": "group-name",
+                        "name": "group-name",
+                        "valueType": "string",
+                        "value": "external"
+                    },
+                    {
+                        "id": "remote-as",
+                        "name": "remote-as",
+                        "valueType": "integer",
+                        "value": 65001
+                    }
+                ],
+                "featureRelationship": [
+                    {
+                        "id": "routing-options",
+                        "name": "routing-options",
+                        "relationshipType": "parent"
+                    }
+                ]
+            }
+        ],
+        "serviceSpecification": {
+            "id": "/netinfra/router"
+        }
+    }
+    yang_schema = r"""module netinfra {
+    yang-version "1.1";
+    namespace "http://example.com/netinfra";
+    prefix "ni";
+    import ietf-yang-tmf-map {
+        prefix tmf;
+    }
+
+    container netinfra {
+        list router {
+            key "name";
+            tmf:cfs-service "Router";
+            leaf name {
+                type string;
+            }
+            container routing-options {
+                leaf admin-distance {
+                    type int32;
+                }
+                list neighbor-group {
+                    key "group-name";
+                    leaf group-name {
+                        type string;
+                    }
+                    leaf remote-as {
+                        type int32;
+                    }
+                }
+            }
+        }
+    }
+}
+    """
+    top_schema = yang.compile([tmf.yang.ietf_yang_tmf_map, yang_schema])
+    layer_config, service_id = json_to_gdata(json_data, top_schema)
+    data = get_service_json(layer_config, top_schema, service_id)
+    if data is not None:
+        return json.encode(data, pretty=True)
+    return ""
+
+def _test_get_json_netinfra_router_feature_identityref():
+    json_data = {
+        "serviceDate": "2026-01-01T00:00:00Z",
+        "startDate": "2026-01-01T00:00:00Z",
+        "serviceCharacteristic": [
+            {
+                "id": "name",
+                "name": "name",
+                "valueType": "string",
+                "value": "ams-core-1"
+            }
+        ],
+        "feature": [
+            {
+                "id": "routing-options",
+                "isBundle": True,
+                "isEnabled": True,
+                "name": "routing-options",
+                "featureCharacteristic": [
+                    {
+                        "id": "platform-type",
+                        "name": "platform-type",
+                        "valueType": "string",
+                        "value": "netinfra:router-platform"
+                    }
+                ],
+                "featureRelationship": []
+            }
+        ],
+        "serviceSpecification": {
+            "id": "/netinfra/router"
+        }
+    }
+    yang_schema = r"""module netinfra {
+    yang-version "1.1";
+    namespace "http://example.com/netinfra";
+    prefix "ni";
+    import ietf-yang-tmf-map {
+        prefix tmf;
+    }
+
+    identity router-platform-base;
+    identity router-platform {
+        base router-platform-base;
+    }
+
+    container netinfra {
+        list router {
+            key "name";
+            tmf:cfs-service "Router";
+            leaf name {
+                type string;
+            }
+            container routing-options {
+                leaf platform-type {
+                    type identityref {
+                        base router-platform-base;
+                    }
+                }
+            }
+        }
+    }
+}
+    """
+    top_schema = yang.compile([tmf.yang.ietf_yang_tmf_map, yang_schema])
+    layer_config, service_id = json_to_gdata(json_data, top_schema)
+    data = get_service_json(layer_config, top_schema, service_id)
+    if data is not None:
+        return json.encode(data, pretty=True)
+    return ""
+
+def _test_get_json_netinfra_router_list_feature_identityref_key():
+    json_data = {
+        "serviceDate": "2026-01-01T00:00:00Z",
+        "startDate": "2026-01-01T00:00:00Z",
+        "serviceCharacteristic": [
+            {
+                "id": "name",
+                "name": "name",
+                "valueType": "string",
+                "value": "ams-core-1"
+            }
+        ],
+        "feature": [
+            {
+                "id": "interface[type='netinfra:uplink']",
+                "isBundle": True,
+                "isEnabled": True,
+                "name": "interface",
+                "featureCharacteristic": [
+                    {
+                        "id": "type",
+                        "name": "type",
+                        "valueType": "string",
+                        "value": "netinfra:uplink"
+                    },
+                    {
+                        "id": "admin-state",
+                        "name": "admin-state",
+                        "valueType": "string",
+                        "value": "up"
+                    }
+                ],
+                "featureRelationship": []
+            }
+        ],
+        "serviceSpecification": {
+            "id": "/netinfra/router"
+        }
+    }
+    yang_schema = r"""module netinfra {
+    yang-version "1.1";
+    namespace "http://example.com/netinfra";
+    prefix "ni";
+    import ietf-yang-tmf-map {
+        prefix tmf;
+    }
+
+    identity interface-type-base;
+    identity uplink {
+        base interface-type-base;
+    }
+
+    container netinfra {
+        list router {
+            key "name";
+            tmf:cfs-service "Router";
+            leaf name {
+                type string;
+            }
+            list interface {
+                key "type";
+                leaf type {
+                    type identityref {
+                        base interface-type-base;
+                    }
+                }
+                leaf admin-state {
+                    type string;
+                }
+            }
+        }
+    }
+}
+    """
+    top_schema = yang.compile([tmf.yang.ietf_yang_tmf_map, yang_schema])
+    layer_config, service_id = json_to_gdata(json_data, top_schema)
+    data = get_service_json(layer_config, top_schema, service_id)
+    if data is not None:
+        return json.encode(data, pretty=True)
+    return ""
+
+def _test_get_json_netinfra_router_list_feature_unqualified_identityref_key():
+    json_data = {
+        "serviceDate": "2026-01-01T00:00:00Z",
+        "startDate": "2026-01-01T00:00:00Z",
+        "serviceCharacteristic": [
+            {
+                "id": "name",
+                "name": "name",
+                "valueType": "string",
+                "value": "ams-core-1"
+            }
+        ],
+        "feature": [
+            {
+                "id": "routing-protocols",
+                "isBundle": True,
+                "isEnabled": True,
+                "name": "routing-protocols",
+                "featureCharacteristic": [],
+                "featureRelationship": []
+            },
+            {
+                "id": "routing-protocols/routing-protocol[type='bgp']",
+                "isBundle": True,
+                "isEnabled": True,
+                "name": "routing-protocol",
+                "featureCharacteristic": [
+                    {
+                        "id": "type",
+                        "name": "type",
+                        "valueType": "string",
+                        "value": "bgp"
+                    }
+                ],
+                "featureRelationship": [
+                    {
+                        "id": "routing-protocols",
+                        "name": "routing-protocols",
+                        "relationshipType": "parent"
+                    }
+                ]
+            },
+            {
+                "id": "routing-protocols/routing-protocol[type='bgp']/bgp",
+                "isBundle": True,
+                "isEnabled": True,
+                "name": "bgp",
+                "featureCharacteristic": [
+                    {
+                        "id": "autonomous-system",
+                        "name": "autonomous-system",
+                        "valueType": "integer",
+                        "value": 65001
+                    },
+                    {
+                        "id": "address-family",
+                        "name": "address-family",
+                        "valueType": "stringArray",
+                        "value": ["ipv4"]
+                    }
+                ],
+                "featureRelationship": [
+                    {
+                        "id": "routing-protocols/routing-protocol[type='bgp']",
+                        "name": "routing-protocols/routing-protocol[type='bgp']",
+                        "relationshipType": "parent"
+                    }
+                ]
+            }
+        ],
+        "serviceSpecification": {
+            "id": "/netinfra/router"
+        }
+    }
+    yang_schema = r"""module netinfra {
+    yang-version "1.1";
+    namespace "http://example.com/netinfra";
+    prefix "ni";
+    import ietf-yang-tmf-map {
+        prefix tmf;
+    }
+
+    identity routing-protocol-type;
+    identity bgp {
+        base routing-protocol-type;
+    }
+
+    container netinfra {
+        list router {
+            key "name";
+            tmf:cfs-service "Router";
+            leaf name {
+                type string;
+            }
+            container routing-protocols {
+                list routing-protocol {
+                    key "type";
+                    leaf type {
+                        type identityref {
+                            base routing-protocol-type;
+                        }
+                    }
+                    container bgp {
+                        leaf autonomous-system {
+                            type int32;
+                        }
+                        leaf-list address-family {
+                            type string;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+    """
+    top_schema = yang.compile([tmf.yang.ietf_yang_tmf_map, yang_schema])
+    layer_config, service_id = json_to_gdata(json_data, top_schema)
+    data = get_service_json(layer_config, top_schema, service_id)
+    if data is not None:
+        return json.encode(data, pretty=True)
+    return ""
 
 def _test_get_json_compound_router_key():
     yang_schema = r"""module netinfra {

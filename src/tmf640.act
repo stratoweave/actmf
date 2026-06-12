@@ -5,18 +5,18 @@ import time
 import uri
 
 import yang
-import yang.gdata
-import yang.data
-import yang.json
+import yang.gdata as ygdata
+import yang.data as ydata
+import yang.json as yjson
 from yang.identityref import Identityref, PartialIdentityref
-import yang.schema
+import yang.schema as yschema
 
-import tmf.cfs
-import tmf.yang
+import cfs
+import tmf_yang
 
 _NS_TMF = "http://stratoweave.org/yang/stratoweave-tmf"
 def _q(n):
-    return yang.gdata.Id(_NS_TMF, n)
+    return ygdata.Id(_NS_TMF, n)
 
 def _xpath_escape(v: str) -> str:
     return v.replace("\\", "\\\\").replace("'", "\\'")
@@ -131,8 +131,8 @@ def _parse_xpath_segment(segment: str) -> (name: str, key_values: dict[str, str]
 
     return (name=name, key_values=key_values)
 
-def _list_entry_matches_xpath_keys(entry: yang.gdata.Node, list_keys: list[yang.gdata.Id], xpath_keys: dict[str, str]) -> bool:
-    if not isinstance(entry, yang.gdata.Container):
+def _list_entry_matches_xpath_keys(entry: ygdata.Node, list_keys: list[ygdata.Id], xpath_keys: dict[str, str]) -> bool:
+    if not isinstance(entry, ygdata.Container):
         return False
     if len(xpath_keys) != len(list_keys):
         return False
@@ -145,8 +145,8 @@ def _list_entry_matches_xpath_keys(entry: yang.gdata.Node, list_keys: list[yang.
             return False
     return True
 
-def _xpath_segment_for_list_entry(schema: yang.schema.DNode, gd: yang.gdata.Node) -> str:
-    if isinstance(schema, yang.schema.DList):
+def _xpath_segment_for_list_entry(schema: yschema.DNode, gd: ygdata.Node) -> str:
+    if isinstance(schema, yschema.DList):
         key_values = get_key_values(gd, schema)
         predicates = ""
         for key_name in schema.key:
@@ -216,8 +216,8 @@ class FeatureYangData(object):
         return direct_features
 
 
-extension FeatureYangData (yang.data.YangData):
-    def take_container(self, schema: yang.schema.DContainer, name: str, ns_qualified: bool, path: list[yang.data.PathElement]=[]) -> ?(op: ?str, val: ?value):
+extension FeatureYangData (ydata.YangData):
+    def take_container(self, schema: yschema.DContainer, name: str, ns_qualified: bool, path: list[ydata.PathElement]=[]) -> ?(op: ?str, val: ?value):
         feature = self._get_direct_feature(name)
         if feature is not None:
             feature_id = feature.id
@@ -225,7 +225,7 @@ extension FeatureYangData (yang.data.YangData):
                 return (op=None, val=FeatureYangData(feature_id, feature.featureCharacteristic, self.features))
         return None
 
-    def take_list(self, schema: yang.schema.DList, name: str, ns_qualified: bool, path: list[yang.data.PathElement]=[]) -> list[(op: ?str, key: dict[str, value], val: value)]:
+    def take_list(self, schema: yschema.DList, name: str, ns_qualified: bool, path: list[ydata.PathElement]=[]) -> list[(op: ?str, key: dict[str, value], val: value)]:
         direct_features = self._get_direct_list_features(name)
         list_entries: list[(op: ?str, key: dict[str, value], val: value)] = []
         for entry in direct_features:
@@ -234,36 +234,36 @@ extension FeatureYangData (yang.data.YangData):
             list_entries.append((op=None, key=entry.key, val=FeatureYangData(current_path_id, entry.feature.featureCharacteristic, self.features)))
         return list_entries
 
-    def take_leaf(self, root: yang.schema.DRoot, schema: yang.schema.DLeaf, name: str, ns_qualified: bool, path: list[yang.data.PathElement]=[]) -> ?(op: ?str, t: str, val: ?value):
+    def take_leaf(self, root: yschema.DRoot, schema: yschema.DLeaf, name: str, ns_qualified: bool, path: list[ydata.PathElement]=[]) -> ?(op: ?str, t: str, val: ?value):
         for entry in self.characteristics:
             leaf_value = entry.value
             if entry.name == name and leaf_value is not None:
-                new_path = path + [yang.data.PathElement(schema)]
-                if tmf.cfs.json_type_and_yang_type_match(entry.valueType, schema.type_.builtin_type):
-                    tv = yang.json.try_parse_json_value(leaf_value, schema, schema.type_, new_path, root)
+                new_path = path + [ydata.PathElement(schema)]
+                if cfs.json_type_and_yang_type_match(entry.valueType, schema.type_.builtin_type):
+                    tv = yjson.try_parse_json_value(leaf_value, schema, schema.type_, new_path, root)
                     if tv is not None:
                         return (op=None, t=tv.t, val=tv.val)
-                raise yang.data.YangValidationError(path, schema.type_, leaf_value)
+                raise ydata.YangValidationError(path, schema.type_, leaf_value)
         return None
 
-    def take_leaflist(self, root: yang.schema.DRoot, schema: yang.schema.DLeafList, name: str, ns_qualified: bool, path: list[yang.data.PathElement]=[]) -> list[(op: ?str, t: str, val: ?value)]:
+    def take_leaflist(self, root: yschema.DRoot, schema: yschema.DLeafList, name: str, ns_qualified: bool, path: list[ydata.PathElement]=[]) -> list[(op: ?str, t: str, val: ?value)]:
         for entry in self.characteristics:
             leaflist_data = entry.value
             entry_value_type = entry.valueType
             if entry.name == name and leaflist_data is not None and entry_value_type is not None:
-                if tmf.cfs.json_type_and_yang_type_match(entry_value_type[:-5] if entry_value_type.endswith("Array") else entry_value_type, schema.type_.builtin_type):
+                if cfs.json_type_and_yang_type_match(entry_value_type[:-5] if entry_value_type.endswith("Array") else entry_value_type, schema.type_.builtin_type):
                     if isinstance(leaflist_data, list):
-                        new_path = path + [yang.data.PathElement(schema)]
+                        new_path = path + [ydata.PathElement(schema)]
                         values: list[(op: ?str, t: str, val: ?value)] = []
                         for item in leaflist_data:
-                            tv = yang.json.try_parse_json_value(item, schema, schema.type_, new_path, root)
+                            tv = yjson.try_parse_json_value(item, schema, schema.type_, new_path, root)
                             if tv is not None:
                                 values.append((op=None, t=tv.t, val=tv.val))
                         return values
-                raise yang.data.YangValidationError(path, schema.type_, leaflist_data)
+                raise ydata.YangValidationError(path, schema.type_, leaflist_data)
         return []
 
-def from_characteristic(root: yang.schema.DRoot, data: list[Characteristic], features: ?list[Feature]=None, path_id: ?str=None, loose: bool=False, root_path: ?list[str]=None) -> yang.gdata.Container:
+def from_characteristic(root: yschema.DRoot, data: list[Characteristic], features: ?list[Feature]=None, path_id: ?str=None, loose: bool=False, root_path: ?list[str]=None) -> ygdata.Container:
     def type_narrower(v):
         if isinstance(v, FeatureYangData):
             return v
@@ -272,15 +272,15 @@ def from_characteristic(root: yang.schema.DRoot, data: list[Characteristic], fea
     normalized_features = features if features is not None else []
     normalized_path_id = path_id if path_id is not None else ""
     normalized_root_path = root_path if root_path is not None else []
-    return yang.data.from_data(root, FeatureYangData(normalized_path_id, data, normalized_features), type_narrower, loose, normalized_root_path)
+    return ydata.from_data(root, FeatureYangData(normalized_path_id, data, normalized_features), type_narrower, loose, normalized_root_path)
 
-def _get_service_json(layer_config: yang.gdata.Node, top_schema: yang.schema.DRoot, service_id: ?str = None) -> ?value:
+def _get_service_json(layer_config: ygdata.Node, top_schema: yschema.DRoot, service_id: ?str = None) -> ?value:
     multiple = service_id is None
     requested_service_id = service_id
     services_json = []
 
     services = layer_config.children[_q("tmf-store")].children[_q("tmf640")].children[_q("service")]
-    if isinstance(services, yang.gdata.List):
+    if isinstance(services, ygdata.List):
         for s in services.elements:
             schema = top_schema
             sid = get_child_str(s, _q("id"))
@@ -293,11 +293,11 @@ def _get_service_json(layer_config: yang.gdata.Node, top_schema: yang.schema.DRo
                 parsed = _parse_xpath_segment(path_element)
                 # TODO: include namespace qualifier in service id path (like in JSON, module name)
                 schema = schema.get(parsed.name)
-                fqname = yang.data.fqname(schema)
+                fqname = ydata.fqname(schema)
                 if len(parsed.key_values) > 0:
                     config = config.children[fqname]
                     entry = None
-                    if isinstance(config, yang.gdata.List):
+                    if isinstance(config, ygdata.List):
                         for element in config.elements:
                             if _list_entry_matches_xpath_keys(element, config.keys, parsed.key_values):
                                 entry = element
@@ -310,9 +310,9 @@ def _get_service_json(layer_config: yang.gdata.Node, top_schema: yang.schema.DRo
             last_path_element = sid_segments[-1]
             last_parsed = _parse_xpath_segment(last_path_element)
             schema = schema.get(last_parsed.name)
-            fqname = yang.data.fqname(schema)
+            fqname = ydata.fqname(schema)
             config = config.children[fqname]
-            if isinstance(config, yang.gdata.List):
+            if isinstance(config, ygdata.List):
                 if multiple:
                     for element in config.elements:
                         add_leaf_properties_to_service_characteristics(element, service)
@@ -328,13 +328,13 @@ def _get_service_json(layer_config: yang.gdata.Node, top_schema: yang.schema.DRo
     if multiple:
         return services_json
 
-def get_service_json(layer_config: yang.gdata.Node, top_schema: yang.schema.DRoot, service_id: str) -> ?dict[str, ?value]:
+def get_service_json(layer_config: ygdata.Node, top_schema: yschema.DRoot, service_id: str) -> ?dict[str, ?value]:
     service = _get_service_json(layer_config, top_schema, service_id)
     if service is not None:
         if isinstance(service, dict):
             return service
 
-def get_service_list_json(layer_config: yang.gdata.Node, top_schema: yang.schema.DRoot) -> list[dict[str, ?value]]:
+def get_service_list_json(layer_config: ygdata.Node, top_schema: yschema.DRoot) -> list[dict[str, ?value]]:
     services = _get_service_json(layer_config, top_schema)
     if services is not None:
         if isinstance(services, list):
@@ -374,14 +374,14 @@ def _normalize_service_hrefs(service: ?object) -> None:
         for supporting_service in service.supportingService:
             _normalize_service_hrefs(supporting_service)
 
-def get_key_values(gd: yang.gdata.Node, schema: yang.schema.DNode) -> dict[str, str]:
-    if isinstance(schema, yang.schema.DList):
+def get_key_values(gd: ygdata.Node, schema: yschema.DNode) -> dict[str, str]:
+    if isinstance(schema, yschema.DList):
         result = {}
         for key_name in schema.key:
-            key = yang.gdata.Id(schema.namespace, key_name)
+            key = ygdata.Id(schema.namespace, key_name)
             try:
                 v = gd.children[key]
-                if isinstance(v, yang.gdata.Leaf):
+                if isinstance(v, ygdata.Leaf):
                     result[key_name] = _value_to_xpath_string(v.val)
                 else:
                     raise NotImplementedError("Service characteristic key {key} is of type {type(v)}, expected Leaf")
@@ -390,15 +390,15 @@ def get_key_values(gd: yang.gdata.Node, schema: yang.schema.DNode) -> dict[str, 
         return result
     raise NotImplementedError("Expected DList schema for service specification")
 
-def get_key_value(gd: yang.gdata.Node, schema: yang.schema.DNode) -> str:
-    if isinstance(schema, yang.schema.DList):
+def get_key_value(gd: ygdata.Node, schema: yschema.DNode) -> str:
+    if isinstance(schema, yschema.DList):
         key_values = get_key_values(gd, schema)
         if len(schema.key) == 0:
             raise ValueError("Expected at least one key in service specification")
         return key_values[schema.key[0]]
     raise NotImplementedError("Expected DList schema for service specification")
 
-def add_key_properties_to_service(service: ?object, gd: yang.gdata.Node, schema: yang.schema.DNode, aggregate_tmf_id: str) -> str:
+def add_key_properties_to_service(service: ?object, gd: ygdata.Node, schema: yschema.DNode, aggregate_tmf_id: str) -> str:
     if isinstance(service, Service):
         tmf_id = _xpath_segment_for_list_entry(schema, gd)
         aggregate_tmf_id = _append_xpath_segment(aggregate_tmf_id, tmf_id)
@@ -428,31 +428,31 @@ def find_supporting_service_by_path(service: ?object, path: str) -> ?ServiceRefO
                 return ss
             return find_supporting_service_by_path(ss, path)
 
-def json_to_gdata(data: dict[str, ?value], top_schema: yang.schema.DRoot) -> (yang.gdata.Node, str):
-    tmf_spec = tmf.cfs.services_from_schema(top_schema)
+def json_to_gdata(data: dict[str, ?value], top_schema: yschema.DRoot) -> (ygdata.Node, str):
+    tmf_spec = cfs.services_from_schema(top_schema)
     service = Service.from_json(data)
     if service.serviceSpecification.id not in tmf_spec:
         raise ValueError("Invalid service specification {service.serviceSpecification.id}")
 
     schema = top_schema
     root_path = []
-    ret = yang.gdata.Container()
+    ret = ygdata.Container()
     current_node = ret
     current_path = ""
     aggregate_tmf_id = ""
 
-    for path_element in tmf.cfs.split_service_specification_id(service.serviceSpecification.id):
-        current_path = tmf.cfs.append_service_specification_id(current_path, path_element)
+    for path_element in cfs.split_service_specification_id(service.serviceSpecification.id):
+        current_path = cfs.append_service_specification_id(current_path, path_element)
         schema = schema.get(path_element)
         root_path.append("{schema.module}:{schema.name}")
-        fqname = yang.data.fqname(schema)
-        if isinstance(schema, yang.schema.DContainer):
-            current_node.children[fqname] = yang.gdata.Container(ns=schema.namespace, module=schema.module)
+        fqname = ydata.fqname(schema)
+        if isinstance(schema, yschema.DContainer):
+            current_node.children[fqname] = ygdata.Container(ns=schema.namespace, module=schema.module)
             current_node = current_node.children[fqname]
             aggregate_tmf_id = _append_xpath_segment(aggregate_tmf_id, path_element)
-        elif isinstance(schema, yang.schema.DList):
-            current_node.children[fqname] = yang.gdata.List(
-                yang.data.fq_list_keys(schema), [], ns=schema.namespace, module=schema.module)
+        elif isinstance(schema, yschema.DList):
+            current_node.children[fqname] = ygdata.List(
+                ydata.fq_list_keys(schema), [], ns=schema.namespace, module=schema.module)
             current_node = current_node.children[fqname]
         else:
             raise NotImplementedError("Unexpected GData class {schema.gname} in path resolution")
@@ -461,19 +461,19 @@ def json_to_gdata(data: dict[str, ?value], top_schema: yang.schema.DRoot) -> (ya
         if ss is not None:
             gd = from_characteristic(top_schema, ss.serviceCharacteristic, ss.feature, root_path=root_path)
             if gd is not None:
-                if isinstance(current_node, yang.gdata.List):
+                if isinstance(current_node, ygdata.List):
                     current_node.elements.append(gd)
                 aggregate_tmf_id = add_key_properties_to_service(ss, gd, schema, aggregate_tmf_id)
                 current_node = gd
 
     gd = from_characteristic(top_schema, service.serviceCharacteristic, service.feature, root_path=root_path)
-    if isinstance(current_node, yang.gdata.List):
+    if isinstance(current_node, ygdata.List):
         current_node.elements.append(gd)
 
     aggregate_tmf_id = add_key_properties_to_service(service, gd, schema, aggregate_tmf_id)
-    ret.children[_q("tmf-store")] = yang.gdata.Container({
-            _q("tmf640"): yang.gdata.Container({
-                _q("service"): yang.gdata.List([_q("id")], [service.to_gdata()])})
+    ret.children[_q("tmf-store")] = ygdata.Container({
+            _q("tmf640"): ygdata.Container({
+                _q("service"): ygdata.List([_q("id")], [service.to_gdata()])})
                 }, ns="http://stratoweave.org/yang/stratoweave-tmf", module="stratoweave-tmf")
 
     return (ret, aggregate_tmf_id)
@@ -485,7 +485,7 @@ def _value_to_xpath_string(v) -> str:
         if v.pfx is not None:
             return "{v.pfx}:{v.val}"
         return v.val
-    json_value = yang.gdata.json_val(v)
+    json_value = ygdata.json_val(v)
     if isinstance(json_value, bool):
         return "true" if json_value else "false"
     if isinstance(json_value, str):
@@ -513,30 +513,30 @@ def _value_matches_xpath_string(v, expected: str) -> bool:
 def _json_safe_value(v):
     if isinstance(v, PartialIdentityref):
         return _value_to_xpath_string(v)
-    return yang.gdata.json_val(v)
+    return ygdata.json_val(v)
 
-def _add_leaf_properties_to_characteristics(gd: yang.gdata.Node, characteristics: list[Characteristic]) -> None:
+def _add_leaf_properties_to_characteristics(gd: ygdata.Node, characteristics: list[Characteristic]) -> None:
 
-    if isinstance(gd, yang.gdata.Container):
+    if isinstance(gd, ygdata.Container):
         for k, v in gd.children.items():
-            if isinstance(v, yang.gdata.Leaf):
+            if isinstance(v, ygdata.Leaf):
                 for chr in characteristics:
                     if chr.name == k.name:
-                        chr.valueType = tmf.cfs.gdata_type_to_tmf_type(v.val)
+                        chr.valueType = cfs.gdata_type_to_tmf_type(v.val)
                         chr.value = _json_safe_value(v.val)
                         break
-            elif isinstance(v, yang.gdata.LeafList):
+            elif isinstance(v, ygdata.LeafList):
                 for chr in characteristics:
                     if chr.name == k.name:
-                        chr.valueType = "{tmf.cfs.gdata_type_to_tmf_type(v.entries)}Array"
+                        chr.valueType = "{cfs.gdata_type_to_tmf_type(v.entries)}Array"
                         chr.value = [_json_safe_value(e.val) for e in v.entries]
                         break
 
-def _get_feature_gdata(gd: yang.gdata.Node, feature_id: ?str) -> ?yang.gdata.Node:
+def _get_feature_gdata(gd: ygdata.Node, feature_id: ?str) -> ?ygdata.Node:
     if isinstance(feature_id, str):
-        current: yang.gdata.Node = gd
+        current: ygdata.Node = gd
         for segment in _split_feature_id_segments(feature_id):
-            if not isinstance(current, yang.gdata.Container):
+            if not isinstance(current, ygdata.Container):
                 return None
             parsed = _parse_xpath_segment(segment)
             child = None
@@ -547,31 +547,31 @@ def _get_feature_gdata(gd: yang.gdata.Node, feature_id: ?str) -> ?yang.gdata.Nod
             if child is None:
                 return None
             if len(parsed.key_values) > 0:
-                if isinstance(child, yang.gdata.List):
+                if isinstance(child, ygdata.List):
                     entry = None
                     for element in child.elements:
                         if _list_entry_matches_xpath_keys(element, child.keys, parsed.key_values):
                             entry = element
                             break
-                    if isinstance(entry, yang.gdata.Container):
+                    if isinstance(entry, ygdata.Container):
                         current = entry
                     else:
                         return None
                 else:
                     return None
-            elif isinstance(child, yang.gdata.Container):
+            elif isinstance(child, ygdata.Container):
                 current = child
-            elif isinstance(child, yang.gdata.List):
+            elif isinstance(child, ygdata.List):
                 current = child
-            elif isinstance(child, yang.gdata.Leaf):
+            elif isinstance(child, ygdata.Leaf):
                 current = child
-            elif isinstance(child, yang.gdata.LeafList):
+            elif isinstance(child, ygdata.LeafList):
                 current = child
             else:
                 return None
         return current
 
-def add_leaf_properties_to_service_characteristics(gd: yang.gdata.Node, service: Service) -> None:
+def add_leaf_properties_to_service_characteristics(gd: ygdata.Node, service: Service) -> None:
     _add_leaf_properties_to_characteristics(gd, service.serviceCharacteristic)
     for feature in service.feature:
         feature_gd = _get_feature_gdata(gd, feature.id)
@@ -626,31 +626,31 @@ def get_opt_value(d: dict[str, ?value], key: str) -> ?value:
     if v is not None:
         return v
 
-def get_child_value(node: yang.gdata.Node, child_name: yang.gdata.Id) -> value:
+def get_child_value(node: ygdata.Node, child_name: ygdata.Id) -> value:
     child = node.children.get(child_name)
-    if isinstance(child, yang.gdata.Leaf):
+    if isinstance(child, ygdata.Leaf):
         return child.val
     raise ValueError("Expected leaf child {child_name}")
 
-def get_child_str(node: yang.gdata.Node, child_name: yang.gdata.Id) -> str:
+def get_child_str(node: ygdata.Node, child_name: ygdata.Id) -> str:
     child = node.children.get(child_name)
-    if isinstance(child, yang.gdata.Leaf):
+    if isinstance(child, ygdata.Leaf):
         child_val = child.val
         if isinstance(child_val, str):
             return child_val
     raise ValueError("Expected leaf child {child_name}")
 
-def get_opt_child_str(node: yang.gdata.Node, child_name: yang.gdata.Id) -> ?str:
+def get_opt_child_str(node: ygdata.Node, child_name: ygdata.Id) -> ?str:
     child = node.children.get(child_name)
-    if isinstance(child, yang.gdata.Leaf):
+    if isinstance(child, ygdata.Leaf):
         child_val = child.val
         if isinstance(child_val, str):
             return child_val
     return None
 
-def get_opt_child_bool(node: yang.gdata.Node, child_name: yang.gdata.Id) -> ?bool:
+def get_opt_child_bool(node: ygdata.Node, child_name: ygdata.Id) -> ?bool:
     child = node.children.get(child_name)
-    if isinstance(child, yang.gdata.Leaf):
+    if isinstance(child, ygdata.Leaf):
         child_val = child.val
         if isinstance(child_val, bool):
             return child_val
@@ -667,15 +667,15 @@ def get_opt_service_specification_ref(d: dict[str, ?value], key: str) -> ?Servic
     if isinstance(v, dict):
         return ServiceSpecificationRef.from_json(v)
 
-def get_child_service_specification_ref(node: yang.gdata.Node, child_name: yang.gdata.Id) -> ServiceSpecificationRef:
+def get_child_service_specification_ref(node: ygdata.Node, child_name: ygdata.Id) -> ServiceSpecificationRef:
     child = node.children.get(child_name)
-    if isinstance(child, yang.gdata.Container):
+    if isinstance(child, ygdata.Container):
         return ServiceSpecificationRef.from_gdata(child)
     raise ValueError("Expected container child {child_name}")
 
-def get_opt_child_service_specification_ref(node: yang.gdata.Node, child_name: yang.gdata.Id) -> ?ServiceSpecificationRef:
+def get_opt_child_service_specification_ref(node: ygdata.Node, child_name: ygdata.Id) -> ?ServiceSpecificationRef:
     child = node.children.get(child_name)
-    if isinstance(child, yang.gdata.Container):
+    if isinstance(child, ygdata.Container):
         return ServiceSpecificationRef.from_gdata(child)
     return None
 
@@ -685,9 +685,9 @@ def get_service_ref_or_value(d: dict[str, ?value], key: str) -> ServiceRefOrValu
         return ServiceRefOrValue.from_json(v)
     raise ValueError("Expected dict for key {key}")
 
-def get_child_service_ref_or_value(node: yang.gdata.Node, child_name: yang.gdata.Id) -> ServiceRefOrValue:
+def get_child_service_ref_or_value(node: ygdata.Node, child_name: ygdata.Id) -> ServiceRefOrValue:
     child = node.children.get(child_name)
-    if isinstance(child, yang.gdata.Container):
+    if isinstance(child, ygdata.Container):
         return ServiceRefOrValue.from_gdata(child)
     raise ValueError("Expected container child {child_name}")
 
@@ -696,33 +696,33 @@ def get_opt_time_period(d: dict[str, ?value], key: str) -> ?TimePeriod:
     if isinstance(v, dict):
         return TimePeriod.from_json(v)
 
-def get_opt_child_time_period(node: yang.gdata.Node, child_name: yang.gdata.Id) -> ?TimePeriod:
+def get_opt_child_time_period(node: ygdata.Node, child_name: ygdata.Id) -> ?TimePeriod:
     child = node.children.get(child_name)
-    if isinstance(child, yang.gdata.Container):
+    if isinstance(child, ygdata.Container):
         return TimePeriod.from_gdata(child)
     return None
 
-def add_leafs_to_gdata(elements: dict[yang.gdata.Id, yang.gdata.Node], properties: list[(yang.gdata.Id, ?value, str)]):
+def add_leafs_to_gdata(elements: dict[ygdata.Id, ygdata.Node], properties: list[(ygdata.Id, ?value, str)]):
     for prop_name, prop_value, prop_type in properties:
         p = prop_value
         if p is not None:
-            elements[prop_name] = yang.gdata.Leaf(p)
+            elements[prop_name] = ygdata.Leaf(p)
         else:
             raise ValueError("Property {prop_name} is required for gdata")
 
-def add_opt_leafs_to_gdata(elements: dict[yang.gdata.Id, yang.gdata.Node], properties: list[(yang.gdata.Id, ?value, str)]):
+def add_opt_leafs_to_gdata(elements: dict[ygdata.Id, ygdata.Node], properties: list[(ygdata.Id, ?value, str)]):
     for prop_name, prop_value, prop_type in properties:
         p = prop_value
         if p is not None:
-            elements[prop_name] = yang.gdata.Leaf(p)
+            elements[prop_name] = ygdata.Leaf(p)
 
 def get_list(val: ?value) -> list[dict[str, ?value]]:
     if isinstance(val, list):
         return val
     return []
 
-def get_yang_list_elements(yl: ?yang.gdata.Node) -> list[yang.gdata.Node]:
-    if isinstance(yl, yang.gdata.List):
+def get_yang_list_elements(yl: ?ygdata.Node) -> list[ygdata.Node]:
+    if isinstance(yl, ygdata.List):
         return yl.elements
     return []
 
@@ -736,7 +736,7 @@ def get_opt_obj_to_json(obj) -> ?dict[str, ?value]:
             return o.to_json()
         raise Exception("Unsupported type for get_opt_obj_to_json: " + str(type(o)))
 
-def add_opt_obj_to_gdata(elements: dict[yang.gdata.Id, yang.gdata.Node], key: yang.gdata.Id, obj):
+def add_opt_obj_to_gdata(elements: dict[ygdata.Id, ygdata.Node], key: ygdata.Id, obj):
     o = obj
     if isinstance(o, TimePeriod):
         elements[key] = o.to_gdata()
@@ -873,8 +873,8 @@ class Service(object):
         }
 
     @staticmethod
-    def from_gdata(gd: yang.gdata.Node) -> Service:
-        if isinstance(gd, yang.gdata.Container):
+    def from_gdata(gd: ygdata.Node) -> Service:
+        if isinstance(gd, ygdata.Container):
             return Service(
                 get_child_str(gd, _q("id")),
                 get_opt_child_str(gd, _q("href")),
@@ -908,7 +908,7 @@ class Service(object):
             )
         raise ValueError("Unsupported gdata node type")
 
-    def to_gdata(self) -> yang.gdata.Node:
+    def to_gdata(self) -> ygdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
             (_q("id"), self.id, "string"),
@@ -934,18 +934,18 @@ class Service(object):
         ])
 
         elements[_q("serviceSpecification")] = self.serviceSpecification.to_gdata()
-        elements[_q("feature")] = yang.gdata.List([_q("id")], [entry.to_gdata() for entry in self.feature])
-        elements[_q("note")] = yang.gdata.List([_q("id")], [entry.to_gdata() for entry in self.note])
-        elements[_q("place")] = yang.gdata.List([_q("id")], [entry.to_gdata() for entry in self.place])
-        elements[_q("relatedEntity")] = yang.gdata.List([_q("id")], [entry.to_gdata() for entry in self.relatedEntity])
-        elements[_q("relatedParty")] = yang.gdata.List([_q("id")], [entry.to_gdata() for entry in self.relatedParty])
-        elements[_q("serviceCharacteristic")] = yang.gdata.List([_q("name")], [entry.to_gdata() for entry in self.serviceCharacteristic])
-        elements[_q("serviceOrderItem")] = yang.gdata.List([_q("itemId")], [entry.to_gdata() for entry in self.serviceOrderItem])
-        elements[_q("serviceRelationship")] = yang.gdata.List([_q("relationshipType")], [entry.to_gdata() for entry in self.serviceRelationship])
-        elements[_q("supportingResource")] = yang.gdata.List([_q("id")], [entry.to_gdata() for entry in self.supportingResource])
-        elements[_q("supportingService")] = yang.gdata.List([_q("id")], [entry.to_gdata() for entry in self.supportingService])
+        elements[_q("feature")] = ygdata.List([_q("id")], [entry.to_gdata() for entry in self.feature])
+        elements[_q("note")] = ygdata.List([_q("id")], [entry.to_gdata() for entry in self.note])
+        elements[_q("place")] = ygdata.List([_q("id")], [entry.to_gdata() for entry in self.place])
+        elements[_q("relatedEntity")] = ygdata.List([_q("id")], [entry.to_gdata() for entry in self.relatedEntity])
+        elements[_q("relatedParty")] = ygdata.List([_q("id")], [entry.to_gdata() for entry in self.relatedParty])
+        elements[_q("serviceCharacteristic")] = ygdata.List([_q("name")], [entry.to_gdata() for entry in self.serviceCharacteristic])
+        elements[_q("serviceOrderItem")] = ygdata.List([_q("itemId")], [entry.to_gdata() for entry in self.serviceOrderItem])
+        elements[_q("serviceRelationship")] = ygdata.List([_q("relationshipType")], [entry.to_gdata() for entry in self.serviceRelationship])
+        elements[_q("supportingResource")] = ygdata.List([_q("id")], [entry.to_gdata() for entry in self.supportingResource])
+        elements[_q("supportingService")] = ygdata.List([_q("id")], [entry.to_gdata() for entry in self.supportingService])
 
-        return yang.gdata.Container(elements)
+        return ygdata.Container(elements)
 
 class ConstraintRef(object):
     id: ?str
@@ -993,8 +993,8 @@ class ConstraintRef(object):
         }
 
     @staticmethod
-    def from_gdata(gd: yang.gdata.Node) -> ConstraintRef:
-        if isinstance(gd, yang.gdata.Container):
+    def from_gdata(gd: ygdata.Node) -> ConstraintRef:
+        if isinstance(gd, ygdata.Container):
             return ConstraintRef(
                 get_opt_child_str(gd, _q("id")),
                 get_opt_child_str(gd, _q("href")),
@@ -1007,7 +1007,7 @@ class ConstraintRef(object):
             )
         raise ValueError("Unsupported gdata node type")
 
-    def to_gdata(self) -> yang.gdata.Node:
+    def to_gdata(self) -> ygdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
             (_q("id"), self.id, "string"),
@@ -1022,7 +1022,7 @@ class ConstraintRef(object):
             (_q("referredType"), self.referredType, "string"),
         ])
 
-        return yang.gdata.Container(elements)
+        return ygdata.Container(elements)
 
 class FeatureRelationship(object):
     id: ?str
@@ -1066,8 +1066,8 @@ class FeatureRelationship(object):
         }
 
     @staticmethod
-    def from_gdata(gd: yang.gdata.Node) -> FeatureRelationship:
-        if isinstance(gd, yang.gdata.Container):
+    def from_gdata(gd: ygdata.Node) -> FeatureRelationship:
+        if isinstance(gd, ygdata.Container):
             return FeatureRelationship(
                 get_opt_child_str(gd, _q("id")),
                 get_opt_child_str(gd, _q("name")),
@@ -1079,7 +1079,7 @@ class FeatureRelationship(object):
             )
         raise ValueError("Unsupported gdata node type")
 
-    def to_gdata(self) -> yang.gdata.Node:
+    def to_gdata(self) -> ygdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
             (_q("id"), self.id, "string"),
@@ -1094,7 +1094,7 @@ class FeatureRelationship(object):
 
         add_opt_obj_to_gdata(elements, _q("validFor"), self.validFor)
 
-        return yang.gdata.Container(elements)
+        return ygdata.Container(elements)
 
 class TimePeriod(object):
     endDateTime: ?str
@@ -1130,8 +1130,8 @@ class TimePeriod(object):
         }
 
     @staticmethod
-    def from_gdata(gd: yang.gdata.Node) -> TimePeriod:
-        if isinstance(gd, yang.gdata.Container):
+    def from_gdata(gd: ygdata.Node) -> TimePeriod:
+        if isinstance(gd, ygdata.Container):
             return TimePeriod(
                 get_opt_child_str(gd, _q("endDateTime")),
                 get_opt_child_str(gd, _q("startDateTime")),
@@ -1141,7 +1141,7 @@ class TimePeriod(object):
             )
         raise ValueError("Unsupported gdata node type")
 
-    def to_gdata(self) -> yang.gdata.Node:
+    def to_gdata(self) -> ygdata.Node:
         elements = {}
         add_opt_leafs_to_gdata(elements, [
             (_q("endDateTime"), self.endDateTime, "string"),
@@ -1151,7 +1151,7 @@ class TimePeriod(object):
             (_q("type"), self.type, "string"),
         ])
 
-        return yang.gdata.Container(elements)
+        return ygdata.Container(elements)
 
 class Feature(object):
     id: ?str
@@ -1207,8 +1207,8 @@ class Feature(object):
         }
 
     @staticmethod
-    def from_gdata(gd: yang.gdata.Node) -> Feature:
-        if isinstance(gd, yang.gdata.Container):
+    def from_gdata(gd: ygdata.Node) -> Feature:
+        if isinstance(gd, ygdata.Container):
             return Feature(
                 get_opt_child_str(gd, _q("id")),
                 get_opt_child_bool(gd, _q("isBundle")),
@@ -1223,7 +1223,7 @@ class Feature(object):
             )
         raise ValueError("Unsupported gdata node type")
 
-    def to_gdata(self) -> yang.gdata.Node:
+    def to_gdata(self) -> ygdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
             (_q("id"), self.id, "string"),
@@ -1237,11 +1237,11 @@ class Feature(object):
             (_q("type"), self.type, "string"),
         ])
 
-        elements[_q("constraint")] = yang.gdata.List([_q("id")], [entry.to_gdata() for entry in self.constraint])
-        elements[_q("featureCharacteristic")] = yang.gdata.List([_q("id")], [entry.to_gdata() for entry in self.featureCharacteristic])
-        elements[_q("featureRelationship")] = yang.gdata.List([_q("id")], [entry.to_gdata() for entry in self.featureRelationship])
+        elements[_q("constraint")] = ygdata.List([_q("id")], [entry.to_gdata() for entry in self.constraint])
+        elements[_q("featureCharacteristic")] = ygdata.List([_q("id")], [entry.to_gdata() for entry in self.featureCharacteristic])
+        elements[_q("featureRelationship")] = ygdata.List([_q("id")], [entry.to_gdata() for entry in self.featureRelationship])
 
-        return yang.gdata.Container(elements)
+        return ygdata.Container(elements)
 
 class Note(object):
     id: ?str
@@ -1285,8 +1285,8 @@ class Note(object):
         }
 
     @staticmethod
-    def from_gdata(gd: yang.gdata.Node) -> Note:
-        if isinstance(gd, yang.gdata.Container):
+    def from_gdata(gd: ygdata.Node) -> Note:
+        if isinstance(gd, ygdata.Container):
             return Note(
                 get_opt_child_str(gd, _q("id")),
                 get_opt_child_str(gd, _q("author")),
@@ -1298,7 +1298,7 @@ class Note(object):
             )
         raise ValueError("Unsupported gdata node type")
 
-    def to_gdata(self) -> yang.gdata.Node:
+    def to_gdata(self) -> ygdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
             (_q("id"), self.id, "string"),
@@ -1312,7 +1312,7 @@ class Note(object):
             (_q("type"), self.type, "string"),
         ])
 
-        return yang.gdata.Container(elements)
+        return ygdata.Container(elements)
 
 class RelatedPlaceRefOrValue(object):
     id: ?str
@@ -1360,8 +1360,8 @@ class RelatedPlaceRefOrValue(object):
         }
 
     @staticmethod
-    def from_gdata(gd: yang.gdata.Node) -> RelatedPlaceRefOrValue:
-        if isinstance(gd, yang.gdata.Container):
+    def from_gdata(gd: ygdata.Node) -> RelatedPlaceRefOrValue:
+        if isinstance(gd, ygdata.Container):
             return RelatedPlaceRefOrValue(
                 get_opt_child_str(gd, _q("id")),
                 get_opt_child_str(gd, _q("href")),
@@ -1374,7 +1374,7 @@ class RelatedPlaceRefOrValue(object):
             )
         raise ValueError("Unsupported gdata node type")
 
-    def to_gdata(self) -> yang.gdata.Node:
+    def to_gdata(self) -> ygdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
             (_q("id"), self.id, "string"),
@@ -1389,7 +1389,7 @@ class RelatedPlaceRefOrValue(object):
             (_q("referredType"), self.referredType, "string"),
         ])
 
-        return yang.gdata.Container(elements)
+        return ygdata.Container(elements)
 
 class RelatedEntityRefOrValue(object):
     id: ?str
@@ -1437,8 +1437,8 @@ class RelatedEntityRefOrValue(object):
         }
 
     @staticmethod
-    def from_gdata(gd: yang.gdata.Node) -> RelatedEntityRefOrValue:
-        if isinstance(gd, yang.gdata.Container):
+    def from_gdata(gd: ygdata.Node) -> RelatedEntityRefOrValue:
+        if isinstance(gd, ygdata.Container):
             return RelatedEntityRefOrValue(
                 get_opt_child_str(gd, _q("id")),
                 get_opt_child_str(gd, _q("href")),
@@ -1451,7 +1451,7 @@ class RelatedEntityRefOrValue(object):
             )
         raise ValueError("Unsupported gdata node type")
 
-    def to_gdata(self) -> yang.gdata.Node:
+    def to_gdata(self) -> ygdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
             (_q("id"), self.id, "string"),
@@ -1466,7 +1466,7 @@ class RelatedEntityRefOrValue(object):
             (_q("referredType"), self.referredType, "string"),
         ])
 
-        return yang.gdata.Container(elements)
+        return ygdata.Container(elements)
 
 class RelatedParty(object):
     id: ?str
@@ -1514,8 +1514,8 @@ class RelatedParty(object):
         }
 
     @staticmethod
-    def from_gdata(gd: yang.gdata.Node) -> RelatedParty:
-        if isinstance(gd, yang.gdata.Container):
+    def from_gdata(gd: ygdata.Node) -> RelatedParty:
+        if isinstance(gd, ygdata.Container):
             return RelatedParty(
                 get_opt_child_str(gd, _q("id")),
                 get_opt_child_str(gd, _q("href")),
@@ -1528,7 +1528,7 @@ class RelatedParty(object):
             )
         raise ValueError("Unsupported gdata node type")
 
-    def to_gdata(self) -> yang.gdata.Node:
+    def to_gdata(self) -> ygdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
             (_q("id"), self.id, "string"),
@@ -1543,7 +1543,7 @@ class RelatedParty(object):
             (_q("referredType"), self.referredType, "string"),
         ])
 
-        return yang.gdata.Container(elements)
+        return ygdata.Container(elements)
 
 class Characteristic(object):
     id: str
@@ -1591,8 +1591,8 @@ class Characteristic(object):
         }
 
     @staticmethod
-    def from_gdata(gd: yang.gdata.Node) -> Characteristic:
-        if isinstance(gd, yang.gdata.Container):
+    def from_gdata(gd: ygdata.Node) -> Characteristic:
+        if isinstance(gd, ygdata.Container):
             return Characteristic(
                 get_child_str(gd, _q("id")),
                 get_child_str(gd, _q("name")),
@@ -1605,7 +1605,7 @@ class Characteristic(object):
             )
         raise ValueError("Unsupported gdata node type")
 
-    def to_gdata(self) -> yang.gdata.Node:
+    def to_gdata(self) -> ygdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
             (_q("id"), self.id, "string"),
@@ -1620,9 +1620,9 @@ class Characteristic(object):
             (_q("type"), self.type, "string"),
         ])
 
-        elements[_q("characteristicRelationship")] = yang.gdata.List([_q("id")], [entry.to_gdata() for entry in self.characteristicRelationship])
+        elements[_q("characteristicRelationship")] = ygdata.List([_q("id")], [entry.to_gdata() for entry in self.characteristicRelationship])
 
-        return yang.gdata.Container(elements)
+        return ygdata.Container(elements)
 
 class CharacteristicRelationship(object):
     id: ?str
@@ -1658,8 +1658,8 @@ class CharacteristicRelationship(object):
         }
 
     @staticmethod
-    def from_gdata(gd: yang.gdata.Node) -> CharacteristicRelationship:
-        if isinstance(gd, yang.gdata.Container):
+    def from_gdata(gd: ygdata.Node) -> CharacteristicRelationship:
+        if isinstance(gd, ygdata.Container):
             return CharacteristicRelationship(
                 get_opt_child_str(gd, _q("id")),
                 get_opt_child_str(gd, _q("relationshipType")),
@@ -1669,7 +1669,7 @@ class CharacteristicRelationship(object):
             )
         raise ValueError("Unsupported gdata node type")
 
-    def to_gdata(self) -> yang.gdata.Node:
+    def to_gdata(self) -> ygdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
             (_q("id"), self.id, "string"),
@@ -1681,7 +1681,7 @@ class CharacteristicRelationship(object):
             (_q("type"), self.type, "string"),
         ])
 
-        return yang.gdata.Container(elements)
+        return ygdata.Container(elements)
 
 class ServiceSpecificationRef(object):
     id: str
@@ -1729,8 +1729,8 @@ class ServiceSpecificationRef(object):
         }
 
     @staticmethod
-    def from_gdata(gd: yang.gdata.Node) -> ServiceSpecificationRef:
-        if isinstance(gd, yang.gdata.Container):
+    def from_gdata(gd: ygdata.Node) -> ServiceSpecificationRef:
+        if isinstance(gd, ygdata.Container):
             return ServiceSpecificationRef(
                 get_child_str(gd, _q("id")),
                 get_opt_child_str(gd, _q("href")),
@@ -1743,7 +1743,7 @@ class ServiceSpecificationRef(object):
             )
         raise ValueError("Unsupported gdata node type")
 
-    def to_gdata(self) -> yang.gdata.Node:
+    def to_gdata(self) -> ygdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
             (_q("id"), self.id, "string"),
@@ -1758,7 +1758,7 @@ class ServiceSpecificationRef(object):
             (_q("referredType"), self.referredType, "string"),
         ])
 
-        return yang.gdata.Container(elements)
+        return ygdata.Container(elements)
 
 class ResourceRef(object):
     id: ?str
@@ -1802,8 +1802,8 @@ class ResourceRef(object):
         }
 
     @staticmethod
-    def from_gdata(gd: yang.gdata.Node) -> ResourceRef:
-        if isinstance(gd, yang.gdata.Container):
+    def from_gdata(gd: ygdata.Node) -> ResourceRef:
+        if isinstance(gd, ygdata.Container):
             return ResourceRef(
                 get_child_str(gd, _q("id")),
                 get_opt_child_str(gd, _q("href")),
@@ -1815,7 +1815,7 @@ class ResourceRef(object):
             )
         raise ValueError("Unsupported gdata node type")
 
-    def to_gdata(self) -> yang.gdata.Node:
+    def to_gdata(self) -> ygdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
             (_q("id"), self.id, "string"),
@@ -1829,7 +1829,7 @@ class ResourceRef(object):
             (_q("referredType"), self.referredType, "string"),
         ])
 
-        return yang.gdata.Container(elements)
+        return ygdata.Container(elements)
 
 class RelatedServiceOrderItem(object):
     itemId: ?str
@@ -1881,8 +1881,8 @@ class RelatedServiceOrderItem(object):
         }
 
     @staticmethod
-    def from_gdata(gd: yang.gdata.Node) -> RelatedServiceOrderItem:
-        if isinstance(gd, yang.gdata.Container):
+    def from_gdata(gd: ygdata.Node) -> RelatedServiceOrderItem:
+        if isinstance(gd, ygdata.Container):
             return RelatedServiceOrderItem(
                 get_opt_child_str(gd, _q("itemId")),
                 get_opt_child_str(gd, _q("role")),
@@ -1896,7 +1896,7 @@ class RelatedServiceOrderItem(object):
             )
         raise ValueError("Unsupported gdata node type")
 
-    def to_gdata(self) -> yang.gdata.Node:
+    def to_gdata(self) -> ygdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
             (_q("itemId"), self.itemId, "string"),
@@ -1912,7 +1912,7 @@ class RelatedServiceOrderItem(object):
             (_q("referredType"), self.referredType, "string"),
         ])
 
-        return yang.gdata.Container(elements)
+        return ygdata.Container(elements)
 
 class ServiceRelationship(object):
     relationshipType: ?str
@@ -1952,8 +1952,8 @@ class ServiceRelationship(object):
         }
 
     @staticmethod
-    def from_gdata(gd: yang.gdata.Node) -> ServiceRelationship:
-        if isinstance(gd, yang.gdata.Container):
+    def from_gdata(gd: ygdata.Node) -> ServiceRelationship:
+        if isinstance(gd, ygdata.Container):
             return ServiceRelationship(
                 get_opt_child_str(gd, _q("relationshipType")),
                 list(map(Characteristic.from_gdata, get_yang_list_elements(gd.children.get(_q("serviceRelationshipCharacteristic"))))),
@@ -1964,7 +1964,7 @@ class ServiceRelationship(object):
             )
         raise ValueError("Unsupported gdata node type")
 
-    def to_gdata(self) -> yang.gdata.Node:
+    def to_gdata(self) -> ygdata.Node:
         elements = {}
         add_opt_leafs_to_gdata(elements, [
             (_q("relationshipType"), self.relationshipType, "string"),
@@ -1974,9 +1974,9 @@ class ServiceRelationship(object):
         ])
 
         elements[_q("service")] = self.service.to_gdata()
-        elements[_q("serviceRelationshipCharacteristic")] = yang.gdata.List([_q("name")], [entry.to_gdata() for entry in self.serviceRelationshipCharacteristic])
+        elements[_q("serviceRelationshipCharacteristic")] = ygdata.List([_q("name")], [entry.to_gdata() for entry in self.serviceRelationshipCharacteristic])
 
-        return yang.gdata.Container(elements)
+        return ygdata.Container(elements)
 
 class ServiceRefOrValue(object):
     id: ?str
@@ -2112,8 +2112,8 @@ class ServiceRefOrValue(object):
         }
 
     @staticmethod
-    def from_gdata(gd: yang.gdata.Node) -> ServiceRefOrValue:
-        if isinstance(gd, yang.gdata.Container):
+    def from_gdata(gd: ygdata.Node) -> ServiceRefOrValue:
+        if isinstance(gd, ygdata.Container):
             return ServiceRefOrValue(
                 get_opt_child_str(gd, _q("id")),
                 get_opt_child_str(gd, _q("href")),
@@ -2148,7 +2148,7 @@ class ServiceRefOrValue(object):
             )
         raise ValueError("Unsupported gdata node type")
 
-    def to_gdata(self) -> yang.gdata.Node:
+    def to_gdata(self) -> ygdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
             (_q("id"), self.id, "string"),
@@ -2175,18 +2175,18 @@ class ServiceRefOrValue(object):
         ])
 
         add_opt_obj_to_gdata(elements, _q("serviceSpecification"), self.serviceSpecification)
-        elements[_q("feature")] = yang.gdata.List([_q("id")], [entry.to_gdata() for entry in self.feature])
-        elements[_q("note")] = yang.gdata.List([_q("id")], [entry.to_gdata() for entry in self.note])
-        elements[_q("place")] = yang.gdata.List([_q("id")], [entry.to_gdata() for entry in self.place])
-        elements[_q("relatedEntity")] = yang.gdata.List([_q("id")], [entry.to_gdata() for entry in self.relatedEntity])
-        elements[_q("relatedParty")] = yang.gdata.List([_q("id")], [entry.to_gdata() for entry in self.relatedParty])
-        elements[_q("serviceCharacteristic")] = yang.gdata.List([_q("name")], [entry.to_gdata() for entry in self.serviceCharacteristic])
-        elements[_q("serviceOrderItem")] = yang.gdata.List([_q("itemId")], [entry.to_gdata() for entry in self.serviceOrderItem])
-        elements[_q("serviceRelationship")] = yang.gdata.List([_q("relationshipType")], [entry.to_gdata() for entry in self.serviceRelationship])
-        elements[_q("supportingResource")] = yang.gdata.List([_q("id")], [entry.to_gdata() for entry in self.supportingResource])
-        elements[_q("supportingService")] = yang.gdata.List([_q("id")], [entry.to_gdata() for entry in self.supportingService])
+        elements[_q("feature")] = ygdata.List([_q("id")], [entry.to_gdata() for entry in self.feature])
+        elements[_q("note")] = ygdata.List([_q("id")], [entry.to_gdata() for entry in self.note])
+        elements[_q("place")] = ygdata.List([_q("id")], [entry.to_gdata() for entry in self.place])
+        elements[_q("relatedEntity")] = ygdata.List([_q("id")], [entry.to_gdata() for entry in self.relatedEntity])
+        elements[_q("relatedParty")] = ygdata.List([_q("id")], [entry.to_gdata() for entry in self.relatedParty])
+        elements[_q("serviceCharacteristic")] = ygdata.List([_q("name")], [entry.to_gdata() for entry in self.serviceCharacteristic])
+        elements[_q("serviceOrderItem")] = ygdata.List([_q("itemId")], [entry.to_gdata() for entry in self.serviceOrderItem])
+        elements[_q("serviceRelationship")] = ygdata.List([_q("relationshipType")], [entry.to_gdata() for entry in self.serviceRelationship])
+        elements[_q("supportingResource")] = ygdata.List([_q("id")], [entry.to_gdata() for entry in self.supportingResource])
+        elements[_q("supportingService")] = ygdata.List([_q("id")], [entry.to_gdata() for entry in self.supportingService])
 
-        return yang.gdata.Container(elements)
+        return ygdata.Container(elements)
 
 def _test_tmf640_mobile_service():
     test_tmf_payload = {
@@ -2424,14 +2424,14 @@ def _test_netinfra_router():
     service = Service.from_json(test_tmf_payload)
     s = yang.compile([yang_schema])
     gd = from_characteristic(s, service.serviceCharacteristic, root_path=["test:netinfra", "router"])
-    r = yang.gdata.Container({
-        yang.gdata.Id("http://example.com/test", "netinfra"): yang.gdata.Container({
-            yang.gdata.Id("http://example.com/test", "router"): yang.gdata.List(
-                [yang.gdata.Id("http://example.com/test", "name")],
+    r = ygdata.Container({
+        ygdata.Id("http://example.com/test", "netinfra"): ygdata.Container({
+            ygdata.Id("http://example.com/test", "router"): ygdata.List(
+                [ygdata.Id("http://example.com/test", "name")],
                 ns='http://example.com/test', module='tst',
                 elements=[
-                    yang.gdata.Container({
-                        yang.gdata.Id("http://example.com/test", "name"): yang.gdata.Leaf('ams-core-1')
+                    ygdata.Container({
+                        ygdata.Id("http://example.com/test", "name"): ygdata.Leaf('ams-core-1')
                     })
                 ])
         }, ns='http://example.com/test', module='tst')
@@ -2468,7 +2468,7 @@ def _test_characteristic_type_mismatch():
     s = yang.compile([yang_schema])
     try:
         gd = from_characteristic(s, service.serviceCharacteristic)
-    except yang.data.YangValidationError as exc:
+    except ydata.YangValidationError as exc:
         testing.assertEqual("Invalid value at /: '415-275-7439' - expected int32 with range -2147483648..2147483647", str(exc), "Expected YangValidationError")
         return
     testing.error("Expected YangValidationError")
@@ -2635,10 +2635,10 @@ def _test_json_to_gdata_netinfra_router():
     }
 }
     """
-    top_schema = yang.compile([tmf.yang.ietf_yang_tmf_map, yang_schema])
+    top_schema = yang.compile([tmf_yang.ietf_yang_tmf_map, yang_schema])
     gd, _ = json_to_gdata(json_data, top_schema)
     services = gd.children[_q("tmf-store")].children[_q("tmf640")].children[_q("service")]
-    if isinstance(services, yang.gdata.List):
+    if isinstance(services, ygdata.List):
         for s in services.elements:
             s.children.pop(_q("serviceDate"))
             s.children.pop(_q("startDate"))
@@ -2693,20 +2693,20 @@ def _test_json_to_gdata_netinfra_router_identityref():
     }
 }
     """
-    top_schema = yang.compile([tmf.yang.ietf_yang_tmf_map, yang_schema])
+    top_schema = yang.compile([tmf_yang.ietf_yang_tmf_map, yang_schema])
     gd, aggregate_tmf_id = json_to_gdata(json_data, top_schema)
 
     testing.assertEqual(aggregate_tmf_id, "/netinfra/router[name='ams-core-1']")
 
-    netinfra = gd.children.get(yang.gdata.Id("http://example.com/netinfra", "netinfra"))
-    if isinstance(netinfra, yang.gdata.Container):
-        routers = netinfra.children.get(yang.gdata.Id("http://example.com/netinfra", "router"))
-        if isinstance(routers, yang.gdata.List):
+    netinfra = gd.children.get(ygdata.Id("http://example.com/netinfra", "netinfra"))
+    if isinstance(netinfra, ygdata.Container):
+        routers = netinfra.children.get(ygdata.Id("http://example.com/netinfra", "router"))
+        if isinstance(routers, ygdata.List):
             testing.assertEqual(len(routers.elements), 1)
             router = routers.elements[0]
-            if isinstance(router, yang.gdata.Container):
-                platform_leaf = router.children.get(yang.gdata.Id("http://example.com/netinfra", "platform-type"))
-                if isinstance(platform_leaf, yang.gdata.Leaf):
+            if isinstance(router, ygdata.Container):
+                platform_leaf = router.children.get(ygdata.Id("http://example.com/netinfra", "platform-type"))
+                if isinstance(platform_leaf, ygdata.Leaf):
                     platform_val = platform_leaf.val
                     if isinstance(platform_val, Identityref):
                         testing.assertEqual(platform_val.val, "router-platform")
@@ -2734,62 +2734,62 @@ def _test_get_json_netinfra_router():
 }
     """
     top_schema = yang.compile([yang_schema])
-    layer_config = yang.gdata.Container({
-        yang.gdata.Id("http://example.com/netinfra", "netinfra"): yang.gdata.Container({
-            yang.gdata.Id("http://example.com/netinfra", "router"): yang.gdata.List(
-                [yang.gdata.Id("http://example.com/netinfra", "name")],
+    layer_config = ygdata.Container({
+        ygdata.Id("http://example.com/netinfra", "netinfra"): ygdata.Container({
+            ygdata.Id("http://example.com/netinfra", "router"): ygdata.List(
+                [ygdata.Id("http://example.com/netinfra", "name")],
                 ns='http://example.com/netinfra', module='netinfra', elements=[
-                    yang.gdata.Container({
-                        yang.gdata.Id("http://example.com/netinfra", "name"): yang.gdata.Leaf('ams-core-1')
+                    ygdata.Container({
+                        ygdata.Id("http://example.com/netinfra", "name"): ygdata.Leaf('ams-core-1')
                     })
                 ])
         }, ns='http://example.com/netinfra', module='netinfra'),
-        _q("tmf-store"): yang.gdata.Container({
-            _q("tmf640"): yang.gdata.Container({
-                _q("service"): yang.gdata.List(
+        _q("tmf-store"): ygdata.Container({
+            _q("tmf640"): ygdata.Container({
+                _q("service"): ygdata.List(
                     [_q("id")], elements=[
-                        yang.gdata.Container({
-                            _q("id"): yang.gdata.Leaf("/netinfra/router[name='ams-core-1']"),
-                            _q("href"): yang.gdata.Leaf("/tmf-api/ServiceActivationAndConfiguration/v4/service/netinfra/router[name='ams-core-1']"),
-                            _q("hasStarted"): yang.gdata.Leaf(True),
-                            _q("isBundle"): yang.gdata.Leaf(False),
-                            _q("isServiceEnabled"): yang.gdata.Leaf(True),
-                            _q("isStateful"): yang.gdata.Leaf(False),
-                            _q("name"): yang.gdata.Leaf('ams-core-1'),
-                            _q("serviceDate"): yang.gdata.Leaf('2024-06-01T12:00:00Z'),
-                            _q("startDate"): yang.gdata.Leaf('2024-06-01T12:00:00Z'),
-                            _q("startMode"): yang.gdata.Leaf('1'),
-                            _q("state"): yang.gdata.Leaf('active'),
-                            _q("baseType"): yang.gdata.Leaf('Service'),
-                            _q("schemaLocation"): yang.gdata.Leaf('/tmf-api/schema/Service/Service.schema.json'),
-                            _q("type"): yang.gdata.Leaf('Service'),
-                            _q("feature"): yang.gdata.List([_q("id")]),
-                            _q("note"): yang.gdata.List([_q("id")]),
-                            _q("place"): yang.gdata.List([_q("id")]),
-                            _q("relatedEntity"): yang.gdata.List([_q("id")]),
-                            _q("relatedParty"): yang.gdata.List([_q("id")]),
-                            _q("serviceCharacteristic"): yang.gdata.List(
+                        ygdata.Container({
+                            _q("id"): ygdata.Leaf("/netinfra/router[name='ams-core-1']"),
+                            _q("href"): ygdata.Leaf("/tmf-api/ServiceActivationAndConfiguration/v4/service/netinfra/router[name='ams-core-1']"),
+                            _q("hasStarted"): ygdata.Leaf(True),
+                            _q("isBundle"): ygdata.Leaf(False),
+                            _q("isServiceEnabled"): ygdata.Leaf(True),
+                            _q("isStateful"): ygdata.Leaf(False),
+                            _q("name"): ygdata.Leaf('ams-core-1'),
+                            _q("serviceDate"): ygdata.Leaf('2024-06-01T12:00:00Z'),
+                            _q("startDate"): ygdata.Leaf('2024-06-01T12:00:00Z'),
+                            _q("startMode"): ygdata.Leaf('1'),
+                            _q("state"): ygdata.Leaf('active'),
+                            _q("baseType"): ygdata.Leaf('Service'),
+                            _q("schemaLocation"): ygdata.Leaf('/tmf-api/schema/Service/Service.schema.json'),
+                            _q("type"): ygdata.Leaf('Service'),
+                            _q("feature"): ygdata.List([_q("id")]),
+                            _q("note"): ygdata.List([_q("id")]),
+                            _q("place"): ygdata.List([_q("id")]),
+                            _q("relatedEntity"): ygdata.List([_q("id")]),
+                            _q("relatedParty"): ygdata.List([_q("id")]),
+                            _q("serviceCharacteristic"): ygdata.List(
                                 [_q("name")], elements=[
-                                    yang.gdata.Container({
-                                        _q("id"): yang.gdata.Leaf('name'),
-                                        _q("name"): yang.gdata.Leaf('name'),
-                                        _q("baseType"): yang.gdata.Leaf('Characteristic'),
-                                        _q("schemaLocation"): yang.gdata.Leaf('/tmf-api/schema/Service/Characteristic.schema.json'),
-                                        _q("type"): yang.gdata.Leaf('Characteristic'),
-                                        _q("characteristicRelationship"): yang.gdata.List([_q("id")])
+                                    ygdata.Container({
+                                        _q("id"): ygdata.Leaf('name'),
+                                        _q("name"): ygdata.Leaf('name'),
+                                        _q("baseType"): ygdata.Leaf('Characteristic'),
+                                        _q("schemaLocation"): ygdata.Leaf('/tmf-api/schema/Service/Characteristic.schema.json'),
+                                        _q("type"): ygdata.Leaf('Characteristic'),
+                                        _q("characteristicRelationship"): ygdata.List([_q("id")])
                                     })
                                 ]),
-                            _q("serviceOrderItem"): yang.gdata.List([_q("id")]),
-                            _q("serviceRelationship"): yang.gdata.List([_q("id")]),
-                            _q("serviceSpecification"): yang.gdata.Container({
-                                _q("id"): yang.gdata.Leaf('/netinfra/router'),
-                                _q("baseType"): yang.gdata.Leaf('ServiceSpecificationRef'),
-                                _q("schemaLocation"): yang.gdata.Leaf('/tmf-api/schema/Service/ServiceSpecificationRef.schema.json'),
-                                _q("type"): yang.gdata.Leaf('ServiceSpecificationRef'),
-                                _q("referredType"): yang.gdata.Leaf('ServiceSpecification')
+                            _q("serviceOrderItem"): ygdata.List([_q("id")]),
+                            _q("serviceRelationship"): ygdata.List([_q("id")]),
+                            _q("serviceSpecification"): ygdata.Container({
+                                _q("id"): ygdata.Leaf('/netinfra/router'),
+                                _q("baseType"): ygdata.Leaf('ServiceSpecificationRef'),
+                                _q("schemaLocation"): ygdata.Leaf('/tmf-api/schema/Service/ServiceSpecificationRef.schema.json'),
+                                _q("type"): ygdata.Leaf('ServiceSpecificationRef'),
+                                _q("referredType"): ygdata.Leaf('ServiceSpecification')
                             }),
-                            _q("supportingResource"): yang.gdata.List([_q("id")]),
-                            _q("supportingService"): yang.gdata.List([_q("id")])
+                            _q("supportingResource"): ygdata.List([_q("id")]),
+                            _q("supportingService"): ygdata.List([_q("id")])
                         })
                     ])
             }, ns=_NS_TMF, module='stratoweave-tmf')
@@ -2861,10 +2861,10 @@ def _test_json_to_gdata_edge_device_access_interface():
         }
     }
 }"""
-    top_schema = yang.compile([tmf.yang.ietf_yang_tmf_map, yang_schema])
+    top_schema = yang.compile([tmf_yang.ietf_yang_tmf_map, yang_schema])
     gd, _ = json_to_gdata(json_data, top_schema)
     services = gd.children[_q("tmf-store")].children[_q("tmf640")].children[_q("service")]
-    if isinstance(services, yang.gdata.List):
+    if isinstance(services, ygdata.List):
         for s in services.elements:
             s.children.pop(_q("serviceDate"))
             s.children.pop(_q("startDate"))
@@ -2956,10 +2956,10 @@ def _test_json_to_gdata_edge_device_access_interface_vlan():
         }
     }
 }"""
-    top_schema = yang.compile([tmf.yang.ietf_yang_tmf_map, yang_schema])
+    top_schema = yang.compile([tmf_yang.ietf_yang_tmf_map, yang_schema])
     gd, _ = json_to_gdata(json_data, top_schema)
     services = gd.children[_q("tmf-store")].children[_q("tmf640")].children[_q("service")]
-    if isinstance(services, yang.gdata.List):
+    if isinstance(services, ygdata.List):
         for s in services.elements:
             s.children.pop(_q("serviceDate"))
             s.children.pop(_q("startDate"))
@@ -2997,153 +2997,153 @@ def _test_get_json_edge_device_access_interface_vlan():
     }
 }"""
     top_schema = yang.compile([yang_schema])
-    layer_config = yang.gdata.Container({
-        yang.gdata.Id("http://example.com/edge", "edge-device"): yang.gdata.List(
-            [yang.gdata.Id("http://example.com/edge", "device-name")],
+    layer_config = ygdata.Container({
+        ygdata.Id("http://example.com/edge", "edge-device"): ygdata.List(
+            [ygdata.Id("http://example.com/edge", "device-name")],
             ns='http://example.com/edge', module='edge', elements=[
-                yang.gdata.Container({
-                    yang.gdata.Id("http://example.com/edge", "device-name"): yang.gdata.Leaf('AM-CORE-1'),
-                    yang.gdata.Id("http://example.com/edge", "access-interface"): yang.gdata.List(
-                        [yang.gdata.Id("http://example.com/edge", "interface-name")],
+                ygdata.Container({
+                    ygdata.Id("http://example.com/edge", "device-name"): ygdata.Leaf('AM-CORE-1'),
+                    ygdata.Id("http://example.com/edge", "access-interface"): ygdata.List(
+                        [ygdata.Id("http://example.com/edge", "interface-name")],
                         ns='http://example.com/edge', module='edge', elements=[
-                            yang.gdata.Container({
-                                yang.gdata.Id("http://example.com/edge", "interface-name"): yang.gdata.Leaf('GigabitEthernet0/1'),
-                                yang.gdata.Id("http://example.com/edge", "speed"): yang.gdata.Leaf(1000),
-                                yang.gdata.Id("http://example.com/edge", "vlan"): yang.gdata.List(
-                                    [yang.gdata.Id("http://example.com/edge", "vlan-id")],
+                            ygdata.Container({
+                                ygdata.Id("http://example.com/edge", "interface-name"): ygdata.Leaf('GigabitEthernet0/1'),
+                                ygdata.Id("http://example.com/edge", "speed"): ygdata.Leaf(1000),
+                                ygdata.Id("http://example.com/edge", "vlan"): ygdata.List(
+                                    [ygdata.Id("http://example.com/edge", "vlan-id")],
                                     ns='http://example.com/edge', module='edge', elements=[
-                                        yang.gdata.Container({
-                                            yang.gdata.Id("http://example.com/edge", "vlan-id"): yang.gdata.Leaf(100)
+                                        ygdata.Container({
+                                            ygdata.Id("http://example.com/edge", "vlan-id"): ygdata.Leaf(100)
                                         })
                                     ])
                             })
                         ])
                 })
             ]),
-        _q("tmf-store"): yang.gdata.Container({
-            _q("tmf640"): yang.gdata.Container({
-                _q("service"): yang.gdata.List(
+        _q("tmf-store"): ygdata.Container({
+            _q("tmf640"): ygdata.Container({
+                _q("service"): ygdata.List(
                     [_q("id")], elements=[
-                        yang.gdata.Container({
-                            _q("id"): yang.gdata.Leaf("/edge-device[device-name='AM-CORE-1']/access-interface[interface-name='GigabitEthernet0/1']/vlan[vlan-id='100']"),
-                            _q("href"): yang.gdata.Leaf("/tmf-api/ServiceActivationAndConfiguration/v4/service/edge-device[device-name='AM-CORE-1']/access-interface[interface-name='GigabitEthernet0/1']/vlan[vlan-id='100']"),
-                            _q("hasStarted"): yang.gdata.Leaf(True),
-                            _q("isBundle"): yang.gdata.Leaf(False),
-                            _q("isServiceEnabled"): yang.gdata.Leaf(True),
-                            _q("isStateful"): yang.gdata.Leaf(False),
-                            _q("name"): yang.gdata.Leaf('100'),
-                            _q("serviceDate"): yang.gdata.Leaf('2024-06-01T12:00:00Z'),
-                            _q("startDate"): yang.gdata.Leaf('2024-06-01T12:00:00Z'),
-                            _q("startMode"): yang.gdata.Leaf('1'),
-                            _q("state"): yang.gdata.Leaf('active'),
-                            _q("baseType"): yang.gdata.Leaf('Service'),
-                            _q("schemaLocation"): yang.gdata.Leaf('/tmf-api/schema/Service/Service.schema.json'),
-                            _q("type"): yang.gdata.Leaf('Service'),
-                            _q("feature"): yang.gdata.List([_q("id")]),
-                            _q("note"): yang.gdata.List([_q("id")]),
-                            _q("place"): yang.gdata.List([_q("id")]),
-                            _q("relatedEntity"): yang.gdata.List([_q("id")]),
-                            _q("relatedParty"): yang.gdata.List([_q("id")]),
-                            _q("serviceCharacteristic"): yang.gdata.List(
+                        ygdata.Container({
+                            _q("id"): ygdata.Leaf("/edge-device[device-name='AM-CORE-1']/access-interface[interface-name='GigabitEthernet0/1']/vlan[vlan-id='100']"),
+                            _q("href"): ygdata.Leaf("/tmf-api/ServiceActivationAndConfiguration/v4/service/edge-device[device-name='AM-CORE-1']/access-interface[interface-name='GigabitEthernet0/1']/vlan[vlan-id='100']"),
+                            _q("hasStarted"): ygdata.Leaf(True),
+                            _q("isBundle"): ygdata.Leaf(False),
+                            _q("isServiceEnabled"): ygdata.Leaf(True),
+                            _q("isStateful"): ygdata.Leaf(False),
+                            _q("name"): ygdata.Leaf('100'),
+                            _q("serviceDate"): ygdata.Leaf('2024-06-01T12:00:00Z'),
+                            _q("startDate"): ygdata.Leaf('2024-06-01T12:00:00Z'),
+                            _q("startMode"): ygdata.Leaf('1'),
+                            _q("state"): ygdata.Leaf('active'),
+                            _q("baseType"): ygdata.Leaf('Service'),
+                            _q("schemaLocation"): ygdata.Leaf('/tmf-api/schema/Service/Service.schema.json'),
+                            _q("type"): ygdata.Leaf('Service'),
+                            _q("feature"): ygdata.List([_q("id")]),
+                            _q("note"): ygdata.List([_q("id")]),
+                            _q("place"): ygdata.List([_q("id")]),
+                            _q("relatedEntity"): ygdata.List([_q("id")]),
+                            _q("relatedParty"): ygdata.List([_q("id")]),
+                            _q("serviceCharacteristic"): ygdata.List(
                                 [_q("name")], elements=[
-                                    yang.gdata.Container({
-                                        _q("id"): yang.gdata.Leaf('vlan-id'),
-                                        _q("name"): yang.gdata.Leaf('vlan-id'),
-                                        _q("baseType"): yang.gdata.Leaf('Characteristic'),
-                                        _q("schemaLocation"): yang.gdata.Leaf('/tmf-api/schema/Service/Characteristic.schema.json'),
-                                        _q("type"): yang.gdata.Leaf('Characteristic'),
-                                        _q("characteristicRelationship"): yang.gdata.List([_q("id")])
+                                    ygdata.Container({
+                                        _q("id"): ygdata.Leaf('vlan-id'),
+                                        _q("name"): ygdata.Leaf('vlan-id'),
+                                        _q("baseType"): ygdata.Leaf('Characteristic'),
+                                        _q("schemaLocation"): ygdata.Leaf('/tmf-api/schema/Service/Characteristic.schema.json'),
+                                        _q("type"): ygdata.Leaf('Characteristic'),
+                                        _q("characteristicRelationship"): ygdata.List([_q("id")])
                                     })
                                 ]),
-                            _q("serviceOrderItem"): yang.gdata.List([_q("id")]),
-                            _q("serviceRelationship"): yang.gdata.List([_q("id")]),
-                            _q("serviceSpecification"): yang.gdata.Container({
-                                _q("id"): yang.gdata.Leaf('/edge-device/access-interface/vlan'),
-                                _q("baseType"): yang.gdata.Leaf('ServiceSpecificationRef'),
-                                _q("schemaLocation"): yang.gdata.Leaf('/tmf-api/schema/Service/ServiceSpecificationRef.schema.json'),
-                                _q("type"): yang.gdata.Leaf('ServiceSpecificationRef'),
-                                _q("referredType"): yang.gdata.Leaf('ServiceSpecification')
+                            _q("serviceOrderItem"): ygdata.List([_q("id")]),
+                            _q("serviceRelationship"): ygdata.List([_q("id")]),
+                            _q("serviceSpecification"): ygdata.Container({
+                                _q("id"): ygdata.Leaf('/edge-device/access-interface/vlan'),
+                                _q("baseType"): ygdata.Leaf('ServiceSpecificationRef'),
+                                _q("schemaLocation"): ygdata.Leaf('/tmf-api/schema/Service/ServiceSpecificationRef.schema.json'),
+                                _q("type"): ygdata.Leaf('ServiceSpecificationRef'),
+                                _q("referredType"): ygdata.Leaf('ServiceSpecification')
                             }),
-                            _q("supportingResource"): yang.gdata.List([_q("id")]),
-                            _q("supportingService"): yang.gdata.List(
+                            _q("supportingResource"): ygdata.List([_q("id")]),
+                            _q("supportingService"): ygdata.List(
                                 [_q("id")], elements=[
-                                    yang.gdata.Container({
-                                        _q("id"): yang.gdata.Leaf("/edge-device[device-name='AM-CORE-1']/access-interface[interface-name='GigabitEthernet0/1']"),
-                                        _q("href"): yang.gdata.Leaf("/tmf-api/ServiceActivationAndConfiguration/v4/service/edge-device[device-name='AM-CORE-1']/access-interface[interface-name='GigabitEthernet0/1']"),
-                                        _q("name"): yang.gdata.Leaf('GigabitEthernet0/1'),
-                                        _q("baseType"): yang.gdata.Leaf('ServiceRefOrValue'),
-                                        _q("schemaLocation"): yang.gdata.Leaf('/tmf-api/schema/Service/ServiceRefOrValue.schema.json'),
-                                        _q("type"): yang.gdata.Leaf('ServiceRefOrValue'),
-                                        _q("serviceSpecification"): yang.gdata.Container({
-                                            _q("id"): yang.gdata.Leaf('/edge-device/access-interface'),
-                                            _q("baseType"): yang.gdata.Leaf('ServiceSpecificationRef'),
-                                            _q("schemaLocation"): yang.gdata.Leaf('/tmf-api/schema/Service/ServiceSpecificationRef.schema.json'),
-                                            _q("type"): yang.gdata.Leaf('ServiceSpecificationRef'),
-                                            _q("referredType"): yang.gdata.Leaf('ServiceSpecification')
+                                    ygdata.Container({
+                                        _q("id"): ygdata.Leaf("/edge-device[device-name='AM-CORE-1']/access-interface[interface-name='GigabitEthernet0/1']"),
+                                        _q("href"): ygdata.Leaf("/tmf-api/ServiceActivationAndConfiguration/v4/service/edge-device[device-name='AM-CORE-1']/access-interface[interface-name='GigabitEthernet0/1']"),
+                                        _q("name"): ygdata.Leaf('GigabitEthernet0/1'),
+                                        _q("baseType"): ygdata.Leaf('ServiceRefOrValue'),
+                                        _q("schemaLocation"): ygdata.Leaf('/tmf-api/schema/Service/ServiceRefOrValue.schema.json'),
+                                        _q("type"): ygdata.Leaf('ServiceRefOrValue'),
+                                        _q("serviceSpecification"): ygdata.Container({
+                                            _q("id"): ygdata.Leaf('/edge-device/access-interface'),
+                                            _q("baseType"): ygdata.Leaf('ServiceSpecificationRef'),
+                                            _q("schemaLocation"): ygdata.Leaf('/tmf-api/schema/Service/ServiceSpecificationRef.schema.json'),
+                                            _q("type"): ygdata.Leaf('ServiceSpecificationRef'),
+                                            _q("referredType"): ygdata.Leaf('ServiceSpecification')
                                         }),
-                                        _q("feature"): yang.gdata.List([_q("id")]),
-                                        _q("note"): yang.gdata.List([_q("id")]),
-                                        _q("place"): yang.gdata.List([_q("id")]),
-                                        _q("relatedEntity"): yang.gdata.List([_q("id")]),
-                                        _q("relatedParty"): yang.gdata.List([_q("id")]),
-                                        _q("serviceCharacteristic"): yang.gdata.List(
+                                        _q("feature"): ygdata.List([_q("id")]),
+                                        _q("note"): ygdata.List([_q("id")]),
+                                        _q("place"): ygdata.List([_q("id")]),
+                                        _q("relatedEntity"): ygdata.List([_q("id")]),
+                                        _q("relatedParty"): ygdata.List([_q("id")]),
+                                        _q("serviceCharacteristic"): ygdata.List(
                                             [_q("name")], elements=[
-                                                yang.gdata.Container({
-                                                    _q("id"): yang.gdata.Leaf('interface-name'),
-                                                    _q("name"): yang.gdata.Leaf('interface-name'),
-                                                    _q("baseType"): yang.gdata.Leaf('Characteristic'),
-                                                    _q("schemaLocation"): yang.gdata.Leaf('/tmf-api/schema/Service/Characteristic.schema.json'),
-                                                    _q("type"): yang.gdata.Leaf('Characteristic'),
-                                                    _q("characteristicRelationship"): yang.gdata.List([_q("id")])
+                                                ygdata.Container({
+                                                    _q("id"): ygdata.Leaf('interface-name'),
+                                                    _q("name"): ygdata.Leaf('interface-name'),
+                                                    _q("baseType"): ygdata.Leaf('Characteristic'),
+                                                    _q("schemaLocation"): ygdata.Leaf('/tmf-api/schema/Service/Characteristic.schema.json'),
+                                                    _q("type"): ygdata.Leaf('Characteristic'),
+                                                    _q("characteristicRelationship"): ygdata.List([_q("id")])
                                                 }),
-                                                yang.gdata.Container({
-                                                    _q("id"): yang.gdata.Leaf('speed'),
-                                                    _q("name"): yang.gdata.Leaf('speed'),
-                                                    _q("baseType"): yang.gdata.Leaf('Characteristic'),
-                                                    _q("schemaLocation"): yang.gdata.Leaf('/tmf-api/schema/Service/Characteristic.schema.json'),
-                                                    _q("type"): yang.gdata.Leaf('Characteristic'),
-                                                    _q("characteristicRelationship"): yang.gdata.List([_q("id")])
+                                                ygdata.Container({
+                                                    _q("id"): ygdata.Leaf('speed'),
+                                                    _q("name"): ygdata.Leaf('speed'),
+                                                    _q("baseType"): ygdata.Leaf('Characteristic'),
+                                                    _q("schemaLocation"): ygdata.Leaf('/tmf-api/schema/Service/Characteristic.schema.json'),
+                                                    _q("type"): ygdata.Leaf('Characteristic'),
+                                                    _q("characteristicRelationship"): ygdata.List([_q("id")])
                                                 })
                                             ]),
-                                        _q("serviceOrderItem"): yang.gdata.List([_q("itemId")]),
-                                        _q("serviceRelationship"): yang.gdata.List([_q("id")]),
-                                        _q("supportingResource"): yang.gdata.List([_q("id")]),
-                                        _q("supportingService"): yang.gdata.List(
+                                        _q("serviceOrderItem"): ygdata.List([_q("itemId")]),
+                                        _q("serviceRelationship"): ygdata.List([_q("id")]),
+                                        _q("supportingResource"): ygdata.List([_q("id")]),
+                                        _q("supportingService"): ygdata.List(
                                             [_q("id")], elements=[
-                                                yang.gdata.Container({
-                                                    _q("id"): yang.gdata.Leaf("/edge-device[device-name='AM-CORE-1']"),
-                                                    _q("href"): yang.gdata.Leaf("/tmf-api/ServiceActivationAndConfiguration/v4/service/edge-device[device-name='AM-CORE-1']"),
-                                                    _q("name"): yang.gdata.Leaf('AM-CORE-1'),
-                                                    _q("baseType"): yang.gdata.Leaf('ServiceRefOrValue'),
-                                                    _q("schemaLocation"): yang.gdata.Leaf('/tmf-api/schema/Service/ServiceRefOrValue.schema.json'),
-                                                    _q("type"): yang.gdata.Leaf('ServiceRefOrValue'),
-                                                    _q("serviceSpecification"): yang.gdata.Container({
-                                                        _q("id"): yang.gdata.Leaf('/edge-device'),
-                                                        _q("baseType"): yang.gdata.Leaf('ServiceSpecificationRef'),
-                                                        _q("schemaLocation"): yang.gdata.Leaf('/tmf-api/schema/Service/ServiceSpecificationRef.schema.json'),
-                                                        _q("type"): yang.gdata.Leaf('ServiceSpecificationRef'),
-                                                        _q("referredType"): yang.gdata.Leaf('ServiceSpecification')
+                                                ygdata.Container({
+                                                    _q("id"): ygdata.Leaf("/edge-device[device-name='AM-CORE-1']"),
+                                                    _q("href"): ygdata.Leaf("/tmf-api/ServiceActivationAndConfiguration/v4/service/edge-device[device-name='AM-CORE-1']"),
+                                                    _q("name"): ygdata.Leaf('AM-CORE-1'),
+                                                    _q("baseType"): ygdata.Leaf('ServiceRefOrValue'),
+                                                    _q("schemaLocation"): ygdata.Leaf('/tmf-api/schema/Service/ServiceRefOrValue.schema.json'),
+                                                    _q("type"): ygdata.Leaf('ServiceRefOrValue'),
+                                                    _q("serviceSpecification"): ygdata.Container({
+                                                        _q("id"): ygdata.Leaf('/edge-device'),
+                                                        _q("baseType"): ygdata.Leaf('ServiceSpecificationRef'),
+                                                        _q("schemaLocation"): ygdata.Leaf('/tmf-api/schema/Service/ServiceSpecificationRef.schema.json'),
+                                                        _q("type"): ygdata.Leaf('ServiceSpecificationRef'),
+                                                        _q("referredType"): ygdata.Leaf('ServiceSpecification')
                                                     }),
-                                                    _q("feature"): yang.gdata.List([_q("id")]),
-                                                    _q("note"): yang.gdata.List([_q("id")]),
-                                                    _q("place"): yang.gdata.List([_q("id")]),
-                                                    _q("relatedEntity"): yang.gdata.List([_q("id")]),
-                                                    _q("relatedParty"): yang.gdata.List([_q("id")]),
-                                                    _q("serviceCharacteristic"): yang.gdata.List(
+                                                    _q("feature"): ygdata.List([_q("id")]),
+                                                    _q("note"): ygdata.List([_q("id")]),
+                                                    _q("place"): ygdata.List([_q("id")]),
+                                                    _q("relatedEntity"): ygdata.List([_q("id")]),
+                                                    _q("relatedParty"): ygdata.List([_q("id")]),
+                                                    _q("serviceCharacteristic"): ygdata.List(
                                                         [_q("name")], elements=[
-                                                            yang.gdata.Container({
-                                                                _q("id"): yang.gdata.Leaf('device-name'),
-                                                                _q("name"): yang.gdata.Leaf('device-name'),
-                                                                _q("baseType"): yang.gdata.Leaf('Characteristic'),
-                                                                _q("schemaLocation"): yang.gdata.Leaf('/tmf-api/schema/Service/Characteristic.schema.json'),
-                                                                _q("type"): yang.gdata.Leaf('Characteristic'),
-                                                                _q("characteristicRelationship"): yang.gdata.List([_q("id")])
+                                                            ygdata.Container({
+                                                                _q("id"): ygdata.Leaf('device-name'),
+                                                                _q("name"): ygdata.Leaf('device-name'),
+                                                                _q("baseType"): ygdata.Leaf('Characteristic'),
+                                                                _q("schemaLocation"): ygdata.Leaf('/tmf-api/schema/Service/Characteristic.schema.json'),
+                                                                _q("type"): ygdata.Leaf('Characteristic'),
+                                                                _q("characteristicRelationship"): ygdata.List([_q("id")])
                                                             })
                                                         ]),
-                                                    _q("serviceOrderItem"): yang.gdata.List([_q("itemId")]),
-                                                    _q("serviceRelationship"): yang.gdata.List([_q("id")]),
-                                                    _q("supportingResource"): yang.gdata.List([_q("id")]),
-                                                    _q("supportingService"): yang.gdata.List([_q("id")])
+                                                    _q("serviceOrderItem"): ygdata.List([_q("itemId")]),
+                                                    _q("serviceRelationship"): ygdata.List([_q("id")]),
+                                                    _q("supportingResource"): ygdata.List([_q("id")]),
+                                                    _q("supportingService"): ygdata.List([_q("id")])
                                                 })
                                             ])
                                     })
@@ -3198,10 +3198,10 @@ def _test_json_to_gdata_compound_router_key():
     }
 }
     """
-    top_schema = yang.compile([tmf.yang.ietf_yang_tmf_map, yang_schema])
+    top_schema = yang.compile([tmf_yang.ietf_yang_tmf_map, yang_schema])
     gd, _ = json_to_gdata(json_data, top_schema)
     services = gd.children[_q("tmf-store")].children[_q("tmf640")].children[_q("service")]
-    if isinstance(services, yang.gdata.List):
+    if isinstance(services, ygdata.List):
         for s in services.elements:
             s.children.pop(_q("serviceDate"))
             s.children.pop(_q("startDate"))
@@ -3298,10 +3298,10 @@ def _test_json_to_gdata_netinfra_router_nested_features():
     }
 }
     """
-    top_schema = yang.compile([tmf.yang.ietf_yang_tmf_map, yang_schema])
+    top_schema = yang.compile([tmf_yang.ietf_yang_tmf_map, yang_schema])
     gd, _ = json_to_gdata(json_data, top_schema)
     services = gd.children[_q("tmf-store")].children[_q("tmf640")].children[_q("service")]
-    if isinstance(services, yang.gdata.List):
+    if isinstance(services, ygdata.List):
         for s in services.elements:
             s.children.pop(_q("serviceDate"))
             s.children.pop(_q("startDate"))
@@ -3400,7 +3400,7 @@ def _test_get_json_netinfra_router_nested_features():
     }
 }
     """
-    top_schema = yang.compile([tmf.yang.ietf_yang_tmf_map, yang_schema])
+    top_schema = yang.compile([tmf_yang.ietf_yang_tmf_map, yang_schema])
     layer_config, service_id = json_to_gdata(json_data, top_schema)
     data = get_service_json(layer_config, top_schema, service_id)
     if data is not None:
@@ -3471,7 +3471,7 @@ def _test_get_json_netinfra_router_feature_identityref():
     }
 }
     """
-    top_schema = yang.compile([tmf.yang.ietf_yang_tmf_map, yang_schema])
+    top_schema = yang.compile([tmf_yang.ietf_yang_tmf_map, yang_schema])
     layer_config, service_id = json_to_gdata(json_data, top_schema)
     data = get_service_json(layer_config, top_schema, service_id)
     if data is not None:
@@ -3552,7 +3552,7 @@ def _test_get_json_netinfra_router_list_feature_identityref_key():
     }
 }
     """
-    top_schema = yang.compile([tmf.yang.ietf_yang_tmf_map, yang_schema])
+    top_schema = yang.compile([tmf_yang.ietf_yang_tmf_map, yang_schema])
     layer_config, service_id = json_to_gdata(json_data, top_schema)
     data = get_service_json(layer_config, top_schema, service_id)
     if data is not None:
@@ -3675,7 +3675,7 @@ def _test_get_json_netinfra_router_list_feature_unqualified_identityref_key():
     }
 }
     """
-    top_schema = yang.compile([tmf.yang.ietf_yang_tmf_map, yang_schema])
+    top_schema = yang.compile([tmf_yang.ietf_yang_tmf_map, yang_schema])
     layer_config, service_id = json_to_gdata(json_data, top_schema)
     data = get_service_json(layer_config, top_schema, service_id)
     if data is not None:
@@ -3703,74 +3703,74 @@ def _test_get_json_compound_router_key():
     """
     top_schema = yang.compile([yang_schema])
     service_id = "/netinfra/router[region='eu-west'][name='ams-core-1']"
-    layer_config = yang.gdata.Container({
-        yang.gdata.Id("http://example.com/netinfra", "netinfra"): yang.gdata.Container({
-            yang.gdata.Id("http://example.com/netinfra", "router"): yang.gdata.List(
+    layer_config = ygdata.Container({
+        ygdata.Id("http://example.com/netinfra", "netinfra"): ygdata.Container({
+            ygdata.Id("http://example.com/netinfra", "router"): ygdata.List(
                 [
-                    yang.gdata.Id("http://example.com/netinfra", "region"),
-                    yang.gdata.Id("http://example.com/netinfra", "name")
+                    ygdata.Id("http://example.com/netinfra", "region"),
+                    ygdata.Id("http://example.com/netinfra", "name")
                 ],
                 ns='http://example.com/netinfra', module='netinfra', elements=[
-                    yang.gdata.Container({
-                        yang.gdata.Id("http://example.com/netinfra", "region"): yang.gdata.Leaf('eu-west'),
-                        yang.gdata.Id("http://example.com/netinfra", "name"): yang.gdata.Leaf('ams-core-1')
+                    ygdata.Container({
+                        ygdata.Id("http://example.com/netinfra", "region"): ygdata.Leaf('eu-west'),
+                        ygdata.Id("http://example.com/netinfra", "name"): ygdata.Leaf('ams-core-1')
                     })
                 ])
         }, ns='http://example.com/netinfra', module='netinfra'),
-        _q("tmf-store"): yang.gdata.Container({
-            _q("tmf640"): yang.gdata.Container({
-                _q("service"): yang.gdata.List(
+        _q("tmf-store"): ygdata.Container({
+            _q("tmf640"): ygdata.Container({
+                _q("service"): ygdata.List(
                     [_q("id")], elements=[
-                        yang.gdata.Container({
-                            _q("id"): yang.gdata.Leaf(service_id),
-                            _q("href"): yang.gdata.Leaf("/tmf-api/ServiceActivationAndConfiguration/v4/service{service_id}"),
-                            _q("hasStarted"): yang.gdata.Leaf(True),
-                            _q("isBundle"): yang.gdata.Leaf(False),
-                            _q("isServiceEnabled"): yang.gdata.Leaf(True),
-                            _q("isStateful"): yang.gdata.Leaf(False),
-                            _q("name"): yang.gdata.Leaf('eu-west'),
-                            _q("serviceDate"): yang.gdata.Leaf('2024-06-01T12:00:00Z'),
-                            _q("startDate"): yang.gdata.Leaf('2024-06-01T12:00:00Z'),
-                            _q("startMode"): yang.gdata.Leaf('1'),
-                            _q("state"): yang.gdata.Leaf('active'),
-                            _q("baseType"): yang.gdata.Leaf('Service'),
-                            _q("schemaLocation"): yang.gdata.Leaf('/tmf-api/schema/Service/Service.schema.json'),
-                            _q("type"): yang.gdata.Leaf('Service'),
-                            _q("feature"): yang.gdata.List([_q("id")]),
-                            _q("note"): yang.gdata.List([_q("id")]),
-                            _q("place"): yang.gdata.List([_q("id")]),
-                            _q("relatedEntity"): yang.gdata.List([_q("id")]),
-                            _q("relatedParty"): yang.gdata.List([_q("id")]),
-                            _q("serviceCharacteristic"): yang.gdata.List(
+                        ygdata.Container({
+                            _q("id"): ygdata.Leaf(service_id),
+                            _q("href"): ygdata.Leaf("/tmf-api/ServiceActivationAndConfiguration/v4/service{service_id}"),
+                            _q("hasStarted"): ygdata.Leaf(True),
+                            _q("isBundle"): ygdata.Leaf(False),
+                            _q("isServiceEnabled"): ygdata.Leaf(True),
+                            _q("isStateful"): ygdata.Leaf(False),
+                            _q("name"): ygdata.Leaf('eu-west'),
+                            _q("serviceDate"): ygdata.Leaf('2024-06-01T12:00:00Z'),
+                            _q("startDate"): ygdata.Leaf('2024-06-01T12:00:00Z'),
+                            _q("startMode"): ygdata.Leaf('1'),
+                            _q("state"): ygdata.Leaf('active'),
+                            _q("baseType"): ygdata.Leaf('Service'),
+                            _q("schemaLocation"): ygdata.Leaf('/tmf-api/schema/Service/Service.schema.json'),
+                            _q("type"): ygdata.Leaf('Service'),
+                            _q("feature"): ygdata.List([_q("id")]),
+                            _q("note"): ygdata.List([_q("id")]),
+                            _q("place"): ygdata.List([_q("id")]),
+                            _q("relatedEntity"): ygdata.List([_q("id")]),
+                            _q("relatedParty"): ygdata.List([_q("id")]),
+                            _q("serviceCharacteristic"): ygdata.List(
                                 [_q("name")], elements=[
-                                    yang.gdata.Container({
-                                        _q("id"): yang.gdata.Leaf('region'),
-                                        _q("name"): yang.gdata.Leaf('region'),
-                                        _q("baseType"): yang.gdata.Leaf('Characteristic'),
-                                        _q("schemaLocation"): yang.gdata.Leaf('/tmf-api/schema/Service/Characteristic.schema.json'),
-                                        _q("type"): yang.gdata.Leaf('Characteristic'),
-                                        _q("characteristicRelationship"): yang.gdata.List([_q("id")])
+                                    ygdata.Container({
+                                        _q("id"): ygdata.Leaf('region'),
+                                        _q("name"): ygdata.Leaf('region'),
+                                        _q("baseType"): ygdata.Leaf('Characteristic'),
+                                        _q("schemaLocation"): ygdata.Leaf('/tmf-api/schema/Service/Characteristic.schema.json'),
+                                        _q("type"): ygdata.Leaf('Characteristic'),
+                                        _q("characteristicRelationship"): ygdata.List([_q("id")])
                                     }),
-                                    yang.gdata.Container({
-                                        _q("id"): yang.gdata.Leaf('name'),
-                                        _q("name"): yang.gdata.Leaf('name'),
-                                        _q("baseType"): yang.gdata.Leaf('Characteristic'),
-                                        _q("schemaLocation"): yang.gdata.Leaf('/tmf-api/schema/Service/Characteristic.schema.json'),
-                                        _q("type"): yang.gdata.Leaf('Characteristic'),
-                                        _q("characteristicRelationship"): yang.gdata.List([_q("id")])
+                                    ygdata.Container({
+                                        _q("id"): ygdata.Leaf('name'),
+                                        _q("name"): ygdata.Leaf('name'),
+                                        _q("baseType"): ygdata.Leaf('Characteristic'),
+                                        _q("schemaLocation"): ygdata.Leaf('/tmf-api/schema/Service/Characteristic.schema.json'),
+                                        _q("type"): ygdata.Leaf('Characteristic'),
+                                        _q("characteristicRelationship"): ygdata.List([_q("id")])
                                     })
                                 ]),
-                            _q("serviceOrderItem"): yang.gdata.List([_q("id")]),
-                            _q("serviceRelationship"): yang.gdata.List([_q("id")]),
-                            _q("serviceSpecification"): yang.gdata.Container({
-                                _q("id"): yang.gdata.Leaf('/netinfra/router'),
-                                _q("baseType"): yang.gdata.Leaf('ServiceSpecificationRef'),
-                                _q("schemaLocation"): yang.gdata.Leaf('/tmf-api/schema/Service/ServiceSpecificationRef.schema.json'),
-                                _q("type"): yang.gdata.Leaf('ServiceSpecificationRef'),
-                                _q("referredType"): yang.gdata.Leaf('ServiceSpecification')
+                            _q("serviceOrderItem"): ygdata.List([_q("id")]),
+                            _q("serviceRelationship"): ygdata.List([_q("id")]),
+                            _q("serviceSpecification"): ygdata.Container({
+                                _q("id"): ygdata.Leaf('/netinfra/router'),
+                                _q("baseType"): ygdata.Leaf('ServiceSpecificationRef'),
+                                _q("schemaLocation"): ygdata.Leaf('/tmf-api/schema/Service/ServiceSpecificationRef.schema.json'),
+                                _q("type"): ygdata.Leaf('ServiceSpecificationRef'),
+                                _q("referredType"): ygdata.Leaf('ServiceSpecification')
                             }),
-                            _q("supportingResource"): yang.gdata.List([_q("id")]),
-                            _q("supportingService"): yang.gdata.List([_q("id")])
+                            _q("supportingResource"): ygdata.List([_q("id")]),
+                            _q("supportingService"): ygdata.List([_q("id")])
                         })
                     ])
             }, ns=_NS_TMF, module='stratoweave-tmf')

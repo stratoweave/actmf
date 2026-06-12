@@ -1,5 +1,5 @@
-name = "actmf"
-fingerprint = 0x6c99e006e616c7be
+name = "tmf"
+fingerprint = 0xd83bc819e616c7be
 dependencies = {
     "yang": (
         repo_url="https://github.com/stratoweave/acton-yang.git",

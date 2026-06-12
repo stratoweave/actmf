@@ -1,6 +1,6 @@
-import yang.gdata
+import yang.gdata as ygdata
 from yang.identityref import Identityref, PartialIdentityref
-import yang.schema
+import yang.schema as yschema
 
 _TMF_YANG_MAP_NS = "urn:ietf:params:xml:ns:yang:ietf-yang-tmf-map"
 
@@ -23,19 +23,19 @@ def split_service_specification_id(service_specification_id: str) -> list[str]:
         return []
     return service_specification_id[1:].split("/")
 
-def is_tmf_cfs_service(node: yang.schema.DNode) -> bool:
-    if isinstance(node, yang.schema.DNodeInner):
+def is_tmf_cfs_service(node: yschema.DNode) -> bool:
+    if isinstance(node, yschema.DNodeInner):
         for ext in node.exts:
             if ext.namespace == _TMF_YANG_MAP_NS and ext.name == "cfs-service":
                 return True
     return False
 
-def services_from_schema(top_schema: yang.schema.DRoot) -> dict[str, (name: str, description: str)]:
+def services_from_schema(top_schema: yschema.DRoot) -> dict[str, (name: str, description: str)]:
     """Extract TMF CFS services from compiled schema by walking the tree and finding tmf:cfs-service extensions."""
     result: dict[str, (name: str, description: str)] = {}
     
-    def _walk_schema(node: yang.schema.DNode, path: list[str]) -> None:
-        if isinstance(node, yang.schema.DNodeInner):
+    def _walk_schema(node: yschema.DNode, path: list[str]) -> None:
+        if isinstance(node, yschema.DNodeInner):
             # Check for cfs-service extension
             if is_tmf_cfs_service(node):
                 for ext in node.exts:
@@ -48,7 +48,7 @@ def services_from_schema(top_schema: yang.schema.DRoot) -> dict[str, (name: str,
                             result[path_key] = (name=ext_arg, description=desc)
             
             for child in node.children:
-                if not isinstance(child, yang.schema.DLeaf):
+                if not isinstance(child, yschema.DLeaf):
                     child_path = path + [child.name]
                     _walk_schema(child, child_path)
     
@@ -83,7 +83,7 @@ def gdata_type_to_tmf_type(v: value) -> str:
         return "integer"
     elif isinstance(v, float):
         return "number"
-    elif isinstance(v, yang.gdata.LeafListEntry):
+    elif isinstance(v, ygdata.LeafListEntry):
         return gdata_type_to_tmf_type(v.val)
     elif isinstance (v, list):
         return gdata_type_to_tmf_type(v[0])

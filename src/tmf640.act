@@ -218,7 +218,7 @@ class FeatureYangData(object):
 
 extension FeatureYangData (ydata.YangData):
     def take_container(self, schema: yschema.DContainer, name: str, ns_qualified: bool, path: list[ydata.PathElement]=[]) -> ?(op: ?str, val: ?value):
-        feature = self._get_direct_feature(name)
+        feature = self._get_direct_feature(schema.name)
         if feature is not None:
             feature_id = feature.id
             if feature_id is not None:
@@ -226,7 +226,7 @@ extension FeatureYangData (ydata.YangData):
         return None
 
     def take_list(self, schema: yschema.DList, name: str, ns_qualified: bool, path: list[ydata.PathElement]=[]) -> list[(op: ?str, key: dict[str, value], val: value)]:
-        direct_features = self._get_direct_list_features(name)
+        direct_features = self._get_direct_list_features(schema.name)
         list_entries: list[(op: ?str, key: dict[str, value], val: value)] = []
         for entry in direct_features:
             feature_id = entry.feature.id
@@ -237,7 +237,7 @@ extension FeatureYangData (ydata.YangData):
     def take_leaf(self, root: yschema.DRoot, schema: yschema.DLeaf, name: str, ns_qualified: bool, path: list[ydata.PathElement]=[]) -> ?(op: ?str, t: str, val: ?value):
         for entry in self.characteristics:
             leaf_value = entry.value
-            if entry.name == name and leaf_value is not None:
+            if entry.name == schema.name and leaf_value is not None:
                 new_path = path + [ydata.PathElement(schema)]
                 if cfs.json_type_and_yang_type_match(entry.valueType, schema.type_.builtin_type):
                     tv = yjson.try_parse_json_value(leaf_value, schema, schema.type_, new_path, root)
@@ -250,7 +250,7 @@ extension FeatureYangData (ydata.YangData):
         for entry in self.characteristics:
             leaflist_data = entry.value
             entry_value_type = entry.valueType
-            if entry.name == name and leaflist_data is not None and entry_value_type is not None:
+            if entry.name == schema.name and leaflist_data is not None and entry_value_type is not None:
                 if cfs.json_type_and_yang_type_match(entry_value_type[:-5] if entry_value_type.endswith("Array") else entry_value_type, schema.type_.builtin_type):
                     if isinstance(leaflist_data, list):
                         new_path = path + [ydata.PathElement(schema)]

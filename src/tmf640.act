@@ -522,13 +522,13 @@ def _add_leaf_properties_to_characteristics(gd: ygdata.Node, characteristics: li
             if isinstance(v, ygdata.Leaf):
                 for chr in characteristics:
                     if chr.name == k.name:
-                        chr.valueType = cfs.gdata_type_to_tmf_type(v.val)
+                        chr.valueType = cfs.gdata_type_to_tmf_type(v)
                         chr.value = _json_safe_value(v.val)
                         break
             elif isinstance(v, ygdata.LeafList):
                 for chr in characteristics:
                     if chr.name == k.name:
-                        chr.valueType = "{cfs.gdata_type_to_tmf_type(v.entries)}Array"
+                        chr.valueType = cfs.gdata_type_to_tmf_type(v)
                         chr.value = [_json_safe_value(e.val) for e in v.entries]
                         break
 

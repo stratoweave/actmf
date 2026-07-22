@@ -1,3 +1,5 @@
+import testing
+
 import yang.gdata as ygdata
 from yang.identityref import Identityref, PartialIdentityref
 import yang.schema as yschema
@@ -68,7 +70,7 @@ def yang_type_to_tmf_type(yt: str) -> str:
         return "number"
     raise ValueError("Unsupported YANG type: %s" % yt)
 
-def gdata_type_to_tmf_type(v: value) -> str:
+def _leaf_value_tmf_type(v: value) -> str:
     if isinstance(v, bool):
         return "boolean"
     elif isinstance(v, str):
@@ -83,11 +85,18 @@ def gdata_type_to_tmf_type(v: value) -> str:
         return "integer"
     elif isinstance(v, float):
         return "number"
-    elif isinstance(v, ygdata.LeafListEntry):
-        return gdata_type_to_tmf_type(v.val)
-    elif isinstance (v, list):
-        return gdata_type_to_tmf_type(v[0])
-    raise ValueError("Unsupported GDATA type: {type(v)}")
+    elif isinstance(v, list):
+        return "string"
+    raise ValueError("Unsupported gdata leaf value: {type(v)}")
+
+def gdata_type_to_tmf_type(node: ygdata.Node) -> str:
+    if isinstance(node, ygdata.Leaf):
+        return _leaf_value_tmf_type(node.val)
+    elif isinstance(node, ygdata.LeafList):
+        entries = node.entries
+        elem = _leaf_value_tmf_type(entries[0].val) if len(entries) > 0 else "string"
+        return "{elem}Array"
+    raise ValueError("Unsupported gdata node for TMF type: {type(node)}")
 
 def json_type_and_yang_type_match(jt: ?str, yt: ?str) -> bool:
     if jt == "boolean" and yt in ["boolean", "empty"]:
@@ -99,3 +108,23 @@ def json_type_and_yang_type_match(jt: ?str, yt: ?str) -> bool:
     elif jt == "number" and yt == "decimal64":
         return True
     return False
+
+def _test_gdata_type_to_tmf_type():
+    # A single leaf maps to its scalar TMF type.
+    testing.assertEqual("boolean", gdata_type_to_tmf_type(ygdata.Leaf(True)), "bool leaf -> boolean")
+    testing.assertEqual("string", gdata_type_to_tmf_type(ygdata.Leaf("x")), "str leaf -> string")
+    testing.assertEqual("integer", gdata_type_to_tmf_type(ygdata.Leaf(5)), "int leaf -> integer")
+    testing.assertEqual("number", gdata_type_to_tmf_type(ygdata.Leaf(5.5)), "float leaf -> number")
+
+    # A YANG bits leaf value is a list[str] of canonical bit names. Only a Leaf
+    # holds a list value, so it is unambiguously bits and maps to TMF "string".
+    bits = ["a", "c"]
+    testing.assertEqual("string", gdata_type_to_tmf_type(ygdata.Leaf(bits)), "bits leaf -> string")
+
+    # A leaf-list maps to the "<elem>Array" form, typed from its entries.
+    entries: list[ygdata.LeafListEntry] = [ygdata.LeafListEntryMerge(5), ygdata.LeafListEntryMerge(7)]
+    testing.assertEqual("integerArray", gdata_type_to_tmf_type(ygdata.LeafList(entries)), "int leaf-list -> integerArray")
+
+    # An empty leaf-list must not crash while indexing its first entry.
+    no_entries: list[ygdata.LeafListEntry] = []
+    testing.assertEqual("stringArray", gdata_type_to_tmf_type(ygdata.LeafList(no_entries)), "empty leaf-list -> stringArray (no crash)")

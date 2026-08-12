@@ -212,7 +212,7 @@ def _get_feature_spec_characteristic(parent_schema: yschema.DNodeInner, child: y
     is_key = _schema_is_key(parent_schema, child)
     is_unique = _schema_is_unique(parent_schema, child)
     if isinstance(child, yschema.DLeaf):
-        child_type = child.type_
+        child_type = child.type
         return FeatureSpecificationCharacteristic(
             id=child.name,
             configurable=True,
@@ -236,7 +236,7 @@ def _get_feature_spec_characteristic(parent_schema: yschema.DNodeInner, child: y
             valueSchemaLocation=None
         )
     if isinstance(child, yschema.DLeafList):
-        child_type = child.type_
+        child_type = child.type
         max_cardinality = child.max_elements
         min_cardinality = child.min_elements if child.min_elements is not None else (1 if is_key else 0)
         return FeatureSpecificationCharacteristic(
@@ -391,7 +391,7 @@ def _build_service_specifications(top_schema: yschema.DRoot, sspec_id: ?str = No
 
         for child in schema.children:
             if isinstance(child, yschema.DLeaf):
-                child_type = child.type_
+                child_type = child.type
                 is_key = _schema_is_key(schema, child)
                 is_unique = _schema_is_unique(schema, child)
                 spec_characteristic = CharacteristicSpecification(
@@ -449,7 +449,7 @@ def _build_service_specifications(top_schema: yschema.DRoot, sspec_id: ?str = No
                     )
                 sspec.specCharacteristic.append(spec_characteristic)
             elif isinstance(child, yschema.DLeafList):
-                child_type = child.type_
+                child_type = child.type
                 is_key = _schema_is_key(schema, child)
                 is_unique = _schema_is_unique(schema, child)
                 spec_characteristic = CharacteristicSpecification(

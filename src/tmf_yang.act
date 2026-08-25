@@ -386,7 +386,6 @@ swtmf640 = r"""module stratoweave-tmf640 {
     list featureCharacteristic {
         key "id";
         uses Characteristic;
-        min-elements 1;
         description
          "This is a list of Characteristics for a particular
           feature.";

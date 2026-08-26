@@ -315,9 +315,11 @@ def _get_service_json(layer_config: ygdata.Node, top_schema: yschema.DRoot, serv
             if isinstance(config, ygdata.List):
                 if multiple:
                     for element in config.elements:
-                        add_leaf_properties_to_service_characteristics(element, service)
-                        _normalize_service_hrefs(service)
-                        services_json.append(service.to_json())
+                        if _list_entry_matches_xpath_keys(element, config.keys, last_parsed.key_values):
+                            add_leaf_properties_to_service_characteristics(element, service)
+                            _normalize_service_hrefs(service)
+                            services_json.append(service.to_json())
+                            break
                 else:
                     for element in config.elements:
                         if _list_entry_matches_xpath_keys(element, config.keys, last_parsed.key_values):
@@ -2741,6 +2743,9 @@ def _test_get_json_netinfra_router():
                 ns='http://example.com/netinfra', module='netinfra', elements=[
                     ygdata.Container({
                         ygdata.Id("http://example.com/netinfra", "name"): ygdata.Leaf('ams-core-1')
+                    }),
+                    ygdata.Container({
+                        ygdata.Id("http://example.com/netinfra", "name"): ygdata.Leaf('fra-core-1')
                     })
                 ])
         }, ns='http://example.com/netinfra', module='netinfra'),

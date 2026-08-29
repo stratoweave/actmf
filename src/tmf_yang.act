@@ -135,17 +135,6 @@ swtmf640 = r"""module stratoweave-tmf640 {
       type inet:uri;
       description "Hyperlink reference";
     }
-    leaf baseType {
-      type string;
-      description
-       "When sub-classing, this defines the super-class";
-    }
-    leaf schemaLocation {
-      type inet:uri;
-      description
-       "A URI to a JSON-Schema file that defines additional
-        attributes and relationships";
-    }
     leaf type {
       type string;
       description
@@ -174,17 +163,6 @@ swtmf640 = r"""module stratoweave-tmf640 {
       key "id";
       uses CharacteristicRelationship;
     }
-    leaf baseType {
-      type string;
-      description
-       "When sub-classing, this defines the super-class";
-    }
-    leaf schemaLocation {
-      type inet:uri;
-      description
-       "A URI to a JSON-Schema file that defines additional
-        attributes and relationships";
-    }
     leaf type {
       type string;
       description
@@ -203,17 +181,6 @@ swtmf640 = r"""module stratoweave-tmf640 {
     leaf relationshipType {
       type string;
       description "The type of relationship";
-    }
-    leaf baseType {
-      type string;
-      description
-       "When sub-classing, this defines the super-class";
-    }
-    leaf schemaLocation {
-      type inet:uri;
-      description
-       "A URI to a JSON-Schema file that defines additional
-        attributes and relationships";
     }
     leaf type {
       type string;
@@ -243,17 +210,6 @@ swtmf640 = r"""module stratoweave-tmf640 {
       type string;
       description "constraint version";
     }
-    leaf baseType {
-      type string;
-      description
-       "When sub-classing, this defines the super-class";
-    }
-    leaf schemaLocation {
-      type inet:uri;
-      description
-       "A URI to a JSON-Schema file that defines additional
-        attributes and relationships";
-    }
     leaf type {
       type string;
       description
@@ -281,17 +237,6 @@ swtmf640 = r"""module stratoweave-tmf640 {
       type string;
       description "Name of the related entity.";
     }
-    leaf baseType {
-      type string;
-      description
-       "When sub-classing, this defines the super-class";
-    }
-    leaf schemaLocation {
-      type inet:uri;
-      description
-       "A URI to a JSON-Schema file that defines additional
-        attributes and relationships";
-    }
     leaf type {
       type string;
       description
@@ -317,17 +262,6 @@ swtmf640 = r"""module stratoweave-tmf640 {
       type string;
       description "Reference of the related entity.";
     }
-    leaf baseType {
-      type string;
-      description
-       "When sub-classing, this defines the super-class";
-    }
-    leaf schemaLocation {
-      type inet:uri;
-      description
-       "A URI to a JSON-Schema file that defines additional
-        attributes and relationships";
-    }
     leaf type {
       type string;
       description
@@ -338,17 +272,6 @@ swtmf640 = r"""module stratoweave-tmf640 {
   grouping Extensible {
     description
      "Base Extensible schema for use in TMForum Open-APIs";
-    leaf baseType {
-      type string;
-      description
-       "When sub-classing, this defines the super-class";
-    }
-    leaf schemaLocation {
-      type inet:uri;
-      description
-       "A URI to a JSON-Schema file that defines additional
-        attributes and relationships";
-    }
     leaf type {
       type string;
       description
@@ -394,17 +317,6 @@ swtmf640 = r"""module stratoweave-tmf640 {
       key "id";
       uses FeatureRelationship;
     }
-    leaf baseType {
-      type string;
-      description
-       "When sub-classing, this defines the super-class";
-    }
-    leaf schemaLocation {
-      type inet:uri;
-      description
-       "A URI to a JSON-Schema file that defines additional attributes
-        and relationships";
-    }
     leaf type {
       type string;
       description
@@ -433,17 +345,6 @@ swtmf640 = r"""module stratoweave-tmf640 {
       description
        "The period for which this feature relationship is valid.";
     }
-    leaf baseType {
-      type string;
-      description
-       "When sub-classing, this defines the super-class";
-    }
-    leaf schemaLocation {
-      type inet:uri;
-      description
-       "A URI to a JSON-Schema file that defines additional
-        attributes and relationships";
-    }
     leaf type {
       type string;
       description
@@ -463,17 +364,6 @@ swtmf640 = r"""module stratoweave-tmf640 {
       type string;
       mandatory true;
       description "The value of the header item, e.g. en-us";
-    }
-    leaf baseType {
-      type string;
-      description
-       "When sub-classing, this defines the super-class";
-    }
-    leaf schemaLocation {
-      type inet:uri;
-      description
-       "A URI to a JSON-Schema file that defines additional
-        attributes and relationships";
     }
     leaf type {
       type string;
@@ -513,17 +403,6 @@ swtmf640 = r"""module stratoweave-tmf640 {
       uses Response;
       description "Represents the response";
     }
-    leaf baseType {
-      type string;
-      description
-       "When sub-classing, this defines the super-class";
-    }
-    leaf schemaLocation {
-      type inet:uri;
-      description
-       "A URI to a JSON-Schema file that defines additional
-        attributes and relationships";
-    }
     leaf type {
       type string;
       description
@@ -552,17 +431,6 @@ swtmf640 = r"""module stratoweave-tmf640 {
       type string;
       description "Text of the note";
     }
-    leaf baseType {
-      type string;
-      description
-       "When sub-classing, this defines the super-class";
-    }
-    leaf schemaLocation {
-      type inet:uri;
-      description
-       "A URI to a JSON-Schema file that defines additional
-        attributes and relationships";
-    }
     leaf type {
       type string;
       description
@@ -588,17 +456,6 @@ swtmf640 = r"""module stratoweave-tmf640 {
        "A user-friendly name for the place, such as [Paris Store],
         [London Store], [Main Home]";
     }
-    leaf baseType {
-      type string;
-      description
-       "When sub-classing, this defines the super-class";
-    }
-    leaf schemaLocation {
-      type inet:uri;
-      description
-       "A URI to a JSON-Schema file that defines additional
-        attributes and relationships";
-    }
     leaf type {
       type string;
       description
@@ -622,17 +479,6 @@ swtmf640 = r"""module stratoweave-tmf640 {
     leaf name {
       type string;
       description "Name of the related entity.";
-    }
-    leaf baseType {
-      type string;
-      description
-       "When sub-classing, this defines the super-class";
-    }
-    leaf schemaLocation {
-      type inet:uri;
-      description
-       "A URI to a JSON-Schema file that defines additional
-        attributes and relationships";
     }
     leaf type {
       type string;
@@ -672,17 +518,6 @@ swtmf640 = r"""module stratoweave-tmf640 {
       type string;
       mandatory true;
     }
-    leaf baseType {
-      type string;
-      description
-       "When sub-classing, this defines the super-class";
-    }
-    leaf schemaLocation {
-      type inet:uri;
-      description
-       "A URI to a JSON-Schema file that defines additional
-        attributes and relationships";
-    }
     leaf type {
       type string;
       description
@@ -717,17 +552,6 @@ swtmf640 = r"""module stratoweave-tmf640 {
     leaf role {
       type string;
       description "Role played by the related party";
-    }
-    leaf baseType {
-      type string;
-      description
-       "When sub-classing, this defines the super-class";
-    }
-    leaf schemaLocation {
-      type inet:uri;
-      description
-       "A URI to a JSON-Schema file that defines additional
-        attributes and relationships";
     }
     leaf type {
       type string;
@@ -768,17 +592,6 @@ swtmf640 = r"""module stratoweave-tmf640 {
     leaf role {
       type string;
       mandatory true;
-    }
-    leaf baseType {
-      type string;
-      description
-       "When sub-classing, this defines the super-class";
-    }
-    leaf schemaLocation {
-      type inet:uri;
-      description
-       "A URI to a JSON-Schema file that defines additional
-       attributes and relationships";
     }
     leaf type {
       type string;
@@ -823,17 +636,6 @@ swtmf640 = r"""module stratoweave-tmf640 {
       type OrderItemActionType;
       description "Action of the order item for this service";
     }
-    leaf baseType {
-      type string;
-      description
-       "When sub-classing, this defines the super-class";
-    }
-    leaf schemaLocation {
-      type inet:uri;
-      description
-       "A URI to a JSON-Schema file that defines additional
-        attributes and relationships";
-    }
     leaf type {
       type string;
       description
@@ -873,17 +675,6 @@ swtmf640 = r"""module stratoweave-tmf640 {
         an HTTP request might contain requested locale, basic
         authentication.";
     }
-    leaf baseType {
-      type string;
-      description
-       "When sub-classing, this defines the super-class";
-    }
-    leaf schemaLocation {
-      type inet:uri;
-      description
-       "A URI to a JSON-Schema file that defines additional
-        attributes and relationships";
-    }
     leaf type {
       type string;
       description
@@ -904,17 +695,6 @@ swtmf640 = r"""module stratoweave-tmf640 {
     leaf name {
       type string;
       description "Name of the related entity.";
-    }
-    leaf baseType {
-      type string;
-      description
-       "When sub-classing, this defines the super-class";
-    }
-    leaf schemaLocation {
-      type inet:uri;
-      description
-       "A URI to a JSON-Schema file that defines additional
-        attributes and relationships";
     }
     leaf type {
       type string;
@@ -951,17 +731,6 @@ swtmf640 = r"""module stratoweave-tmf640 {
       description
        "Items included in the header of the response. For example
         for an HTTP response might contain negotiated locale.";
-    }
-    leaf baseType {
-      type string;
-      description
-       "When sub-classing, this defines the super-class";
-    }
-    leaf schemaLocation {
-      type inet:uri;
-      description
-       "A URI to a JSON-Schema file that defines additional
-        attributes and relationships";
     }
     leaf type {
       type string;
@@ -1131,17 +900,6 @@ swtmf640 = r"""module stratoweave-tmf640 {
         collection of services that support this service (bundling,
         link CFS to RFS)";
     }
-    leaf baseType {
-      type string;
-      description
-       "When sub-classing, this defines the super-class";
-    }
-    leaf schemaLocation {
-      type inet:uri;
-      description
-       "A URI to a JSON-Schema file that defines additional
-        attributes and relationships";
-    }
     leaf type {
       type string;
       description
@@ -1164,17 +922,6 @@ swtmf640 = r"""module stratoweave-tmf640 {
     leaf name {
       type string;
       description "Name of the related entity.";
-    }
-    leaf baseType {
-      type string;
-      description
-       "When sub-classing, this defines the super-class";
-    }
-    leaf schemaLocation {
-      type inet:uri;
-      description
-       "A URI to a JSON-Schema file that defines additional
-        attributes and relationships";
     }
     leaf type {
       type string;
@@ -1204,17 +951,6 @@ swtmf640 = r"""module stratoweave-tmf640 {
         path "../../../service/id";
       }
     }
-    leaf baseType {
-      type string;
-      description
-       "When sub-classing, this defines the super-class";
-    }
-    leaf schemaLocation {
-      type inet:uri;
-      description
-       "A URI to a JSON-Schema file that defines additional
-        attributes and relationships";
-    }
     leaf type {
       type string;
       description
@@ -1243,16 +979,6 @@ swtmf640 = r"""module stratoweave-tmf640 {
         type string;
         description "Service specification version";
       }
-      leaf baseType {
-        type string;
-        description "When sub-classing, this defines the
-         super-class";
-      }
-      leaf schemaLocation {
-        type inet:uri;
-        description "A URI to a JSON-Schema file that defines
-         additional attributes and relationships";
-      }
       leaf type {
         type string;
         description "When sub-classing, this defines the sub-class
@@ -1280,17 +1006,6 @@ swtmf640 = r"""module stratoweave-tmf640 {
       description
        "Start of the time period, using IETC-RFC-3339 format. If you
         define a start, you must also define an end";
-    }
-    leaf baseType {
-      type string;
-      description
-       "When sub-classing, this defines the super-class";
-    }
-    leaf schemaLocation {
-      type inet:uri;
-      description
-       "A URI to a JSON-Schema file that defines additional
-        attributes and relationships";
     }
     leaf type {
       type string;
@@ -1801,17 +1516,6 @@ swtmf640 = r"""module stratoweave-tmf640 {
     leaf referenceError {
       type inet:uri;
       description "URI of documentation describing the error.";
-    }
-    leaf baseType {
-      type string;
-      description
-       "When sub-classing, this defines the super-class.";
-    }
-    leaf schemaLocation {
-      type inet:uri;
-      description
-       "A URI to a JSON-Schema file that defines additional
-        attributes and relationships";
     }
     leaf type {
       type string;

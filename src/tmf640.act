@@ -15,8 +15,38 @@ import cfs
 import tmf_yang
 
 _NS_TMF = "http://stratoweave.org/yang/stratoweave-tmf"
+
 def _q(n):
     return ygdata.Id(_NS_TMF, n)
+
+def _compact_tmf_json(data: ?value) -> ?value:
+    if isinstance(data, dict):
+        compacted: dict[str, ?value] = {}
+        for key, item in data.items():
+            compacted_item = _compact_tmf_json(item)
+            if compacted_item is None:
+                continue
+            if isinstance(compacted_item, list) and len(compacted_item) == 0:
+                continue
+            compacted[key] = compacted_item
+        return compacted
+    if isinstance(data, list):
+        compacted_list: list[?value] = []
+        for item in data:
+            compacted_item = _compact_tmf_json(item)
+            if compacted_item is not None:
+                compacted_list.append(compacted_item)
+        return compacted_list
+    return data
+
+def _compact_tmf_json_object(data: dict[str, ?value]) -> dict[str, ?value]:
+    compacted = _compact_tmf_json(data)
+    if isinstance(compacted, dict):
+        return compacted
+    raise ValueError("Expected compacted TMF JSON object")
+
+def _compact_tmf_json_list(data: list[dict[str, ?value]]) -> list[dict[str, ?value]]:
+    return [_compact_tmf_json_object(entry) for entry in data]
 
 def _xpath_escape(v: str) -> str:
     return v.replace("\\", "\\\\").replace("'", "\\'")
@@ -334,13 +364,13 @@ def get_service_json(layer_config: ygdata.Node, top_schema: yschema.DRoot, servi
     service = _get_service_json(layer_config, top_schema, service_id)
     if service is not None:
         if isinstance(service, dict):
-            return service
+            return _compact_tmf_json_object(service)
 
 def get_service_list_json(layer_config: ygdata.Node, top_schema: yschema.DRoot) -> list[dict[str, ?value]]:
     services = _get_service_json(layer_config, top_schema)
     if services is not None:
         if isinstance(services, list):
-            return services
+            return _compact_tmf_json_list(services)
     return []
 
 def get_service_specification_id(s: ?object) -> str:
@@ -772,11 +802,9 @@ class Service(object):
     state: ?str
     supportingResource: list[ResourceRef]
     supportingService: list[ServiceRefOrValue]
-    baseType: ?str
-    schemaLocation: ?str
     type: ?str
 
-    def __init__(self, id: ?str, href: ?str, category: ?str, description: ?str, endDate: ?str, hasStarted: ?bool, isBundle: ?bool, isServiceEnabled: ?bool, isStateful: ?bool, name: ?str, serviceDate: ?str, serviceType: ?str, startDate: ?str, startMode: ?str, feature: list[Feature], note: list[Note], place: list[RelatedPlaceRefOrValue], relatedEntity: list[RelatedEntityRefOrValue], relatedParty: list[RelatedParty], serviceCharacteristic: list[Characteristic], serviceOrderItem: list[RelatedServiceOrderItem], serviceRelationship: list[ServiceRelationship], serviceSpecification: ServiceSpecificationRef, state: ?str, supportingResource: list[ResourceRef], supportingService: list[ServiceRefOrValue], baseType: ?str, schemaLocation: ?str, type: ?str):
+    def __init__(self, id: ?str, href: ?str, category: ?str, description: ?str, endDate: ?str, hasStarted: ?bool, isBundle: ?bool, isServiceEnabled: ?bool, isStateful: ?bool, name: ?str, serviceDate: ?str, serviceType: ?str, startDate: ?str, startMode: ?str, feature: list[Feature], note: list[Note], place: list[RelatedPlaceRefOrValue], relatedEntity: list[RelatedEntityRefOrValue], relatedParty: list[RelatedParty], serviceCharacteristic: list[Characteristic], serviceOrderItem: list[RelatedServiceOrderItem], serviceRelationship: list[ServiceRelationship], serviceSpecification: ServiceSpecificationRef, state: ?str, supportingResource: list[ResourceRef], supportingService: list[ServiceRefOrValue], type: ?str):
         self.id = id
         self.href = href
         self.category = category
@@ -803,8 +831,6 @@ class Service(object):
         self.state = state if state is not None else "active"
         self.supportingResource = supportingResource
         self.supportingService = supportingService
-        self.baseType = baseType if baseType is not None else "Service"
-        self.schemaLocation = schemaLocation if schemaLocation is not None else "/tmf-api/schema/Service/Service.schema.json"
         self.type = type if type is not None else "Service"
 
     @staticmethod
@@ -836,8 +862,6 @@ class Service(object):
             get_opt_str(data, "state"),
             list(map(ResourceRef.from_json, get_list(data.get("supportingResource")))),
             list(map(ServiceRefOrValue.from_json, get_list(data.get("supportingService")))),
-            get_opt_str(data, "@baseType"),
-            get_opt_str(data, "@schemaLocation"),
             get_opt_str(data, "@type"),
         )
 
@@ -869,8 +893,6 @@ class Service(object):
             "state": self.state,
             "supportingResource": [entry.to_json() for entry in self.supportingResource],
             "supportingService": [entry.to_json() for entry in self.supportingService],
-            "@baseType": self.baseType,
-            "@schemaLocation": self.schemaLocation,
             "@type": self.type,
         }
 
@@ -904,8 +926,6 @@ class Service(object):
                 get_opt_child_str(gd, _q("state")),
                 list(map(ResourceRef.from_gdata, get_yang_list_elements(gd.children.get(_q("supportingResource"))))),
                 list(map(ServiceRefOrValue.from_gdata, get_yang_list_elements(gd.children.get(_q("supportingService"))))),
-                get_opt_child_str(gd, _q("baseType")),
-                get_opt_child_str(gd, _q("schemaLocation")),
                 get_opt_child_str(gd, _q("type")),
             )
         raise ValueError("Unsupported gdata node type")
@@ -930,8 +950,6 @@ class Service(object):
             (_q("startDate"), self.startDate, "string"),
             (_q("startMode"), self.startMode, "string"),
             (_q("state"), self.state, "string"),
-            (_q("baseType"), self.baseType, "string"),
-            (_q("schemaLocation"), self.schemaLocation, "string"),
             (_q("type"), self.type, "string"),
         ])
 
@@ -954,18 +972,14 @@ class ConstraintRef(object):
     href: ?str
     name: ?str
     version: ?str
-    baseType: ?str
-    schemaLocation: ?str
     type: ?str
     referredType: ?str
 
-    def __init__(self, id: ?str, href: ?str, name: ?str, version: ?str, baseType: ?str, schemaLocation: ?str, type: ?str, referredType: ?str):
+    def __init__(self, id: ?str, href: ?str, name: ?str, version: ?str, type: ?str, referredType: ?str):
         self.id = id
         self.href = href
         self.name = name
         self.version = version
-        self.baseType = baseType if baseType is not None else "ConstraintRef"
-        self.schemaLocation = schemaLocation if schemaLocation is not None else "/tmf-api/schema/Service/ConstraintRef.schema.json"
         self.type = type if type is not None else "ConstraintRef"
         self.referredType = referredType if referredType is not None else "Constraint"
 
@@ -976,8 +990,6 @@ class ConstraintRef(object):
             get_opt_str(data, "href"),
             get_opt_str(data, "name"),
             get_opt_str(data, "version"),
-            get_opt_str(data, "@baseType"),
-            get_opt_str(data, "@schemaLocation"),
             get_opt_str(data, "@type"),
             get_opt_str(data, "@referredType"),
         )
@@ -988,8 +1000,6 @@ class ConstraintRef(object):
             "href": self.href,
             "name": self.name,
             "version": self.version,
-            "@baseType": self.baseType,
-            "@schemaLocation": self.schemaLocation,
             "@type": self.type,
             "@referredType": self.referredType,
         }
@@ -1002,8 +1012,6 @@ class ConstraintRef(object):
                 get_opt_child_str(gd, _q("href")),
                 get_opt_child_str(gd, _q("name")),
                 get_opt_child_str(gd, _q("version")),
-                get_opt_child_str(gd, _q("baseType")),
-                get_opt_child_str(gd, _q("schemaLocation")),
                 get_opt_child_str(gd, _q("type")),
                 get_opt_child_str(gd, _q("referredType")),
             )
@@ -1018,8 +1026,6 @@ class ConstraintRef(object):
             (_q("href"), self.href, "string"),
             (_q("name"), self.name, "string"),
             (_q("version"), self.version, "string"),
-            (_q("baseType"), self.baseType, "string"),
-            (_q("schemaLocation"), self.schemaLocation, "string"),
             (_q("type"), self.type, "string"),
             (_q("referredType"), self.referredType, "string"),
         ])
@@ -1031,17 +1037,13 @@ class FeatureRelationship(object):
     name: ?str
     relationshipType: ?str
     validFor: ?TimePeriod
-    baseType: ?str
-    schemaLocation: ?str
     type: ?str
 
-    def __init__(self, id: ?str, name: ?str, relationshipType: ?str, validFor: ?TimePeriod, baseType: ?str, schemaLocation: ?str, type: ?str):
+    def __init__(self, id: ?str, name: ?str, relationshipType: ?str, validFor: ?TimePeriod, type: ?str):
         self.id = id
         self.name = name
         self.relationshipType = relationshipType
         self.validFor = validFor
-        self.baseType = baseType if baseType is not None else "FeatureRelationship"
-        self.schemaLocation = schemaLocation if schemaLocation is not None else "/tmf-api/schema/Service/FeatureRelationship.schema.json"
         self.type = type if type is not None else "FeatureRelationship"
 
     @staticmethod
@@ -1051,8 +1053,6 @@ class FeatureRelationship(object):
             get_opt_str(data, "name"),
             get_opt_str(data, "relationshipType"),
             get_opt_time_period(data, "validFor"),
-            get_opt_str(data, "@baseType"),
-            get_opt_str(data, "@schemaLocation"),
             get_opt_str(data, "@type"),
         )
 
@@ -1062,8 +1062,6 @@ class FeatureRelationship(object):
             "name": self.name,
             "relationshipType": self.relationshipType,
             "validFor": get_opt_obj_to_json(self.validFor),
-            "@baseType": self.baseType,
-            "@schemaLocation": self.schemaLocation,
             "@type": self.type,
         }
 
@@ -1075,8 +1073,6 @@ class FeatureRelationship(object):
                 get_opt_child_str(gd, _q("name")),
                 get_opt_child_str(gd, _q("relationshipType")),
                 get_opt_child_time_period(gd, _q("validFor")),
-                get_opt_child_str(gd, _q("baseType")),
-                get_opt_child_str(gd, _q("schemaLocation")),
                 get_opt_child_str(gd, _q("type")),
             )
         raise ValueError("Unsupported gdata node type")
@@ -1089,8 +1085,6 @@ class FeatureRelationship(object):
         add_opt_leafs_to_gdata(elements, [
             (_q("name"), self.name, "string"),
             (_q("relationshipType"), self.relationshipType, "string"),
-            (_q("baseType"), self.baseType, "string"),
-            (_q("schemaLocation"), self.schemaLocation, "string"),
             (_q("type"), self.type, "string"),
         ])
 
@@ -1101,15 +1095,11 @@ class FeatureRelationship(object):
 class TimePeriod(object):
     endDateTime: ?str
     startDateTime: ?str
-    baseType: ?str
-    schemaLocation: ?str
     type: ?str
 
-    def __init__(self, endDateTime: ?str, startDateTime: ?str, baseType: ?str, schemaLocation: ?str, type: ?str):
+    def __init__(self, endDateTime: ?str, startDateTime: ?str, type: ?str):
         self.endDateTime = endDateTime
         self.startDateTime = startDateTime
-        self.baseType = baseType if baseType is not None else "TimePeriod"
-        self.schemaLocation = schemaLocation if schemaLocation is not None else "/tmf-api/schema/Service/TimePeriod.schema.json"
         self.type = type if type is not None else "TimePeriod"
 
     @staticmethod
@@ -1117,8 +1107,6 @@ class TimePeriod(object):
         return TimePeriod(
             get_opt_str(data, "endDateTime"),
             get_opt_str(data, "startDateTime"),
-            get_opt_str(data, "@baseType"),
-            get_opt_str(data, "@schemaLocation"),
             get_opt_str(data, "@type"),
         )
 
@@ -1126,8 +1114,6 @@ class TimePeriod(object):
         return {
             "endDateTime": self.endDateTime,
             "startDateTime": self.startDateTime,
-            "@baseType": self.baseType,
-            "@schemaLocation": self.schemaLocation,
             "@type": self.type,
         }
 
@@ -1137,8 +1123,6 @@ class TimePeriod(object):
             return TimePeriod(
                 get_opt_child_str(gd, _q("endDateTime")),
                 get_opt_child_str(gd, _q("startDateTime")),
-                get_opt_child_str(gd, _q("baseType")),
-                get_opt_child_str(gd, _q("schemaLocation")),
                 get_opt_child_str(gd, _q("type")),
             )
         raise ValueError("Unsupported gdata node type")
@@ -1148,8 +1132,6 @@ class TimePeriod(object):
         add_opt_leafs_to_gdata(elements, [
             (_q("endDateTime"), self.endDateTime, "string"),
             (_q("startDateTime"), self.startDateTime, "string"),
-            (_q("baseType"), self.baseType, "string"),
-            (_q("schemaLocation"), self.schemaLocation, "string"),
             (_q("type"), self.type, "string"),
         ])
 
@@ -1163,11 +1145,9 @@ class Feature(object):
     constraint: list[ConstraintRef]
     featureCharacteristic: list[Characteristic]
     featureRelationship: list[FeatureRelationship]
-    baseType: ?str
-    schemaLocation: ?str
     type: ?str
 
-    def __init__(self, id: ?str, isBundle: ?bool, isEnabled: ?bool, name: ?str, constraint: list[ConstraintRef], featureCharacteristic: list[Characteristic], featureRelationship: list[FeatureRelationship], baseType: ?str, schemaLocation: ?str, type: ?str):
+    def __init__(self, id: ?str, isBundle: ?bool, isEnabled: ?bool, name: ?str, constraint: list[ConstraintRef], featureCharacteristic: list[Characteristic], featureRelationship: list[FeatureRelationship], type: ?str):
         self.id = id
         self.isBundle = isBundle
         self.isEnabled = isEnabled
@@ -1175,8 +1155,6 @@ class Feature(object):
         self.constraint = constraint
         self.featureCharacteristic = featureCharacteristic
         self.featureRelationship = featureRelationship
-        self.baseType = baseType if baseType is not None else "Feature"
-        self.schemaLocation = schemaLocation if schemaLocation is not None else "/tmf-api/schema/Service/Feature.schema.json"
         self.type = type if type is not None else "Feature"
 
     @staticmethod
@@ -1189,8 +1167,6 @@ class Feature(object):
             list(map(ConstraintRef.from_json, get_list(data.get("constraint")))),
             list(map(Characteristic.from_json, get_list(data.get("featureCharacteristic")))),
             list(map(FeatureRelationship.from_json, get_list(data.get("featureRelationship")))),
-            get_opt_str(data, "@baseType"),
-            get_opt_str(data, "@schemaLocation"),
             get_opt_str(data, "@type"),
         )
 
@@ -1203,8 +1179,6 @@ class Feature(object):
             "constraint": [entry.to_json() for entry in self.constraint],
             "featureCharacteristic": [entry.to_json() for entry in self.featureCharacteristic],
             "featureRelationship": [entry.to_json() for entry in self.featureRelationship],
-            "@baseType": self.baseType,
-            "@schemaLocation": self.schemaLocation,
             "@type": self.type,
         }
 
@@ -1219,8 +1193,6 @@ class Feature(object):
                 list(map(ConstraintRef.from_gdata, get_yang_list_elements(gd.children.get(_q("constraint"))))),
                 list(map(Characteristic.from_gdata, get_yang_list_elements(gd.children.get(_q("featureCharacteristic"))))),
                 list(map(FeatureRelationship.from_gdata, get_yang_list_elements(gd.children.get(_q("featureRelationship"))))),
-                get_opt_child_str(gd, _q("baseType")),
-                get_opt_child_str(gd, _q("schemaLocation")),
                 get_opt_child_str(gd, _q("type")),
             )
         raise ValueError("Unsupported gdata node type")
@@ -1234,8 +1206,6 @@ class Feature(object):
             (_q("isBundle"), self.isBundle, "boolean"),
             (_q("isEnabled"), self.isEnabled, "boolean"),
             (_q("name"), self.name, "string"),
-            (_q("baseType"), self.baseType, "string"),
-            (_q("schemaLocation"), self.schemaLocation, "string"),
             (_q("type"), self.type, "string"),
         ])
 
@@ -1250,17 +1220,13 @@ class Note(object):
     author: ?str
     date: ?str
     text: ?str
-    baseType: ?str
-    schemaLocation: ?str
     type: ?str
 
-    def __init__(self, id: ?str, author: ?str, date: ?str, text: ?str, baseType: ?str, schemaLocation: ?str, type: ?str):
+    def __init__(self, id: ?str, author: ?str, date: ?str, text: ?str, type: ?str):
         self.id = id
         self.author = author
         self.date = date
         self.text = text
-        self.baseType = baseType if baseType is not None else "Note"
-        self.schemaLocation = schemaLocation if schemaLocation is not None else "/tmf-api/schema/Service/Note.schema.json"
         self.type = type if type is not None else "Note"
 
     @staticmethod
@@ -1270,8 +1236,6 @@ class Note(object):
             get_opt_str(data, "author"),
             get_opt_str(data, "date"),
             get_opt_str(data, "text"),
-            get_opt_str(data, "@baseType"),
-            get_opt_str(data, "@schemaLocation"),
             get_opt_str(data, "@type"),
         )
 
@@ -1281,8 +1245,6 @@ class Note(object):
             "author": self.author,
             "date": self.date,
             "text": self.text,
-            "@baseType": self.baseType,
-            "@schemaLocation": self.schemaLocation,
             "@type": self.type,
         }
 
@@ -1294,8 +1256,6 @@ class Note(object):
                 get_opt_child_str(gd, _q("author")),
                 get_opt_child_str(gd, _q("date")),
                 get_opt_child_str(gd, _q("text")),
-                get_opt_child_str(gd, _q("baseType")),
-                get_opt_child_str(gd, _q("schemaLocation")),
                 get_opt_child_str(gd, _q("type")),
             )
         raise ValueError("Unsupported gdata node type")
@@ -1309,8 +1269,6 @@ class Note(object):
             (_q("author"), self.author, "string"),
             (_q("date"), self.date, "string"),
             (_q("text"), self.text, "string"),
-            (_q("baseType"), self.baseType, "string"),
-            (_q("schemaLocation"), self.schemaLocation, "string"),
             (_q("type"), self.type, "string"),
         ])
 
@@ -1321,18 +1279,14 @@ class RelatedPlaceRefOrValue(object):
     href: ?str
     name: ?str
     role: ?str
-    baseType: ?str
-    schemaLocation: ?str
     type: ?str
     referredType: ?str
 
-    def __init__(self, id: ?str, href: ?str, name: ?str, role: ?str, baseType: ?str, schemaLocation: ?str, type: ?str, referredType: ?str):
+    def __init__(self, id: ?str, href: ?str, name: ?str, role: ?str, type: ?str, referredType: ?str):
         self.id = id
         self.href = href
         self.name = name
         self.role = role
-        self.baseType = baseType if baseType is not None else "RelatedPlaceRefOrValue"
-        self.schemaLocation = schemaLocation if schemaLocation is not None else "/tmf-api/schema/Service/RelatedPlaceRefOrValue.schema.json"
         self.type = type if type is not None else "RelatedPlaceRefOrValue"
         self.referredType = referredType if referredType is not None else "Place"
 
@@ -1343,8 +1297,6 @@ class RelatedPlaceRefOrValue(object):
             get_opt_str(data, "href"),
             get_opt_str(data, "name"),
             get_opt_str(data, "role"),
-            get_opt_str(data, "@baseType"),
-            get_opt_str(data, "@schemaLocation"),
             get_opt_str(data, "@type"),
             get_opt_str(data, "@referredType"),
         )
@@ -1355,8 +1307,6 @@ class RelatedPlaceRefOrValue(object):
             "href": self.href,
             "name": self.name,
             "role": self.role,
-            "@baseType": self.baseType,
-            "@schemaLocation": self.schemaLocation,
             "@type": self.type,
             "@referredType": self.referredType,
         }
@@ -1369,8 +1319,6 @@ class RelatedPlaceRefOrValue(object):
                 get_opt_child_str(gd, _q("href")),
                 get_opt_child_str(gd, _q("name")),
                 get_opt_child_str(gd, _q("role")),
-                get_opt_child_str(gd, _q("baseType")),
-                get_opt_child_str(gd, _q("schemaLocation")),
                 get_opt_child_str(gd, _q("type")),
                 get_opt_child_str(gd, _q("referredType")),
             )
@@ -1385,8 +1333,6 @@ class RelatedPlaceRefOrValue(object):
             (_q("href"), self.href, "string"),
             (_q("name"), self.name, "string"),
             (_q("role"), self.role, "string"),
-            (_q("baseType"), self.baseType, "string"),
-            (_q("schemaLocation"), self.schemaLocation, "string"),
             (_q("type"), self.type, "string"),
             (_q("referredType"), self.referredType, "string"),
         ])
@@ -1398,18 +1344,14 @@ class RelatedEntityRefOrValue(object):
     href: ?str
     name: ?str
     role: ?str
-    baseType: ?str
-    schemaLocation: ?str
     type: ?str
     referredType: ?str
 
-    def __init__(self, id: ?str, href: ?str, name: ?str, role: ?str, baseType: ?str, schemaLocation: ?str, type: ?str, referredType: ?str):
+    def __init__(self, id: ?str, href: ?str, name: ?str, role: ?str, type: ?str, referredType: ?str):
         self.id = id
         self.href = href
         self.name = name
         self.role = role
-        self.baseType = baseType if baseType is not None else "RelatedEntityRefOrValue"
-        self.schemaLocation = schemaLocation if schemaLocation is not None else "/tmf-api/schema/Service/RelatedEntityRefOrValue.schema.json"
         self.type = type if type is not None else "RelatedEntityRefOrValue"
         self.referredType = referredType if referredType is not None else "Entity"
 
@@ -1420,8 +1362,6 @@ class RelatedEntityRefOrValue(object):
             get_opt_str(data, "href"),
             get_opt_str(data, "name"),
             get_opt_str(data, "role"),
-            get_opt_str(data, "@baseType"),
-            get_opt_str(data, "@schemaLocation"),
             get_opt_str(data, "@type"),
             get_opt_str(data, "@referredType"),
         )
@@ -1432,8 +1372,6 @@ class RelatedEntityRefOrValue(object):
             "href": self.href,
             "name": self.name,
             "role": self.role,
-            "@baseType": self.baseType,
-            "@schemaLocation": self.schemaLocation,
             "@type": self.type,
             "@referredType": self.referredType,
         }
@@ -1446,8 +1384,6 @@ class RelatedEntityRefOrValue(object):
                 get_opt_child_str(gd, _q("href")),
                 get_opt_child_str(gd, _q("name")),
                 get_opt_child_str(gd, _q("role")),
-                get_opt_child_str(gd, _q("baseType")),
-                get_opt_child_str(gd, _q("schemaLocation")),
                 get_opt_child_str(gd, _q("type")),
                 get_opt_child_str(gd, _q("referredType")),
             )
@@ -1462,8 +1398,6 @@ class RelatedEntityRefOrValue(object):
             (_q("href"), self.href, "string"),
             (_q("name"), self.name, "string"),
             (_q("role"), self.role, "string"),
-            (_q("baseType"), self.baseType, "string"),
-            (_q("schemaLocation"), self.schemaLocation, "string"),
             (_q("type"), self.type, "string"),
             (_q("referredType"), self.referredType, "string"),
         ])
@@ -1475,18 +1409,14 @@ class RelatedParty(object):
     href: ?str
     name: ?str
     role: ?str
-    baseType: ?str
-    schemaLocation: ?str
     type: ?str
     referredType: ?str
 
-    def __init__(self, id: ?str, href: ?str, name: ?str, role: ?str, baseType: ?str, schemaLocation: ?str, type: ?str, referredType: ?str):
+    def __init__(self, id: ?str, href: ?str, name: ?str, role: ?str, type: ?str, referredType: ?str):
         self.id = id
         self.href = href
         self.name = name
         self.role = role
-        self.baseType = baseType if baseType is not None else "RelatedParty"
-        self.schemaLocation = schemaLocation if schemaLocation is not None else "/tmf-api/schema/Service/RelatedParty.schema.json"
         self.type = type if type is not None else "RelatedParty"
         self.referredType = referredType if referredType is not None else "Party"
 
@@ -1497,8 +1427,6 @@ class RelatedParty(object):
             get_opt_str(data, "href"),
             get_opt_str(data, "name"),
             get_opt_str(data, "role"),
-            get_opt_str(data, "@baseType"),
-            get_opt_str(data, "@schemaLocation"),
             get_opt_str(data, "@type"),
             get_opt_str(data, "@referredType"),
         )
@@ -1509,8 +1437,6 @@ class RelatedParty(object):
             "href": self.href,
             "name": self.name,
             "role": self.role,
-            "@baseType": self.baseType,
-            "@schemaLocation": self.schemaLocation,
             "@type": self.type,
             "@referredType": self.referredType,
         }
@@ -1523,8 +1449,6 @@ class RelatedParty(object):
                 get_opt_child_str(gd, _q("href")),
                 get_opt_child_str(gd, _q("name")),
                 get_opt_child_str(gd, _q("role")),
-                get_opt_child_str(gd, _q("baseType")),
-                get_opt_child_str(gd, _q("schemaLocation")),
                 get_opt_child_str(gd, _q("type")),
                 get_opt_child_str(gd, _q("referredType")),
             )
@@ -1539,8 +1463,6 @@ class RelatedParty(object):
             (_q("href"), self.href, "string"),
             (_q("name"), self.name, "string"),
             (_q("role"), self.role, "string"),
-            (_q("baseType"), self.baseType, "string"),
-            (_q("schemaLocation"), self.schemaLocation, "string"),
             (_q("type"), self.type, "string"),
             (_q("referredType"), self.referredType, "string"),
         ])
@@ -1553,18 +1475,14 @@ class Characteristic(object):
     valueType: ?str
     characteristicRelationship: list[CharacteristicRelationship]
     value: ?value
-    baseType: ?str
-    schemaLocation: ?str
     type: ?str
 
-    def __init__(self, id: str, name: str, valueType: ?str, characteristicRelationship: list[CharacteristicRelationship], value: ?value, baseType: ?str, schemaLocation: ?str, type: ?str):
+    def __init__(self, id: str, name: str, valueType: ?str, characteristicRelationship: list[CharacteristicRelationship], value: ?value, type: ?str):
         self.id = id
         self.name = name
         self.valueType = valueType
         self.characteristicRelationship = characteristicRelationship
         self.value = value
-        self.baseType = baseType if baseType is not None else "Characteristic"
-        self.schemaLocation = schemaLocation if schemaLocation is not None else "/tmf-api/schema/Service/Characteristic.schema.json"
         self.type = type if type is not None else "Characteristic"
 
     @staticmethod
@@ -1575,8 +1493,6 @@ class Characteristic(object):
             get_opt_str(data, "valueType"),
             list(map(CharacteristicRelationship.from_json, get_list(data.get("characteristicRelationship")))),
             get_opt_value(data, "value"),
-            get_opt_str(data, "@baseType"),
-            get_opt_str(data, "@schemaLocation"),
             get_opt_str(data, "@type"),
         )
 
@@ -1587,8 +1503,6 @@ class Characteristic(object):
             "valueType": self.valueType,
             "characteristicRelationship": [entry.to_json() for entry in self.characteristicRelationship],
             "value": self.value,
-            "@baseType": self.baseType,
-            "@schemaLocation": self.schemaLocation,
             "@type": self.type,
         }
 
@@ -1601,8 +1515,6 @@ class Characteristic(object):
                 None,  # The valueType is derived from the value on the destination leaf
                 list(map(CharacteristicRelationship.from_gdata, get_yang_list_elements(gd.children.get(_q("characteristicRelationship"))))),
                 None,   # The value is stored on the destination leaf
-                get_opt_child_str(gd, _q("baseType")),
-                get_opt_child_str(gd, _q("schemaLocation")),
                 get_opt_child_str(gd, _q("type")),
             )
         raise ValueError("Unsupported gdata node type")
@@ -1617,8 +1529,6 @@ class Characteristic(object):
             # NOTE: The value and valueType are not stored in the TMF Store
             # because they are stored on the respective leaf
             # of the destination transform.
-            (_q("baseType"), self.baseType, "string"),
-            (_q("schemaLocation"), self.schemaLocation, "string"),
             (_q("type"), self.type, "string"),
         ])
 
@@ -1629,15 +1539,11 @@ class Characteristic(object):
 class CharacteristicRelationship(object):
     id: ?str
     relationshipType: ?str
-    baseType: ?str
-    schemaLocation: ?str
     type: ?str
 
-    def __init__(self, id: ?str, relationshipType: ?str, baseType: ?str, schemaLocation: ?str, type: ?str):
+    def __init__(self, id: ?str, relationshipType: ?str, type: ?str):
         self.id = id
         self.relationshipType = relationshipType
-        self.baseType = baseType if baseType is not None else "CharacteristicRelationship"
-        self.schemaLocation = schemaLocation if schemaLocation is not None else "/tmf-api/schema/Service/CharacteristicRelationship.schema.json"
         self.type = type if type is not None else "CharacteristicRelationship"
 
     @staticmethod
@@ -1645,8 +1551,6 @@ class CharacteristicRelationship(object):
         return CharacteristicRelationship(
             get_opt_str(data, "id"),
             get_opt_str(data, "relationshipType"),
-            get_opt_str(data, "@baseType"),
-            get_opt_str(data, "@schemaLocation"),
             get_opt_str(data, "@type"),
         )
 
@@ -1654,8 +1558,6 @@ class CharacteristicRelationship(object):
         return {
             "id": self.id,
             "relationshipType": self.relationshipType,
-            "@baseType": self.baseType,
-            "@schemaLocation": self.schemaLocation,
             "@type": self.type,
         }
 
@@ -1665,8 +1567,6 @@ class CharacteristicRelationship(object):
             return CharacteristicRelationship(
                 get_opt_child_str(gd, _q("id")),
                 get_opt_child_str(gd, _q("relationshipType")),
-                get_opt_child_str(gd, _q("baseType")),
-                get_opt_child_str(gd, _q("schemaLocation")),
                 get_opt_child_str(gd, _q("type")),
             )
         raise ValueError("Unsupported gdata node type")
@@ -1678,8 +1578,6 @@ class CharacteristicRelationship(object):
         ])
         add_opt_leafs_to_gdata(elements, [
             (_q("relationshipType"), self.relationshipType, "string"),
-            (_q("baseType"), self.baseType, "string"),
-            (_q("schemaLocation"), self.schemaLocation, "string"),
             (_q("type"), self.type, "string"),
         ])
 
@@ -1690,18 +1588,14 @@ class ServiceSpecificationRef(object):
     href: ?str
     name: ?str
     version: ?str
-    baseType: ?str
-    schemaLocation: ?str
     type: ?str
     referredType: ?str
 
-    def __init__(self, id: str, href: ?str, name: ?str, version: ?str, baseType: ?str, schemaLocation: ?str, type: ?str, referredType: ?str):
+    def __init__(self, id: str, href: ?str, name: ?str, version: ?str, type: ?str, referredType: ?str):
         self.id = id
         self.href = href
         self.name = name
         self.version = version
-        self.baseType = baseType if baseType is not None else "ServiceSpecificationRef"
-        self.schemaLocation = schemaLocation if schemaLocation is not None else "/tmf-api/schema/Service/ServiceSpecificationRef.schema.json"
         self.type = type if type is not None else "ServiceSpecificationRef"
         self.referredType = referredType if referredType is not None else "ServiceSpecification"
 
@@ -1712,8 +1606,6 @@ class ServiceSpecificationRef(object):
             get_opt_str(data, "href"),
             get_opt_str(data, "name"),
             get_opt_str(data, "version"),
-            get_opt_str(data, "@baseType"),
-            get_opt_str(data, "@schemaLocation"),
             get_opt_str(data, "@type"),
             get_opt_str(data, "@referredType"),
         )
@@ -1724,8 +1616,6 @@ class ServiceSpecificationRef(object):
             "href": self.href,
             "name": self.name,
             "version": self.version,
-            "@baseType": self.baseType,
-            "@schemaLocation": self.schemaLocation,
             "@type": self.type,
             "@referredType": self.referredType,
         }
@@ -1738,8 +1628,6 @@ class ServiceSpecificationRef(object):
                 get_opt_child_str(gd, _q("href")),
                 get_opt_child_str(gd, _q("name")),
                 get_opt_child_str(gd, _q("version")),
-                get_opt_child_str(gd, _q("baseType")),
-                get_opt_child_str(gd, _q("schemaLocation")),
                 get_opt_child_str(gd, _q("type")),
                 get_opt_child_str(gd, _q("referredType")),
             )
@@ -1754,8 +1642,6 @@ class ServiceSpecificationRef(object):
             (_q("href"), self.href, "string"),
             (_q("name"), self.name, "string"),
             (_q("version"), self.version, "string"),
-            (_q("baseType"), self.baseType, "string"),
-            (_q("schemaLocation"), self.schemaLocation, "string"),
             (_q("type"), self.type, "string"),
             (_q("referredType"), self.referredType, "string"),
         ])
@@ -1766,17 +1652,13 @@ class ResourceRef(object):
     id: ?str
     href: ?str
     name: ?str
-    baseType: ?str
-    schemaLocation: ?str
     type: ?str
     referredType: ?str
 
-    def __init__(self, id: ?str, href: ?str, name: ?str, baseType: ?str, schemaLocation: ?str, type: ?str, referredType: ?str):
+    def __init__(self, id: ?str, href: ?str, name: ?str, type: ?str, referredType: ?str):
         self.id = id
         self.href = href
         self.name = name
-        self.baseType = baseType if baseType is not None else "ResourceRef"
-        self.schemaLocation = schemaLocation if schemaLocation is not None else "/tmf-api/schema/Service/ResourceRef.schema.json"
         self.type = type if type is not None else "ResourceRef"
         self.referredType = referredType if referredType is not None else "Resource"
 
@@ -1786,8 +1668,6 @@ class ResourceRef(object):
             get_opt_str(data, "id"),
             get_opt_str(data, "href"),
             get_opt_str(data, "name"),
-            get_opt_str(data, "@baseType"),
-            get_opt_str(data, "@schemaLocation"),
             get_opt_str(data, "@type"),
             get_opt_str(data, "@referredType"),
         )
@@ -1797,8 +1677,6 @@ class ResourceRef(object):
             "id": self.id,
             "href": self.href,
             "name": self.name,
-            "@baseType": self.baseType,
-            "@schemaLocation": self.schemaLocation,
             "@type": self.type,
             "@referredType": self.referredType,
         }
@@ -1810,8 +1688,6 @@ class ResourceRef(object):
                 get_child_str(gd, _q("id")),
                 get_opt_child_str(gd, _q("href")),
                 get_opt_child_str(gd, _q("name")),
-                get_opt_child_str(gd, _q("baseType")),
-                get_opt_child_str(gd, _q("schemaLocation")),
                 get_opt_child_str(gd, _q("type")),
                 get_opt_child_str(gd, _q("referredType")),
             )
@@ -1825,8 +1701,6 @@ class ResourceRef(object):
         add_opt_leafs_to_gdata(elements, [
             (_q("href"), self.href, "string"),
             (_q("name"), self.name, "string"),
-            (_q("baseType"), self.baseType, "string"),
-            (_q("schemaLocation"), self.schemaLocation, "string"),
             (_q("type"), self.type, "string"),
             (_q("referredType"), self.referredType, "string"),
         ])
@@ -1839,19 +1713,15 @@ class RelatedServiceOrderItem(object):
     serviceOrderHref: ?str
     serviceOrderId: ?str
     itemAction: ?str
-    baseType: ?str
-    schemaLocation: ?str
     type: ?str
     referredType: ?str
 
-    def __init__(self, itemId: ?str, role: ?str, serviceOrderHref: ?str, serviceOrderId: ?str, itemAction: ?str, baseType: ?str, schemaLocation: ?str, type: ?str, referredType: ?str):
+    def __init__(self, itemId: ?str, role: ?str, serviceOrderHref: ?str, serviceOrderId: ?str, itemAction: ?str, type: ?str, referredType: ?str):
         self.itemId = itemId
         self.role = role
         self.serviceOrderHref = serviceOrderHref
         self.serviceOrderId = serviceOrderId
         self.itemAction = itemAction
-        self.baseType = baseType if baseType is not None else "RelatedServiceOrderItem"
-        self.schemaLocation = schemaLocation if schemaLocation is not None else "/tmf-api/schema/Service/RelatedServiceOrderItem.schema.json"
         self.type = type if type is not None else "RelatedServiceOrderItem"
         self.referredType = referredType if referredType is not None else "ServiceOrderItem"
 
@@ -1863,8 +1733,6 @@ class RelatedServiceOrderItem(object):
             get_opt_str(data, "serviceOrderHref"),
             get_opt_str(data, "serviceOrderId"),
             get_opt_str(data, "itemAction"),
-            get_opt_str(data, "@baseType"),
-            get_opt_str(data, "@schemaLocation"),
             get_opt_str(data, "@type"),
             get_opt_str(data, "@referredType"),
         )
@@ -1876,8 +1744,6 @@ class RelatedServiceOrderItem(object):
             "serviceOrderHref": self.serviceOrderHref,
             "serviceOrderId": self.serviceOrderId,
             "itemAction": self.itemAction,
-            "@baseType": self.baseType,
-            "@schemaLocation": self.schemaLocation,
             "@type": self.type,
             "@referredType": self.referredType,
         }
@@ -1891,8 +1757,6 @@ class RelatedServiceOrderItem(object):
                 get_opt_child_str(gd, _q("serviceOrderHref")),
                 get_opt_child_str(gd, _q("serviceOrderId")),
                 get_opt_child_str(gd, _q("itemAction")),
-                get_opt_child_str(gd, _q("baseType")),
-                get_opt_child_str(gd, _q("schemaLocation")),
                 get_opt_child_str(gd, _q("type")),
                 get_opt_child_str(gd, _q("referredType")),
             )
@@ -1908,8 +1772,6 @@ class RelatedServiceOrderItem(object):
             (_q("serviceOrderHref"), self.serviceOrderHref, "string"),
             (_q("serviceOrderId"), self.serviceOrderId, "string"),
             (_q("itemAction"), self.itemAction, "string"),
-            (_q("baseType"), self.baseType, "string"),
-            (_q("schemaLocation"), self.schemaLocation, "string"),
             (_q("type"), self.type, "string"),
             (_q("referredType"), self.referredType, "string"),
         ])
@@ -1920,16 +1782,12 @@ class ServiceRelationship(object):
     relationshipType: ?str
     serviceRelationshipCharacteristic: list[Characteristic]
     service: ServiceRefOrValue
-    baseType: ?str
-    schemaLocation: ?str
     type: ?str
 
-    def __init__(self, relationshipType: ?str, serviceRelationshipCharacteristic: list[Characteristic], service: ServiceRefOrValue, baseType: ?str, schemaLocation: ?str, type: ?str):
+    def __init__(self, relationshipType: ?str, serviceRelationshipCharacteristic: list[Characteristic], service: ServiceRefOrValue, type: ?str):
         self.relationshipType = relationshipType
         self.serviceRelationshipCharacteristic = serviceRelationshipCharacteristic
         self.service = service
-        self.baseType = baseType if baseType is not None else "ServiceRelationship"
-        self.schemaLocation = schemaLocation if schemaLocation is not None else "/tmf-api/schema/Service/ServiceRelationship.schema.json"
         self.type = type if type is not None else "ServiceRelationship"
 
     @staticmethod
@@ -1938,8 +1796,6 @@ class ServiceRelationship(object):
             get_opt_str(data, "relationshipType"),
             list(map(Characteristic.from_json, get_list(data.get("ServiceRelationshipCharacteristic")))),
             get_service_ref_or_value(data, "service"),
-            get_opt_str(data, "@baseType"),
-            get_opt_str(data, "@schemaLocation"),
             get_opt_str(data, "@type"),
         )
 
@@ -1948,8 +1804,6 @@ class ServiceRelationship(object):
             "relationshipType": self.relationshipType,
             "ServiceRelationshipCharacteristic": [entry.to_json() for entry in self.serviceRelationshipCharacteristic],
             "service": self.service.to_json(),
-            "@baseType": self.baseType,
-            "@schemaLocation": self.schemaLocation,
             "@type": self.type,
         }
 
@@ -1960,8 +1814,6 @@ class ServiceRelationship(object):
                 get_opt_child_str(gd, _q("relationshipType")),
                 list(map(Characteristic.from_gdata, get_yang_list_elements(gd.children.get(_q("serviceRelationshipCharacteristic"))))),
                 get_child_service_ref_or_value(gd, _q("service")),
-                get_opt_child_str(gd, _q("baseType")),
-                get_opt_child_str(gd, _q("schemaLocation")),
                 get_opt_child_str(gd, _q("type")),
             )
         raise ValueError("Unsupported gdata node type")
@@ -1970,8 +1822,6 @@ class ServiceRelationship(object):
         elements = {}
         add_opt_leafs_to_gdata(elements, [
             (_q("relationshipType"), self.relationshipType, "string"),
-            (_q("baseType"), self.baseType, "string"),
-            (_q("schemaLocation"), self.schemaLocation, "string"),
             (_q("type"), self.type, "string"),
         ])
 
@@ -2007,12 +1857,10 @@ class ServiceRefOrValue(object):
     state: ?str
     supportingResource: list[ResourceRef]
     supportingService: list[ServiceRefOrValue]
-    baseType: ?str
-    schemaLocation: ?str
     type: ?str
     referredType: ?str
 
-    def __init__(self, id: ?str, href: ?str, category: ?str, description: ?str, endDate: ?str, hasStarted: ?bool, isBundle: ?bool, isServiceEnabled: ?bool, isStateful: ?bool, name: ?str, serviceDate: ?str, serviceType: ?str, startDate: ?str, startMode: ?str, feature: list[Feature], note: list[Note], place: list[RelatedPlaceRefOrValue], relatedEntity: list[RelatedEntityRefOrValue], relatedParty: list[RelatedParty], serviceCharacteristic: list[Characteristic], serviceOrderItem: list[RelatedServiceOrderItem], serviceRelationship: list[ServiceRelationship], serviceSpecification: ?ServiceSpecificationRef, state: ?str, supportingResource: list[ResourceRef], supportingService: list[ServiceRefOrValue], baseType: ?str, schemaLocation: ?str, type: ?str, referredType: ?str):
+    def __init__(self, id: ?str, href: ?str, category: ?str, description: ?str, endDate: ?str, hasStarted: ?bool, isBundle: ?bool, isServiceEnabled: ?bool, isStateful: ?bool, name: ?str, serviceDate: ?str, serviceType: ?str, startDate: ?str, startMode: ?str, feature: list[Feature], note: list[Note], place: list[RelatedPlaceRefOrValue], relatedEntity: list[RelatedEntityRefOrValue], relatedParty: list[RelatedParty], serviceCharacteristic: list[Characteristic], serviceOrderItem: list[RelatedServiceOrderItem], serviceRelationship: list[ServiceRelationship], serviceSpecification: ?ServiceSpecificationRef, state: ?str, supportingResource: list[ResourceRef], supportingService: list[ServiceRefOrValue], type: ?str, referredType: ?str):
         self.id = id
         self.href = href
         self.category = category
@@ -2039,8 +1887,6 @@ class ServiceRefOrValue(object):
         self.state = state
         self.supportingResource = supportingResource
         self.supportingService = supportingService
-        self.baseType = baseType if baseType is not None else "ServiceRefOrValue"
-        self.schemaLocation = schemaLocation if schemaLocation is not None else "/tmf-api/schema/Service/ServiceRefOrValue.schema.json"
         self.type = type if type is not None else "ServiceRefOrValue"
         self.referredType = referredType if referredType is not None else "Service"
 
@@ -2073,8 +1919,6 @@ class ServiceRefOrValue(object):
             get_opt_str(data, "state"),
             list(map(ResourceRef.from_json, get_list(data.get("supportingResource")))),
             list(map(ServiceRefOrValue.from_json, get_list(data.get("supportingService")))),
-            get_opt_str(data, "@baseType"),
-            get_opt_str(data, "@schemaLocation"),
             get_opt_str(data, "@type"),
             get_opt_str(data, "@referredType"),
         )
@@ -2107,8 +1951,6 @@ class ServiceRefOrValue(object):
             "state": self.state,
             "supportingResource": [entry.to_json() for entry in self.supportingResource],
             "supportingService": [entry.to_json() for entry in self.supportingService],
-            "@baseType": self.baseType,
-            "@schemaLocation": self.schemaLocation,
             "@type": self.type,
             "@referredType": self.referredType,
         }
@@ -2143,8 +1985,6 @@ class ServiceRefOrValue(object):
                 get_opt_child_str(gd, _q("state")),
                 list(map(ResourceRef.from_gdata, get_yang_list_elements(gd.children.get(_q("supportingResource"))))),
                 list(map(ServiceRefOrValue.from_gdata, get_yang_list_elements(gd.children.get(_q("supportingService"))))),
-                get_opt_child_str(gd, _q("baseType")),
-                get_opt_child_str(gd, _q("schemaLocation")),
                 get_opt_child_str(gd, _q("type")),
                 get_opt_child_str(gd, _q("referredType")),
             )
@@ -2170,8 +2010,6 @@ class ServiceRefOrValue(object):
             (_q("startDate"), self.startDate, "string"),
             (_q("startMode"), self.startMode, "string"),
             (_q("state"), self.state, "string"),
-            (_q("baseType"), self.baseType, "string"),
-            (_q("schemaLocation"), self.schemaLocation, "string"),
             (_q("type"), self.type, "string"),
             (_q("referredType"), self.referredType, "string"),
         ])
@@ -2209,9 +2047,7 @@ def _test_tmf640_mobile_service():
                             {
                                 "voiceStandard": "enable",
                                 "voWifi": "disable",
-                                "roaming": "enable",
-                                "@schemaLocation": ".../serviceSpecification/11/featureSpecification/1/VoiceFeatureCharacteristic.json",
-                                "@type": "VoiceFeatureCharacteristic"
+                                "roaming": "enable"
                             }
                         ],
                         "@type": "FeatureCharacteristic"
@@ -2279,7 +2115,7 @@ def _test_tmf640_mobile_service():
         "serviceSpecification": {
             "id": "cfs45",
             "name": "c_Mobile",
-            "@type": "serviceSpecification",
+            "@type": "ServiceSpecificationRef",
             "@referredType": "ServiceSpecification"
         },
         "state": "active",
@@ -2289,7 +2125,7 @@ def _test_tmf640_mobile_service():
                     "id": "cfs89",
                     "href": ".../serviceCatalog/v4/serviceSpecification/cfs89",
                     "name": "c_MobileSupport",
-                    "@type": "serviceSpecification",
+                    "@type": "ServiceSpecificationRef",
                     "@referredType": "ServiceSpecification"
                 },
                 "serviceCharacteristic": [
@@ -2367,7 +2203,7 @@ def _test_tmf640_mobile_service():
     if sspec is not None:
         testing.assertEqual(sspec.id, "cfs45")
         testing.assertEqual(sspec.name, "c_Mobile")
-        testing.assertEqual(sspec.type, "serviceSpecification")
+        testing.assertEqual(sspec.type, "ServiceSpecificationRef")
         testing.assertEqual(sspec.referredType, "ServiceSpecification")
     testing.assertEqual(service.state, "active")
     testing.assertEqual(len(service.supportingService), 2)
@@ -2377,7 +2213,7 @@ def _test_tmf640_mobile_service():
         testing.assertEqual(ss0_sspec.id, "cfs89")
         testing.assertEqual(ss0_sspec.href, ".../serviceCatalog/v4/serviceSpecification/cfs89")
         testing.assertEqual(ss0_sspec.name, "c_MobileSupport")
-        testing.assertEqual(ss0_sspec.type, "serviceSpecification")
+        testing.assertEqual(ss0_sspec.type, "ServiceSpecificationRef")
         testing.assertEqual(ss0_sspec.referredType, "ServiceSpecification")
     testing.assertEqual(len(ss0.serviceCharacteristic), 1)
     ss0_sc0 = ss0.serviceCharacteristic[0]
@@ -2765,8 +2601,6 @@ def _test_get_json_netinfra_router():
                             _q("startDate"): ygdata.Leaf('2024-06-01T12:00:00Z'),
                             _q("startMode"): ygdata.Leaf('1'),
                             _q("state"): ygdata.Leaf('active'),
-                            _q("baseType"): ygdata.Leaf('Service'),
-                            _q("schemaLocation"): ygdata.Leaf('/tmf-api/schema/Service/Service.schema.json'),
                             _q("type"): ygdata.Leaf('Service'),
                             _q("feature"): ygdata.List([_q("id")]),
                             _q("note"): ygdata.List([_q("id")]),
@@ -2778,8 +2612,6 @@ def _test_get_json_netinfra_router():
                                     ygdata.Container({
                                         _q("id"): ygdata.Leaf('name'),
                                         _q("name"): ygdata.Leaf('name'),
-                                        _q("baseType"): ygdata.Leaf('Characteristic'),
-                                        _q("schemaLocation"): ygdata.Leaf('/tmf-api/schema/Service/Characteristic.schema.json'),
                                         _q("type"): ygdata.Leaf('Characteristic'),
                                         _q("characteristicRelationship"): ygdata.List([_q("id")])
                                     })
@@ -2788,8 +2620,6 @@ def _test_get_json_netinfra_router():
                             _q("serviceRelationship"): ygdata.List([_q("id")]),
                             _q("serviceSpecification"): ygdata.Container({
                                 _q("id"): ygdata.Leaf('/netinfra/router'),
-                                _q("baseType"): ygdata.Leaf('ServiceSpecificationRef'),
-                                _q("schemaLocation"): ygdata.Leaf('/tmf-api/schema/Service/ServiceSpecificationRef.schema.json'),
                                 _q("type"): ygdata.Leaf('ServiceSpecificationRef'),
                                 _q("referredType"): ygdata.Leaf('ServiceSpecification')
                             }),
@@ -3041,8 +2871,6 @@ def _test_get_json_edge_device_access_interface_vlan():
                             _q("startDate"): ygdata.Leaf('2024-06-01T12:00:00Z'),
                             _q("startMode"): ygdata.Leaf('1'),
                             _q("state"): ygdata.Leaf('active'),
-                            _q("baseType"): ygdata.Leaf('Service'),
-                            _q("schemaLocation"): ygdata.Leaf('/tmf-api/schema/Service/Service.schema.json'),
                             _q("type"): ygdata.Leaf('Service'),
                             _q("feature"): ygdata.List([_q("id")]),
                             _q("note"): ygdata.List([_q("id")]),
@@ -3054,8 +2882,6 @@ def _test_get_json_edge_device_access_interface_vlan():
                                     ygdata.Container({
                                         _q("id"): ygdata.Leaf('vlan-id'),
                                         _q("name"): ygdata.Leaf('vlan-id'),
-                                        _q("baseType"): ygdata.Leaf('Characteristic'),
-                                        _q("schemaLocation"): ygdata.Leaf('/tmf-api/schema/Service/Characteristic.schema.json'),
                                         _q("type"): ygdata.Leaf('Characteristic'),
                                         _q("characteristicRelationship"): ygdata.List([_q("id")])
                                     })
@@ -3064,8 +2890,6 @@ def _test_get_json_edge_device_access_interface_vlan():
                             _q("serviceRelationship"): ygdata.List([_q("id")]),
                             _q("serviceSpecification"): ygdata.Container({
                                 _q("id"): ygdata.Leaf('/edge-device/access-interface/vlan'),
-                                _q("baseType"): ygdata.Leaf('ServiceSpecificationRef'),
-                                _q("schemaLocation"): ygdata.Leaf('/tmf-api/schema/Service/ServiceSpecificationRef.schema.json'),
                                 _q("type"): ygdata.Leaf('ServiceSpecificationRef'),
                                 _q("referredType"): ygdata.Leaf('ServiceSpecification')
                             }),
@@ -3076,13 +2900,9 @@ def _test_get_json_edge_device_access_interface_vlan():
                                         _q("id"): ygdata.Leaf("/edge-device[device-name='AM-CORE-1']/access-interface[interface-name='GigabitEthernet0/1']"),
                                         _q("href"): ygdata.Leaf("/tmf-api/ServiceActivationAndConfiguration/v4/service/edge-device[device-name='AM-CORE-1']/access-interface[interface-name='GigabitEthernet0/1']"),
                                         _q("name"): ygdata.Leaf('GigabitEthernet0/1'),
-                                        _q("baseType"): ygdata.Leaf('ServiceRefOrValue'),
-                                        _q("schemaLocation"): ygdata.Leaf('/tmf-api/schema/Service/ServiceRefOrValue.schema.json'),
                                         _q("type"): ygdata.Leaf('ServiceRefOrValue'),
                                         _q("serviceSpecification"): ygdata.Container({
                                             _q("id"): ygdata.Leaf('/edge-device/access-interface'),
-                                            _q("baseType"): ygdata.Leaf('ServiceSpecificationRef'),
-                                            _q("schemaLocation"): ygdata.Leaf('/tmf-api/schema/Service/ServiceSpecificationRef.schema.json'),
                                             _q("type"): ygdata.Leaf('ServiceSpecificationRef'),
                                             _q("referredType"): ygdata.Leaf('ServiceSpecification')
                                         }),
@@ -3096,16 +2916,12 @@ def _test_get_json_edge_device_access_interface_vlan():
                                                 ygdata.Container({
                                                     _q("id"): ygdata.Leaf('interface-name'),
                                                     _q("name"): ygdata.Leaf('interface-name'),
-                                                    _q("baseType"): ygdata.Leaf('Characteristic'),
-                                                    _q("schemaLocation"): ygdata.Leaf('/tmf-api/schema/Service/Characteristic.schema.json'),
                                                     _q("type"): ygdata.Leaf('Characteristic'),
                                                     _q("characteristicRelationship"): ygdata.List([_q("id")])
                                                 }),
                                                 ygdata.Container({
                                                     _q("id"): ygdata.Leaf('speed'),
                                                     _q("name"): ygdata.Leaf('speed'),
-                                                    _q("baseType"): ygdata.Leaf('Characteristic'),
-                                                    _q("schemaLocation"): ygdata.Leaf('/tmf-api/schema/Service/Characteristic.schema.json'),
                                                     _q("type"): ygdata.Leaf('Characteristic'),
                                                     _q("characteristicRelationship"): ygdata.List([_q("id")])
                                                 })
@@ -3119,13 +2935,9 @@ def _test_get_json_edge_device_access_interface_vlan():
                                                     _q("id"): ygdata.Leaf("/edge-device[device-name='AM-CORE-1']"),
                                                     _q("href"): ygdata.Leaf("/tmf-api/ServiceActivationAndConfiguration/v4/service/edge-device[device-name='AM-CORE-1']"),
                                                     _q("name"): ygdata.Leaf('AM-CORE-1'),
-                                                    _q("baseType"): ygdata.Leaf('ServiceRefOrValue'),
-                                                    _q("schemaLocation"): ygdata.Leaf('/tmf-api/schema/Service/ServiceRefOrValue.schema.json'),
                                                     _q("type"): ygdata.Leaf('ServiceRefOrValue'),
                                                     _q("serviceSpecification"): ygdata.Container({
                                                         _q("id"): ygdata.Leaf('/edge-device'),
-                                                        _q("baseType"): ygdata.Leaf('ServiceSpecificationRef'),
-                                                        _q("schemaLocation"): ygdata.Leaf('/tmf-api/schema/Service/ServiceSpecificationRef.schema.json'),
                                                         _q("type"): ygdata.Leaf('ServiceSpecificationRef'),
                                                         _q("referredType"): ygdata.Leaf('ServiceSpecification')
                                                     }),
@@ -3139,8 +2951,6 @@ def _test_get_json_edge_device_access_interface_vlan():
                                                             ygdata.Container({
                                                                 _q("id"): ygdata.Leaf('device-name'),
                                                                 _q("name"): ygdata.Leaf('device-name'),
-                                                                _q("baseType"): ygdata.Leaf('Characteristic'),
-                                                                _q("schemaLocation"): ygdata.Leaf('/tmf-api/schema/Service/Characteristic.schema.json'),
                                                                 _q("type"): ygdata.Leaf('Characteristic'),
                                                                 _q("characteristicRelationship"): ygdata.List([_q("id")])
                                                             })
@@ -3738,8 +3548,6 @@ def _test_get_json_compound_router_key():
                             _q("startDate"): ygdata.Leaf('2024-06-01T12:00:00Z'),
                             _q("startMode"): ygdata.Leaf('1'),
                             _q("state"): ygdata.Leaf('active'),
-                            _q("baseType"): ygdata.Leaf('Service'),
-                            _q("schemaLocation"): ygdata.Leaf('/tmf-api/schema/Service/Service.schema.json'),
                             _q("type"): ygdata.Leaf('Service'),
                             _q("feature"): ygdata.List([_q("id")]),
                             _q("note"): ygdata.List([_q("id")]),
@@ -3751,16 +3559,12 @@ def _test_get_json_compound_router_key():
                                     ygdata.Container({
                                         _q("id"): ygdata.Leaf('region'),
                                         _q("name"): ygdata.Leaf('region'),
-                                        _q("baseType"): ygdata.Leaf('Characteristic'),
-                                        _q("schemaLocation"): ygdata.Leaf('/tmf-api/schema/Service/Characteristic.schema.json'),
                                         _q("type"): ygdata.Leaf('Characteristic'),
                                         _q("characteristicRelationship"): ygdata.List([_q("id")])
                                     }),
                                     ygdata.Container({
                                         _q("id"): ygdata.Leaf('name'),
                                         _q("name"): ygdata.Leaf('name'),
-                                        _q("baseType"): ygdata.Leaf('Characteristic'),
-                                        _q("schemaLocation"): ygdata.Leaf('/tmf-api/schema/Service/Characteristic.schema.json'),
                                         _q("type"): ygdata.Leaf('Characteristic'),
                                         _q("characteristicRelationship"): ygdata.List([_q("id")])
                                     })
@@ -3769,8 +3573,6 @@ def _test_get_json_compound_router_key():
                             _q("serviceRelationship"): ygdata.List([_q("id")]),
                             _q("serviceSpecification"): ygdata.Container({
                                 _q("id"): ygdata.Leaf('/netinfra/router'),
-                                _q("baseType"): ygdata.Leaf('ServiceSpecificationRef'),
-                                _q("schemaLocation"): ygdata.Leaf('/tmf-api/schema/Service/ServiceSpecificationRef.schema.json'),
                                 _q("type"): ygdata.Leaf('ServiceSpecificationRef'),
                                 _q("referredType"): ygdata.Leaf('ServiceSpecification')
                             }),

@@ -8,14 +8,6 @@
         "lifecycleStatus": "active",
         "name": "Access Interface Service Specification",
         "version": "2025-11-01",
-        "attachment": [],
-        "constraint": [],
-        "entitySpecRelationship": [],
-        "featureSpecification": [],
-        "relatedParty": [],
-        "resourceSpecification": [],
-        "serviceLevelSpecification": [],
-        "serviceSpecRelationship": [],
         "specCharacteristic": [
             {
                 "id": "interface-name",
@@ -26,18 +18,11 @@
                 "maxCardinality": 1,
                 "minCardinality": 1,
                 "name": "interface-name",
-                "regex": null,
                 "valueType": "string",
-                "charSpecRelationship": [],
-                "characteristicValueSpecification": [],
                 "validFor": {
-                    "endDateTime": null,
                     "startDateTime": "1970-01-01T00:00:00"
                 },
-                "@baseType": "CharacteristicSpecification",
-                "@schemaLocation": "/tmf-api/schema/Service/CharacteristicSpecification.schema.json",
-                "@type": "CharacteristicSpecification",
-                "@valueSchemaLocation": null
+                "@type": "CharacteristicSpecification"
             },
             {
                 "id": "speed",
@@ -48,27 +33,16 @@
                 "maxCardinality": 1,
                 "minCardinality": 0,
                 "name": "speed",
-                "regex": null,
                 "valueType": "integer",
-                "charSpecRelationship": [],
-                "characteristicValueSpecification": [],
                 "validFor": {
-                    "endDateTime": null,
                     "startDateTime": "1970-01-01T00:00:00"
                 },
-                "@baseType": "CharacteristicSpecification",
-                "@schemaLocation": "/tmf-api/schema/Service/CharacteristicSpecification.schema.json",
-                "@type": "CharacteristicSpecification",
-                "@valueSchemaLocation": null
+                "@type": "CharacteristicSpecification"
             }
         ],
-        "targetEntitySchema": null,
         "validFor": {
-            "endDateTime": null,
             "startDateTime": "1970-01-01T00:00:00"
         },
-        "@baseType": "ServiceSpecification",
-        "@schemaLocation": "/tmf-api/schema/Service/CustomerFacingServiceSpecification.schema.json",
         "@type": "CustomerFacingServiceSpecification"
     },
     {
@@ -80,9 +54,6 @@
         "lifecycleStatus": "active",
         "name": "Router Service Specification",
         "version": "2025-11-01",
-        "attachment": [],
-        "constraint": [],
-        "entitySpecRelationship": [],
         "featureSpecification": [
             {
                 "id": "routing-options",
@@ -90,7 +61,6 @@
                 "isEnabled": true,
                 "name": "Routing options",
                 "version": "2025-11-01",
-                "constraint": [],
                 "featureSpecCharacteristic": [
                     {
                         "id": "admin-distance",
@@ -101,33 +71,23 @@
                         "maxCardinality": 1,
                         "minCardinality": 0,
                         "name": "admin-distance",
-                        "regex": null,
                         "valueType": "integer",
-                        "featureSpecCharRelationship": [],
-                        "featureSpecCharacteristicValue": [],
                         "validFor": {
-                            "endDateTime": null,
                             "startDateTime": "1970-01-01T00:00:00"
                         },
-                        "@baseType": "FeatureSpecificationCharacteristic",
-                        "@schemaLocation": "/tmf-api/schema/Service/FeatureSpecificationCharacteristic.schema.json",
-                        "@type": "FeatureSpecificationCharacteristic",
-                        "@valueSchemaLocation": null
+                        "@type": "FeatureSpecificationCharacteristic"
                     }
                 ],
-                "featureSpecRelationship": [],
                 "validFor": {
-                    "endDateTime": null,
                     "startDateTime": "1970-01-01T00:00:00"
                 }
             },
             {
                 "id": "routing-options/neighbor-group",
-                "isBundle": true,
+                "isBundle": false,
                 "isEnabled": true,
                 "name": "Neighbor group",
                 "version": "2025-11-01",
-                "constraint": [],
                 "featureSpecCharacteristic": [
                     {
                         "id": "group-name",
@@ -138,18 +98,11 @@
                         "maxCardinality": 1,
                         "minCardinality": 1,
                         "name": "group-name",
-                        "regex": null,
                         "valueType": "string",
-                        "featureSpecCharRelationship": [],
-                        "featureSpecCharacteristicValue": [],
                         "validFor": {
-                            "endDateTime": null,
                             "startDateTime": "1970-01-01T00:00:00"
                         },
-                        "@baseType": "FeatureSpecificationCharacteristic",
-                        "@schemaLocation": "/tmf-api/schema/Service/FeatureSpecificationCharacteristic.schema.json",
-                        "@type": "FeatureSpecificationCharacteristic",
-                        "@valueSchemaLocation": null
+                        "@type": "FeatureSpecificationCharacteristic"
                     },
                     {
                         "id": "remote-as",
@@ -160,18 +113,11 @@
                         "maxCardinality": 1,
                         "minCardinality": 0,
                         "name": "remote-as",
-                        "regex": null,
                         "valueType": "integer",
-                        "featureSpecCharRelationship": [],
-                        "featureSpecCharacteristicValue": [],
                         "validFor": {
-                            "endDateTime": null,
                             "startDateTime": "1970-01-01T00:00:00"
                         },
-                        "@baseType": "FeatureSpecificationCharacteristic",
-                        "@schemaLocation": "/tmf-api/schema/Service/FeatureSpecificationCharacteristic.schema.json",
-                        "@type": "FeatureSpecificationCharacteristic",
-                        "@valueSchemaLocation": null
+                        "@type": "FeatureSpecificationCharacteristic"
                     }
                 ],
                 "featureSpecRelationship": [
@@ -182,21 +128,15 @@
                         "parentSpecificationId": "/netinfra/router",
                         "relationshipType": "parent",
                         "validFor": {
-                            "endDateTime": null,
                             "startDateTime": "1970-01-01T00:00:00"
                         }
                     }
                 ],
                 "validFor": {
-                    "endDateTime": null,
                     "startDateTime": "1970-01-01T00:00:00"
                 }
             }
         ],
-        "relatedParty": [],
-        "resourceSpecification": [],
-        "serviceLevelSpecification": [],
-        "serviceSpecRelationship": [],
         "specCharacteristic": [
             {
                 "id": "name",
@@ -207,18 +147,11 @@
                 "maxCardinality": 1,
                 "minCardinality": 1,
                 "name": "name",
-                "regex": null,
                 "valueType": "string",
-                "charSpecRelationship": [],
-                "characteristicValueSpecification": [],
                 "validFor": {
-                    "endDateTime": null,
                     "startDateTime": "1970-01-01T00:00:00"
                 },
-                "@baseType": "CharacteristicSpecification",
-                "@schemaLocation": "/tmf-api/schema/Service/CharacteristicSpecification.schema.json",
-                "@type": "CharacteristicSpecification",
-                "@valueSchemaLocation": null
+                "@type": "CharacteristicSpecification"
             },
             {
                 "id": "model",
@@ -229,18 +162,11 @@
                 "maxCardinality": 1,
                 "minCardinality": 0,
                 "name": "model",
-                "regex": null,
                 "valueType": "string",
-                "charSpecRelationship": [],
-                "characteristicValueSpecification": [],
                 "validFor": {
-                    "endDateTime": null,
                     "startDateTime": "1970-01-01T00:00:00"
                 },
-                "@baseType": "CharacteristicSpecification",
-                "@schemaLocation": "/tmf-api/schema/Service/CharacteristicSpecification.schema.json",
-                "@type": "CharacteristicSpecification",
-                "@valueSchemaLocation": null
+                "@type": "CharacteristicSpecification"
             },
             {
                 "id": "capacity",
@@ -251,18 +177,11 @@
                 "maxCardinality": 1,
                 "minCardinality": 0,
                 "name": "capacity",
-                "regex": null,
                 "valueType": "integer",
-                "charSpecRelationship": [],
-                "characteristicValueSpecification": [],
                 "validFor": {
-                    "endDateTime": null,
                     "startDateTime": "1970-01-01T00:00:00"
                 },
-                "@baseType": "CharacteristicSpecification",
-                "@schemaLocation": "/tmf-api/schema/Service/CharacteristicSpecification.schema.json",
-                "@type": "CharacteristicSpecification",
-                "@valueSchemaLocation": null
+                "@type": "CharacteristicSpecification"
             },
             {
                 "id": "vendor",
@@ -273,70 +192,40 @@
                 "maxCardinality": 1,
                 "minCardinality": 0,
                 "name": "vendor",
-                "regex": null,
                 "valueType": "string",
-                "charSpecRelationship": [],
                 "characteristicValueSpecification": [
                     {
                         "isDefault": true,
-                        "rangeInterval": null,
-                        "regex": null,
-                        "unitOfMeasure": null,
-                        "valueFrom": null,
-                        "valueTo": null,
                         "valueType": "string",
                         "validFor": {
-                            "endDateTime": null,
                             "startDateTime": "1970-01-01T00:00:00"
                         },
                         "value": "Cisco",
-                        "@baseType": "CharacteristicValueSpecification",
-                        "@schemaLocation": "/tmf-api/schema/Service/CharacteristicValueSpecification.schema.json",
                         "@type": "CharacteristicValueSpecification"
                     },
                     {
                         "isDefault": false,
-                        "rangeInterval": null,
-                        "regex": null,
-                        "unitOfMeasure": null,
-                        "valueFrom": null,
-                        "valueTo": null,
                         "valueType": "string",
                         "validFor": {
-                            "endDateTime": null,
                             "startDateTime": "1970-01-01T00:00:00"
                         },
                         "value": "Juniper",
-                        "@baseType": "CharacteristicValueSpecification",
-                        "@schemaLocation": "/tmf-api/schema/Service/CharacteristicValueSpecification.schema.json",
                         "@type": "CharacteristicValueSpecification"
                     },
                     {
                         "isDefault": false,
-                        "rangeInterval": null,
-                        "regex": null,
-                        "unitOfMeasure": null,
-                        "valueFrom": null,
-                        "valueTo": null,
                         "valueType": "string",
                         "validFor": {
-                            "endDateTime": null,
                             "startDateTime": "1970-01-01T00:00:00"
                         },
                         "value": "Nokia",
-                        "@baseType": "CharacteristicValueSpecification",
-                        "@schemaLocation": "/tmf-api/schema/Service/CharacteristicValueSpecification.schema.json",
                         "@type": "CharacteristicValueSpecification"
                     }
                 ],
                 "validFor": {
-                    "endDateTime": null,
                     "startDateTime": "1970-01-01T00:00:00"
                 },
-                "@baseType": "CharacteristicSpecification",
-                "@schemaLocation": "/tmf-api/schema/Service/CharacteristicSpecification.schema.json",
-                "@type": "CharacteristicSpecification",
-                "@valueSchemaLocation": null
+                "@type": "CharacteristicSpecification"
             },
             {
                 "id": "qos-profiles",
@@ -344,30 +233,18 @@
                 "description": "List of QoS profiles supported by the router",
                 "extensible": false,
                 "isUnique": false,
-                "maxCardinality": null,
                 "minCardinality": 0,
                 "name": "qos-profiles",
-                "regex": null,
                 "valueType": "stringArray",
-                "charSpecRelationship": [],
-                "characteristicValueSpecification": [],
                 "validFor": {
-                    "endDateTime": null,
                     "startDateTime": "1970-01-01T00:00:00"
                 },
-                "@baseType": "CharacteristicSpecification",
-                "@schemaLocation": "/tmf-api/schema/Service/CharacteristicSpecification.schema.json",
-                "@type": "CharacteristicSpecification",
-                "@valueSchemaLocation": null
+                "@type": "CharacteristicSpecification"
             }
         ],
-        "targetEntitySchema": null,
         "validFor": {
-            "endDateTime": null,
             "startDateTime": "1970-01-01T00:00:00"
         },
-        "@baseType": "ServiceSpecification",
-        "@schemaLocation": "/tmf-api/schema/Service/CustomerFacingServiceSpecification.schema.json",
         "@type": "CustomerFacingServiceSpecification"
     }
 ]

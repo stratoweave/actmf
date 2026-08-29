@@ -9,6 +9,35 @@ import yang.gdata as ygdata
 import yang.schema as yschema
 
 
+def _compact_tmf_json(data: ?value) -> ?value:
+    if isinstance(data, dict):
+        compacted: dict[str, ?value] = {}
+        for key, item in data.items():
+            compacted_item = _compact_tmf_json(item)
+            if compacted_item is None:
+                continue
+            if isinstance(compacted_item, list) and len(compacted_item) == 0:
+                continue
+            compacted[key] = compacted_item
+        return compacted
+    if isinstance(data, list):
+        compacted_list: list[?value] = []
+        for item in data:
+            compacted_item = _compact_tmf_json(item)
+            if compacted_item is not None:
+                compacted_list.append(compacted_item)
+        return compacted_list
+    return data
+
+def _compact_tmf_json_object(data: dict[str, ?value]) -> dict[str, ?value]:
+    compacted = _compact_tmf_json(data)
+    if isinstance(compacted, dict):
+        return compacted
+    raise ValueError("Expected compacted TMF JSON object")
+
+def _compact_tmf_json_list(data: list[dict[str, ?value]]) -> list[dict[str, ?value]]:
+    return [_compact_tmf_json_object(entry) for entry in data]
+
 def _get_service_catalog_json(catalog_id: ?str = None) -> ?value:
         multiple = catalog_id is None
         if not multiple and catalog_id != "default":
@@ -27,8 +56,6 @@ def _get_service_catalog_json(catalog_id: ?str = None) -> ?value:
                 href="/tmf-api/serviceCatalogManagement/v4/serviceCategory/default",
                 name="Default Service Category",
                 version="2025-11-01",
-                baseType="ServiceCategoryRef",
-                schemaLocation="/tmf-api/schema/Service/ServiceCategoryRef.schema.json",
                 type="ServiceCategoryRef",
                 referredType="ServiceCategory"
             )],
@@ -37,8 +64,6 @@ def _get_service_catalog_json(catalog_id: ?str = None) -> ?value:
                 endDateTime=None,
                 startDateTime="1970-01-01T00:00:00"
             ),
-            baseType="ServiceCatalog",
-            schemaLocation="/tmf-api/schema/Service/ServiceCatalog.schema.json",
             type="ServiceCatalog"
         )
 
@@ -48,13 +73,13 @@ def get_service_catalog_json(catalog_id: str) -> ?dict[str, ?value]:
     catalog = _get_service_catalog_json(catalog_id)
     if catalog is not None:
         if isinstance(catalog, dict):
-            return catalog
+            return _compact_tmf_json_object(catalog)
 
 def get_service_catalog_list_json() -> list[dict[str, ?value]]:
     catalogs = _get_service_catalog_json()
     if catalogs is not None:
         if isinstance(catalogs, list):
-            return catalogs
+            return _compact_tmf_json_list(catalogs)
     return []
 
 def _get_service_category_json(top_schema: yschema.DRoot, category_id: ?str = None) -> ?value:
@@ -79,8 +104,6 @@ def _get_service_category_json(top_schema: yschema.DRoot, category_id: ?str = No
             endDateTime=None,
             startDateTime="1970-01-01T00:00:00"
         ),
-        baseType="Category",
-        schemaLocation="/tmf-api/schema/Service/ServiceCategory.schema.json",
         type="ServiceCategory"
     )
     for k, v in tmf_spec.items():
@@ -89,8 +112,6 @@ def _get_service_category_json(top_schema: yschema.DRoot, category_id: ?str = No
             href="/tmf-api/serviceCatalogManagement/v4/serviceCandidate/{uri.quote(k, safe='')}",
             name="{v.name} Service Candidate",
             version="2025-11-01",
-            baseType="ServiceCandidateRef",
-            schemaLocation="/tmf-api/schema/Service/ServiceCandidateRef.schema.json",
             type="ServiceCandidateRef",
             referredType="ServiceCandidate"
         ))
@@ -100,14 +121,14 @@ def get_service_category_json(top_schema: yschema.DRoot, category_id: str) -> ?d
     category = _get_service_category_json(top_schema, category_id)
     if category is not None:
         if isinstance(category, dict):
-            return category
+            return _compact_tmf_json_object(category)
     return None
 
 def get_service_category_list_json(top_schema: yschema.DRoot) -> list[dict[str, ?value]]:
     categories = _get_service_category_json(top_schema)
     if categories is not None:
         if isinstance(categories, list):
-            return categories
+            return _compact_tmf_json_list(categories)
     return []
 
 def _get_service_candidate_json(top_schema: yschema.DRoot, candidate_id: ?str = None) -> ?value:
@@ -132,8 +153,6 @@ def _get_service_candidate_json(top_schema: yschema.DRoot, candidate_id: ?str = 
                 href="/tmf-api/serviceCatalogManagement/v4/serviceCategory/default",
                 name="Default Service Category",
                 version="2025-11-01",
-                baseType="ServiceCategoryRef",
-                schemaLocation="/tmf-api/schema/Service/ServiceCategoryRef.schema.json",
                 type="ServiceCategoryRef",
                 referredType="ServiceCategory"
             )],
@@ -142,8 +161,6 @@ def _get_service_candidate_json(top_schema: yschema.DRoot, candidate_id: ?str = 
                 href="/tmf-api/serviceCatalogManagement/v4/serviceSpecification/{uri.quote(k, safe='')}",
                 name="{v.name} Service Specification",
                 version="2025-11-01",
-                baseType="ServiceSpecificationRef",
-                schemaLocation="/tmf-api/schema/Service/ServiceSpecificationRef.schema.json",
                 type="ServiceSpecificationRef",
                 referredType="CustomerFacingServiceSpecification"
             ),
@@ -151,8 +168,6 @@ def _get_service_candidate_json(top_schema: yschema.DRoot, candidate_id: ?str = 
                 endDateTime=None,
                 startDateTime="1970-01-01T00:00:00"
             ),
-            baseType="ServiceCandidate",
-            schemaLocation="/tmf-api/schema/Service/ServiceCandidate.schema.json",
             type="ServiceCandidate"
         )
 
@@ -168,14 +183,14 @@ def get_service_candidate_json(top_schema: yschema.DRoot, candidate_id: str) -> 
     candidate = _get_service_candidate_json(top_schema, candidate_id)
     if candidate is not None:
         if isinstance(candidate, dict):
-            return candidate
+            return _compact_tmf_json_object(candidate)
     return None
 
 def get_service_candidate_list_json(top_schema: yschema.DRoot) -> list[dict[str, ?value]]:
     candidates = _get_service_candidate_json(top_schema)
     if candidates is not None:
         if isinstance(candidates, list):
-            return candidates
+            return _compact_tmf_json_list(candidates)
     return []
 
 def _resolve_service_schema(top_schema: yschema.DRoot, service_specification_id: str) -> yschema.DNodeInner:
@@ -230,8 +245,6 @@ def _get_feature_spec_characteristic(parent_schema: yschema.DNodeInner, child: y
                 endDateTime=None,
                 startDateTime="1970-01-01T00:00:00"
             ),
-            baseType="FeatureSpecificationCharacteristic",
-            schemaLocation="/tmf-api/schema/Service/FeatureSpecificationCharacteristic.schema.json",
             type="FeatureSpecificationCharacteristic",
             valueSchemaLocation=None
         )
@@ -256,8 +269,6 @@ def _get_feature_spec_characteristic(parent_schema: yschema.DNodeInner, child: y
                 endDateTime=None,
                 startDateTime="1970-01-01T00:00:00"
             ),
-            baseType="FeatureSpecificationCharacteristic",
-            schemaLocation="/tmf-api/schema/Service/FeatureSpecificationCharacteristic.schema.json",
             type="FeatureSpecificationCharacteristic",
             valueSchemaLocation=None
         )
@@ -282,6 +293,13 @@ def _append_feature_spec_characteristics(feature_specification: FeatureSpecifica
                 _get_feature_spec_characteristic(feature_schema, feature_child)
             )
 
+def _has_nested_feature_specifications(feature_schema: yschema.DNodeInner) -> bool:
+    for feature_child in feature_schema.children:
+        if isinstance(feature_child, yschema.DContainer) or isinstance(feature_child, yschema.DList):
+            if not cfs.is_tmf_cfs_service(feature_child):
+                return True
+    return False
+
 def _append_nested_feature_specifications(sspec: ServiceSpecification, feature_schema: yschema.DNodeInner, service_specification_id: str, parent_feature_id: str) -> None:
     for nested_child in feature_schema.children:
         if isinstance(nested_child, yschema.DContainer):
@@ -290,7 +308,7 @@ def _append_nested_feature_specifications(sspec: ServiceSpecification, feature_s
             feature_id = _append_feature_id(parent_feature_id, nested_child.name)
             feature_specification = FeatureSpecification(
                 id=feature_id,
-                isBundle=True,
+                isBundle=_has_nested_feature_specifications(nested_child),
                 isEnabled=True,
                 name=nested_child.description if nested_child.description is not None else nested_child.name,
                 version="2025-11-01",
@@ -323,7 +341,7 @@ def _append_nested_feature_specifications(sspec: ServiceSpecification, feature_s
             feature_id = _append_feature_id(parent_feature_id, nested_child.name)
             feature_specification = FeatureSpecification(
                 id=feature_id,
-                isBundle=True,
+                isBundle=_has_nested_feature_specifications(nested_child),
                 isEnabled=True,
                 name=nested_child.description if nested_child.description is not None else nested_child.name,
                 version="2025-11-01",
@@ -382,8 +400,6 @@ def _build_service_specifications(top_schema: yschema.DRoot, sspec_id: ?str = No
                 endDateTime=None,
                 startDateTime="1970-01-01T00:00:00"
             ),
-            baseType="ServiceSpecification",
-            schemaLocation="/tmf-api/schema/Service/CustomerFacingServiceSpecification.schema.json",
             type="CustomerFacingServiceSpecification"
         )
 
@@ -411,8 +427,6 @@ def _build_service_specifications(top_schema: yschema.DRoot, sspec_id: ?str = No
                         endDateTime=None,
                         startDateTime="1970-01-01T00:00:00"
                     ),
-                    baseType="CharacteristicSpecification",
-                    schemaLocation="/tmf-api/schema/Service/CharacteristicSpecification.schema.json",
                     type="CharacteristicSpecification",
                     valueSchemaLocation=None  # When to set this?
                 )
@@ -427,8 +441,6 @@ def _build_service_specifications(top_schema: yschema.DRoot, sspec_id: ?str = No
                                     endDateTime=None,
                                     startDateTime="1970-01-01T00:00:00"
                                 ),
-                                baseType="CharacteristicValueSpecification",
-                                schemaLocation="/tmf-api/schema/Service/CharacteristicValueSpecification.schema.json",
                                 type="CharacteristicValueSpecification"
                             )
                         )
@@ -442,8 +454,6 @@ def _build_service_specifications(top_schema: yschema.DRoot, sspec_id: ?str = No
                                 endDateTime=None,
                                 startDateTime="1970-01-01T00:00:00"
                             ),
-                            baseType="CharacteristicValueSpecification",
-                            schemaLocation="/tmf-api/schema/Service/CharacteristicValueSpecification.schema.json",
                             type="CharacteristicValueSpecification"
                         )
                     )
@@ -469,8 +479,6 @@ def _build_service_specifications(top_schema: yschema.DRoot, sspec_id: ?str = No
                         endDateTime=None,
                         startDateTime="1970-01-01T00:00:00"
                     ),
-                    baseType="CharacteristicSpecification",
-                    schemaLocation="/tmf-api/schema/Service/CharacteristicSpecification.schema.json",
                     type="CharacteristicSpecification",
                     valueSchemaLocation=None  # When to set this?
                 )
@@ -486,8 +494,6 @@ def _build_service_specifications(top_schema: yschema.DRoot, sspec_id: ?str = No
                                     endDateTime=None,
                                     startDateTime="1970-01-01T00:00:00"
                                 ),
-                                baseType="CharacteristicValueSpecification",
-                                schemaLocation="/tmf-api/schema/Service/CharacteristicValueSpecification.schema.json",
                                 type="CharacteristicValueSpecification"
                             )
                         )
@@ -502,8 +508,6 @@ def _build_service_specifications(top_schema: yschema.DRoot, sspec_id: ?str = No
                                     endDateTime=None,
                                     startDateTime="1970-01-01T00:00:00"
                                 ),
-                                baseType="CharacteristicValueSpecification",
-                                schemaLocation="/tmf-api/schema/Service/CharacteristicValueSpecification.schema.json",
                                 type="CharacteristicValueSpecification"
                             )
                         )
@@ -517,7 +521,7 @@ def _build_service_specifications(top_schema: yschema.DRoot, sspec_id: ?str = No
                 feature_id = _append_feature_id("", child.name)
                 feature_specification = FeatureSpecification(
                     id=feature_id,
-                    isBundle=True,
+                    isBundle=_has_nested_feature_specifications(child),
                     isEnabled=True,
                     name=child.description if child.description is not None else child.name,
                     version="2025-11-01",
@@ -539,7 +543,7 @@ def _build_service_specifications(top_schema: yschema.DRoot, sspec_id: ?str = No
                 feature_id = _append_feature_id("", child.name)
                 feature_specification = FeatureSpecification(
                     id=feature_id,
-                    isBundle=True,
+                    isBundle=_has_nested_feature_specifications(child),
                     isEnabled=True,
                     name=child.description if child.description is not None else child.name,
                     version="2025-11-01",
@@ -571,14 +575,14 @@ def get_service_specification_json(top_schema: yschema.DRoot, sspec_id: str) -> 
     sspec = _get_service_specification_json(top_schema, sspec_id)
     if sspec is not None:
         if isinstance(sspec, dict):
-            return sspec
+            return _compact_tmf_json_object(sspec)
     return None
 
 def get_service_specification_list_json(top_schema: yschema.DRoot) -> list[dict[str, ?value]]:
     sspecs = _get_service_specification_json(top_schema)
     if sspecs is not None:
         if isinstance(sspecs, list):
-            return sspecs
+            return _compact_tmf_json_list(sspecs)
     return []
 
 def get_opt_obj_to_json(obj) -> ?dict[str, ?value]:
@@ -608,11 +612,9 @@ class ServiceCatalog(object):
     category: list  [ServiceCategoryRef]
     relatedParty: list  [RelatedParty]
     validFor: ?TimePeriod
-    baseType: ?str
-    schemaLocation: ?str
     type: ?str
 
-    def __init__(self, id: ?str, href: ?str, description: ?str, lastUpdate: ?str, lifecycleStatus: ?str, name: ?str, version: ?str, category: list  [ServiceCategoryRef], relatedParty: list  [RelatedParty], validFor: ?TimePeriod, baseType: ?str, schemaLocation: ?str, type: ?str):
+    def __init__(self, id: ?str, href: ?str, description: ?str, lastUpdate: ?str, lifecycleStatus: ?str, name: ?str, version: ?str, category: list  [ServiceCategoryRef], relatedParty: list  [RelatedParty], validFor: ?TimePeriod, type: ?str):
         self.id = id
         self.href = href
         self.description = description
@@ -623,8 +625,6 @@ class ServiceCatalog(object):
         self.category = category
         self.relatedParty = relatedParty
         self.validFor = validFor
-        self.baseType = baseType
-        self.schemaLocation = schemaLocation
         self.type = type
 
     def to_json(self) -> dict[str, ?value]:
@@ -639,8 +639,6 @@ class ServiceCatalog(object):
             "category": [entry.to_json() for entry in self.category],
             "relatedParty": [entry.to_json() for entry in self.relatedParty],
             "validFor": get_opt_obj_to_json(self.validFor),
-            "@baseType": self.baseType,
-            "@schemaLocation": self.schemaLocation,
             "@type": self.type,
         }
 
@@ -657,11 +655,9 @@ class ServiceCategory(object):
     category: list  [ServiceCategoryRef]
     serviceCandidate: list  [ServiceCandidateRef]
     validFor: ?TimePeriod
-    baseType: ?str
-    schemaLocation: ?str
     type: ?str
 
-    def __init__(self, id: ?str, href: ?str, description: ?str, isRoot: ?bool, lastUpdate: ?str, lifecycleStatus: ?str, name: ?str, parentId: ?str, version: ?str, category: list  [ServiceCategoryRef], serviceCandidate: list  [ServiceCandidateRef], validFor: ?TimePeriod, baseType: ?str, schemaLocation: ?str, type: ?str):
+    def __init__(self, id: ?str, href: ?str, description: ?str, isRoot: ?bool, lastUpdate: ?str, lifecycleStatus: ?str, name: ?str, parentId: ?str, version: ?str, category: list  [ServiceCategoryRef], serviceCandidate: list  [ServiceCandidateRef], validFor: ?TimePeriod, type: ?str):
         self.id = id
         self.href = href
         self.description = description
@@ -674,8 +670,6 @@ class ServiceCategory(object):
         self.category = category
         self.serviceCandidate = serviceCandidate
         self.validFor = validFor
-        self.baseType = baseType
-        self.schemaLocation = schemaLocation
         self.type = type
 
     def to_json(self) -> dict[str, ?value]:
@@ -692,8 +686,6 @@ class ServiceCategory(object):
             "category": [entry.to_json() for entry in self.category],
             "serviceCandidate": [entry.to_json() for entry in self.serviceCandidate],
             "validFor": get_opt_obj_to_json(self.validFor),
-            "@baseType": self.baseType,
-            "@schemaLocation": self.schemaLocation,
             "@type": self.type,
         }
 
@@ -708,11 +700,9 @@ class ServiceCandidate(object):
     category: list  [ServiceCategoryRef]
     serviceSpecification: ?ServiceSpecificationRef
     validFor: ?TimePeriod
-    baseType: ?str
-    schemaLocation: ?str
     type: ?str
 
-    def __init__(self, id: ?str, href: ?str, description: ?str, lastUpdate: ?str, lifecycleStatus: ?str, name: ?str, version: ?str, category: list  [ServiceCategoryRef], serviceSpecification: ?ServiceSpecificationRef, validFor: ?TimePeriod, baseType: ?str, schemaLocation: ?str, type: ?str):
+    def __init__(self, id: ?str, href: ?str, description: ?str, lastUpdate: ?str, lifecycleStatus: ?str, name: ?str, version: ?str, category: list  [ServiceCategoryRef], serviceSpecification: ?ServiceSpecificationRef, validFor: ?TimePeriod, type: ?str):
         self.id = id
         self.href = href
         self.description = description
@@ -723,8 +713,6 @@ class ServiceCandidate(object):
         self.category = category
         self.serviceSpecification = serviceSpecification
         self.validFor = validFor
-        self.baseType = baseType
-        self.schemaLocation = schemaLocation
         self.type = type
 
     def to_json(self) -> dict[str, ?value]:
@@ -739,8 +727,6 @@ class ServiceCandidate(object):
             "category": [entry.to_json() for entry in self.category],
             "serviceSpecification": get_opt_obj_to_json(self.serviceSpecification),
             "validFor": get_opt_obj_to_json(self.validFor),
-            "@baseType": self.baseType,
-            "@schemaLocation": self.schemaLocation,
             "@type": self.type,
         }
 
@@ -758,12 +744,10 @@ class CharacteristicSpecification(object):
     charSpecRelationship: list  [CharacteristicSpecificationRelationship]
     characteristicValueSpecification: list  [CharacteristicValueSpecification]
     validFor: ?TimePeriod
-    baseType: ?str
-    schemaLocation: ?str
     type: ?str
     valueSchemaLocation: ?str
 
-    def __init__(self, id: ?str, configurable: ?bool, description: ?str, extensible: ?bool, isUnique: ?bool, maxCardinality: ?int, minCardinality: ?int, name: ?str, regex: ?str, valueType: ?str, charSpecRelationship: list  [CharacteristicSpecificationRelationship], characteristicValueSpecification: list  [CharacteristicValueSpecification], validFor: ?TimePeriod, baseType: ?str, schemaLocation: ?str, type: ?str, valueSchemaLocation: ?str):
+    def __init__(self, id: ?str, configurable: ?bool, description: ?str, extensible: ?bool, isUnique: ?bool, maxCardinality: ?int, minCardinality: ?int, name: ?str, regex: ?str, valueType: ?str, charSpecRelationship: list  [CharacteristicSpecificationRelationship], characteristicValueSpecification: list  [CharacteristicValueSpecification], validFor: ?TimePeriod, type: ?str, valueSchemaLocation: ?str):
         self.id = id
         self.configurable = configurable
         self.description = description
@@ -777,8 +761,6 @@ class CharacteristicSpecification(object):
         self.charSpecRelationship = charSpecRelationship
         self.characteristicValueSpecification = characteristicValueSpecification
         self.validFor = validFor
-        self.baseType = baseType
-        self.schemaLocation = schemaLocation
         self.type = type
         self.valueSchemaLocation = valueSchemaLocation
 
@@ -797,8 +779,6 @@ class CharacteristicSpecification(object):
             "charSpecRelationship": [entry.to_json() for entry in self.charSpecRelationship],
             "characteristicValueSpecification": [entry.to_json() for entry in self.characteristicValueSpecification],
             "validFor": get_opt_obj_to_json(self.validFor),
-            "@baseType": self.baseType,
-            "@schemaLocation": self.schemaLocation,
             "@type": self.type,
             "@valueSchemaLocation": self.valueSchemaLocation,
         }
@@ -823,11 +803,9 @@ class ServiceSpecification(object):
     specCharacteristic: list  [CharacteristicSpecification]
     targetEntitySchema: ?TargetEntitySchema
     validFor: ?TimePeriod
-    baseType: ?str
-    schemaLocation: ?str
     type: ?str
 
-    def __init__(self, id: ?str, href: ?str, description: ?str, isBundle: ?bool, lastUpdate: ?str, lifecycleStatus: ?str, name: ?str, version: ?str, attachment: list  [AttachmentRefOrValue], constraint: list  [ConstraintRef], entitySpecRelationship: list  [EntitySpecificationRelationship], featureSpecification: list  [FeatureSpecification], relatedParty: list  [RelatedParty], resourceSpecification: list  [ResourceSpecificationRef], serviceLevelSpecification: list  [ServiceLevelSpecificationRef], serviceSpecRelationship: list  [ServiceSpecRelationship], specCharacteristic: list  [CharacteristicSpecification], targetEntitySchema: ?TargetEntitySchema, validFor: ?TimePeriod, baseType: ?str, schemaLocation: ?str, type: ?str):
+    def __init__(self, id: ?str, href: ?str, description: ?str, isBundle: ?bool, lastUpdate: ?str, lifecycleStatus: ?str, name: ?str, version: ?str, attachment: list  [AttachmentRefOrValue], constraint: list  [ConstraintRef], entitySpecRelationship: list  [EntitySpecificationRelationship], featureSpecification: list  [FeatureSpecification], relatedParty: list  [RelatedParty], resourceSpecification: list  [ResourceSpecificationRef], serviceLevelSpecification: list  [ServiceLevelSpecificationRef], serviceSpecRelationship: list  [ServiceSpecRelationship], specCharacteristic: list  [CharacteristicSpecification], targetEntitySchema: ?TargetEntitySchema, validFor: ?TimePeriod, type: ?str):
         self.id = id
         self.href = href
         self.description = description
@@ -847,8 +825,6 @@ class ServiceSpecification(object):
         self.specCharacteristic = specCharacteristic
         self.targetEntitySchema = targetEntitySchema
         self.validFor = validFor
-        self.baseType = baseType
-        self.schemaLocation = schemaLocation
         self.type = type
 
     def to_json(self) -> dict[str, ?value]:
@@ -872,8 +848,6 @@ class ServiceSpecification(object):
             "specCharacteristic": [entry.to_json() for entry in self.specCharacteristic],
             "targetEntitySchema": get_opt_obj_to_json(self.targetEntitySchema),
             "validFor": get_opt_obj_to_json(self.validFor),
-            "@baseType": self.baseType,
-            "@schemaLocation": self.schemaLocation,
             "@type": self.type,
         }
 
@@ -926,12 +900,10 @@ class FeatureSpecificationCharacteristic(object):
     featureSpecCharRelationship: list  [FeatureSpecificationCharacteristicRelationship]
     featureSpecCharacteristicValue: list  [CharacteristicValueSpecification]
     validFor: ?TimePeriod
-    baseType: ?str
-    schemaLocation: ?str
     type: ?str
     valueSchemaLocation: ?str
 
-    def __init__(self, id: ?str, configurable: ?bool, description: ?str, extensible: ?bool, isUnique: ?bool, maxCardinality: ?int, minCardinality: ?int, name: str, regex: ?str, valueType: ?str, featureSpecCharRelationship: list  [FeatureSpecificationCharacteristicRelationship], featureSpecCharacteristicValue: list  [CharacteristicValueSpecification], validFor: ?TimePeriod, baseType: ?str, schemaLocation: ?str, type: ?str, valueSchemaLocation: ?str):
+    def __init__(self, id: ?str, configurable: ?bool, description: ?str, extensible: ?bool, isUnique: ?bool, maxCardinality: ?int, minCardinality: ?int, name: str, regex: ?str, valueType: ?str, featureSpecCharRelationship: list  [FeatureSpecificationCharacteristicRelationship], featureSpecCharacteristicValue: list  [CharacteristicValueSpecification], validFor: ?TimePeriod, type: ?str, valueSchemaLocation: ?str):
         self.id = id
         self.configurable = configurable
         self.description = description
@@ -945,8 +917,6 @@ class FeatureSpecificationCharacteristic(object):
         self.featureSpecCharRelationship = featureSpecCharRelationship
         self.featureSpecCharacteristicValue = featureSpecCharacteristicValue
         self.validFor = validFor
-        self.baseType = baseType
-        self.schemaLocation = schemaLocation
         self.type = type
         self.valueSchemaLocation = valueSchemaLocation
 
@@ -965,8 +935,6 @@ class FeatureSpecificationCharacteristic(object):
             "featureSpecCharRelationship": [entry.to_json() for entry in self.featureSpecCharRelationship],
             "featureSpecCharacteristicValue": [entry.to_json() for entry in self.featureSpecCharacteristicValue],
             "validFor": get_opt_obj_to_json(self.validFor),
-            "@baseType": self.baseType,
-            "@schemaLocation": self.schemaLocation,
             "@type": self.type,
             "@valueSchemaLocation": self.valueSchemaLocation,
         }
@@ -981,11 +949,9 @@ class CharacteristicValueSpecification(object):
     valueType: ?str
     validFor: ?TimePeriod
     value: ?value
-    baseType: ?str
-    schemaLocation: ?str
     type: ?str
 
-    def __init__(self, isDefault: ?bool, rangeInterval: ?str, regex: ?str, unitOfMeasure: ?str, valueFrom: ?int, valueTo: ?int, valueType: ?str, validFor: ?TimePeriod, value: ?value, baseType: ?str, schemaLocation: ?str, type: ?str):
+    def __init__(self, isDefault: ?bool, rangeInterval: ?str, regex: ?str, unitOfMeasure: ?str, valueFrom: ?int, valueTo: ?int, valueType: ?str, validFor: ?TimePeriod, value: ?value, type: ?str):
         self.isDefault = isDefault
         self.rangeInterval = rangeInterval
         self.regex = regex
@@ -995,8 +961,6 @@ class CharacteristicValueSpecification(object):
         self.valueType = valueType
         self.validFor = validFor
         self.value = value
-        self.baseType = baseType
-        self.schemaLocation = schemaLocation
         self.type = type
 
     def to_json(self) -> dict[str, ?value]:
@@ -1010,8 +974,6 @@ class CharacteristicValueSpecification(object):
             "valueType": self.valueType,
             "validFor": get_opt_obj_to_json(self.validFor),
             "value": self.value,
-            "@baseType": self.baseType,
-            "@schemaLocation": self.schemaLocation,
             "@type": self.type,
         }
 
@@ -1048,20 +1010,16 @@ class ServiceSpecRelationship(object):
     relationshipType: str
     role: ?str
     validFor: ?TimePeriod
-    baseType: ?str
-    schemaLocation: ?str
     type: ?str
     referredType: ?str
 
-    def __init__(self, id: ?str, href: ?str, name: ?str, relationshipType: str, role: ?str, validFor: ?TimePeriod, baseType: ?str, schemaLocation: ?str, type: ?str, referredType: ?str):
+    def __init__(self, id: ?str, href: ?str, name: ?str, relationshipType: str, role: ?str, validFor: ?TimePeriod, type: ?str, referredType: ?str):
         self.id = id
         self.href = href
         self.name = name
         self.relationshipType = relationshipType
         self.role = role
         self.validFor = validFor
-        self.baseType = baseType
-        self.schemaLocation = schemaLocation
         self.type = type
         self.referredType = referredType
 
@@ -1073,8 +1031,6 @@ class ServiceSpecRelationship(object):
             "relationshipType": self.relationshipType,
             "role": self.role,
             "validFor": get_opt_obj_to_json(self.validFor),
-            "@baseType": self.baseType,
-            "@schemaLocation": self.schemaLocation,
             "@type": self.type,
             "@referredType": self.referredType,
         }
@@ -1087,12 +1043,10 @@ class EntitySpecificationRelationship(object):
     role: ?str
     associationSpec: ?AssociationSpecificationRef
     validFor: ?TimePeriod
-    baseType: ?str
-    schemaLocation: ?str
     type: ?str
     referredType: ?str
 
-    def __init__(self, id: ?str, href: ?str, name: ?str, relationshipType: str, role: ?str, associationSpec: ?AssociationSpecificationRef, validFor: ?TimePeriod, baseType: ?str, schemaLocation: ?str, type: ?str, referredType: ?str):
+    def __init__(self, id: ?str, href: ?str, name: ?str, relationshipType: str, role: ?str, associationSpec: ?AssociationSpecificationRef, validFor: ?TimePeriod, type: ?str, referredType: ?str):
         self.id = id
         self.href = href
         self.name = name
@@ -1100,8 +1054,6 @@ class EntitySpecificationRelationship(object):
         self.role = role
         self.associationSpec = associationSpec
         self.validFor = validFor
-        self.baseType = baseType
-        self.schemaLocation = schemaLocation
         self.type = type
         self.referredType = referredType
 
@@ -1114,8 +1066,6 @@ class EntitySpecificationRelationship(object):
             "role": self.role,
             "associationSpec": get_opt_obj_to_json(self.associationSpec),
             "validFor": get_opt_obj_to_json(self.validFor),
-            "@baseType": self.baseType,
-            "@schemaLocation": self.schemaLocation,
             "@type": self.type,
             "@referredType": self.referredType,
         }
@@ -1180,18 +1130,14 @@ class ServiceCategoryRef(object):
     href: ?str
     name: ?str
     version: ?str
-    baseType: ?str
-    schemaLocation: ?str
     type: ?str
     referredType: ?str
 
-    def __init__(self, id: str, href: ?str, name: ?str, version: ?str, baseType: ?str, schemaLocation: ?str, type: ?str, referredType: ?str):
+    def __init__(self, id: str, href: ?str, name: ?str, version: ?str, type: ?str, referredType: ?str):
         self.id = id
         self.href = href
         self.name = name
         self.version = version
-        self.baseType = baseType
-        self.schemaLocation = schemaLocation
         self.type = type
         self.referredType = referredType
 
@@ -1201,8 +1147,6 @@ class ServiceCategoryRef(object):
             "href": self.href,
             "name": self.name,
             "version": self.version,
-            "@baseType": self.baseType,
-            "@schemaLocation": self.schemaLocation,
             "@type": self.type,
             "@referredType": self.referredType,
         }
@@ -1212,18 +1156,14 @@ class ServiceCandidateRef(object):
     href: ?str
     name: ?str
     version: ?str
-    baseType: ?str
-    schemaLocation: ?str
     type: ?str
     referredType: ?str
 
-    def __init__(self, id: str, href: ?str, name: ?str, version: ?str, baseType: ?str, schemaLocation: ?str, type: ?str, referredType: ?str):
+    def __init__(self, id: str, href: ?str, name: ?str, version: ?str, type: ?str, referredType: ?str):
         self.id = id
         self.href = href
         self.name = name
         self.version = version
-        self.baseType = baseType
-        self.schemaLocation = schemaLocation
         self.type = type
         self.referredType = referredType
 
@@ -1233,8 +1173,6 @@ class ServiceCandidateRef(object):
             "href": self.href,
             "name": self.name,
             "version": self.version,
-            "@baseType": self.baseType,
-            "@schemaLocation": self.schemaLocation,
             "@type": self.type,
             "@referredType": self.referredType,
         }
@@ -1244,18 +1182,14 @@ class ServiceSpecificationRef(object):
     href: ?str
     name: ?str
     version: ?str
-    baseType: ?str
-    schemaLocation: ?str
     type: ?str
     referredType: ?str
 
-    def __init__(self, id: str, href: ?str, name: ?str, version: ?str, baseType: ?str, schemaLocation: ?str, type: ?str, referredType: ?str):
+    def __init__(self, id: str, href: ?str, name: ?str, version: ?str, type: ?str, referredType: ?str):
         self.id = id
         self.href = href
         self.name = name
         self.version = version
-        self.baseType = baseType
-        self.schemaLocation = schemaLocation
         self.type = type
         self.referredType = referredType
 
@@ -1265,8 +1199,6 @@ class ServiceSpecificationRef(object):
             "href": self.href,
             "name": self.name,
             "version": self.version,
-            "@baseType": self.baseType,
-            "@schemaLocation": self.schemaLocation,
             "@type": self.type,
             "@referredType": self.referredType,
         }
@@ -1276,18 +1208,14 @@ class ResourceSpecificationRef(object):
     href: ?str
     name: ?str
     version: ?str
-    baseType: ?str
-    schemaLocation: ?str
     type: ?str
     referredType: ?str
 
-    def __init__(self, id: str, href: ?str, name: ?str, version: ?str, baseType: ?str, schemaLocation: ?str, type: ?str, referredType: ?str):
+    def __init__(self, id: str, href: ?str, name: ?str, version: ?str, type: ?str, referredType: ?str):
         self.id = id
         self.href = href
         self.name = name
         self.version = version
-        self.baseType = baseType
-        self.schemaLocation = schemaLocation
         self.type = type
         self.referredType = referredType
 
@@ -1297,8 +1225,6 @@ class ResourceSpecificationRef(object):
             "href": self.href,
             "name": self.name,
             "version": self.version,
-            "@baseType": self.baseType,
-            "@schemaLocation": self.schemaLocation,
             "@type": self.type,
             "@referredType": self.referredType,
         }
@@ -1307,17 +1233,13 @@ class AssociationSpecificationRef(object):
     id: str
     href: ?str
     name: ?str
-    baseType: ?str
-    schemaLocation: ?str
     type: ?str
     referredType: ?str
 
-    def __init__(self, id: str, href: ?str, name: ?str, baseType: ?str, schemaLocation: ?str, type: ?str, referredType: ?str):
+    def __init__(self, id: str, href: ?str, name: ?str, type: ?str, referredType: ?str):
         self.id = id
         self.href = href
         self.name = name
-        self.baseType = baseType
-        self.schemaLocation = schemaLocation
         self.type = type
         self.referredType = referredType
 
@@ -1326,8 +1248,6 @@ class AssociationSpecificationRef(object):
             "id": self.id,
             "href": self.href,
             "name": self.name,
-            "@baseType": self.baseType,
-            "@schemaLocation": self.schemaLocation,
             "@type": self.type,
             "@referredType": self.referredType,
         }
@@ -1336,17 +1256,13 @@ class ServiceLevelSpecificationRef(object):
     id: str
     href: ?str
     name: ?str
-    baseType: ?str
-    schemaLocation: ?str
     type: ?str
     referredType: ?str
 
-    def __init__(self, id: str, href: ?str, name: ?str, baseType: ?str, schemaLocation: ?str, type: ?str, referredType: ?str):
+    def __init__(self, id: str, href: ?str, name: ?str, type: ?str, referredType: ?str):
         self.id = id
         self.href = href
         self.name = name
-        self.baseType = baseType
-        self.schemaLocation = schemaLocation
         self.type = type
         self.referredType = referredType
 
@@ -1355,8 +1271,6 @@ class ServiceLevelSpecificationRef(object):
             "id": self.id,
             "href": self.href,
             "name": self.name,
-            "@baseType": self.baseType,
-            "@schemaLocation": self.schemaLocation,
             "@type": self.type,
             "@referredType": self.referredType,
         }
@@ -1366,18 +1280,14 @@ class ConstraintRef(object):
     href: ?str
     name: ?str
     version: ?str
-    baseType: ?str
-    schemaLocation: ?str
     type: ?str
     referredType: ?str
 
-    def __init__(self, id: str, href: ?str, name: ?str, version: ?str, baseType: ?str, schemaLocation: ?str, type: ?str, referredType: ?str):
+    def __init__(self, id: str, href: ?str, name: ?str, version: ?str, type: ?str, referredType: ?str):
         self.id = id
         self.href = href
         self.name = name
         self.version = version
-        self.baseType = baseType
-        self.schemaLocation = schemaLocation
         self.type = type
         self.referredType = referredType
 
@@ -1387,8 +1297,6 @@ class ConstraintRef(object):
             "href": self.href,
             "name": self.name,
             "version": self.version,
-            "@baseType": self.baseType,
-            "@schemaLocation": self.schemaLocation,
             "@type": self.type,
             "@referredType": self.referredType,
         }
@@ -1404,12 +1312,10 @@ class AttachmentRefOrValue(object):
     url: ?str
     size: ?Quantity
     validFor: ?TimePeriod
-    baseType: ?str
-    schemaLocation: ?str
     type: ?str
     referredType: ?str
 
-    def __init__(self, id: ?str, href: ?str, attachmentType: ?str, content: ?str, description: ?str, mimeType: ?str, name: ?str, url: ?str, size: ?Quantity, validFor: ?TimePeriod, baseType: ?str, schemaLocation: ?str, type: ?str, referredType: ?str):
+    def __init__(self, id: ?str, href: ?str, attachmentType: ?str, content: ?str, description: ?str, mimeType: ?str, name: ?str, url: ?str, size: ?Quantity, validFor: ?TimePeriod, type: ?str, referredType: ?str):
         self.id = id
         self.href = href
         self.attachmentType = attachmentType
@@ -1420,8 +1326,6 @@ class AttachmentRefOrValue(object):
         self.url = url
         self.size = size
         self.validFor = validFor
-        self.baseType = baseType
-        self.schemaLocation = schemaLocation
         self.type = type
         self.referredType = referredType
 
@@ -1437,8 +1341,6 @@ class AttachmentRefOrValue(object):
             "url": self.url,
             "size": get_opt_obj_to_json(self.size),
             "validFor": get_opt_obj_to_json(self.validFor),
-            "@baseType": self.baseType,
-            "@schemaLocation": self.schemaLocation,
             "@type": self.type,
             "@referredType": self.referredType,
         }
@@ -1462,18 +1364,14 @@ class RelatedParty(object):
     href: ?str
     name: ?str
     role: ?str
-    baseType: ?str
-    schemaLocation: ?str
     type: ?str
     referredType: str
 
-    def __init__(self, id: str, href: ?str, name: ?str, role: ?str, baseType: ?str, schemaLocation: ?str, type: ?str, referredType: str):
+    def __init__(self, id: str, href: ?str, name: ?str, role: ?str, type: ?str, referredType: str):
         self.id = id
         self.href = href
         self.name = name
         self.role = role
-        self.baseType = baseType
-        self.schemaLocation = schemaLocation
         self.type = type
         self.referredType = referredType
 
@@ -1483,8 +1381,6 @@ class RelatedParty(object):
             "href": self.href,
             "name": self.name,
             "role": self.role,
-            "@baseType": self.baseType,
-            "@schemaLocation": self.schemaLocation,
             "@type": self.type,
             "@referredType": self.referredType,
         }
@@ -1504,16 +1400,13 @@ class TimePeriod(object):
         }
 
 class TargetEntitySchema(object):
-    schemaLocation: str
     type: str
 
-    def __init__(self, schemaLocation: str, type: str):
-        self.schemaLocation = schemaLocation
+    def __init__(self, type: str):
         self.type = type
 
     def to_json(self) -> dict[str, ?value]:
         return {
-            "@schemaLocation": self.schemaLocation,
             "@type": self.type,
         }
 

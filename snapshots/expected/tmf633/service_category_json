@@ -7,27 +7,20 @@
         "lastUpdate": "2025-11-01T00:00:00",
         "lifecycleStatus": "active",
         "name": "Default Service Category",
-        "parentId": null,
         "version": "2025-11-01",
-        "category": [],
         "serviceCandidate": [
             {
                 "id": "/netinfra/router",
                 "href": "/tmf-api/serviceCatalogManagement/v4/serviceCandidate/%2Fnetinfra%2Frouter",
                 "name": "Router Service Candidate",
                 "version": "2025-11-01",
-                "@baseType": "ServiceCandidateRef",
-                "@schemaLocation": "/tmf-api/schema/Service/ServiceCandidateRef.schema.json",
                 "@type": "ServiceCandidateRef",
                 "@referredType": "ServiceCandidate"
             }
         ],
         "validFor": {
-            "endDateTime": null,
             "startDateTime": "1970-01-01T00:00:00"
         },
-        "@baseType": "Category",
-        "@schemaLocation": "/tmf-api/schema/Service/ServiceCategory.schema.json",
         "@type": "ServiceCategory"
     }
 ]

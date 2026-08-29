@@ -28,13 +28,9 @@ Container({
           Id('http://stratoweave.org/yang/stratoweave-tmf', 'name'): Leaf('100'),
           Id('http://stratoweave.org/yang/stratoweave-tmf', 'startMode'): Leaf('1'),
           Id('http://stratoweave.org/yang/stratoweave-tmf', 'state'): Leaf('active'),
-          Id('http://stratoweave.org/yang/stratoweave-tmf', 'baseType'): Leaf('Service'),
-          Id('http://stratoweave.org/yang/stratoweave-tmf', 'schemaLocation'): Leaf('/tmf-api/schema/Service/Service.schema.json'),
           Id('http://stratoweave.org/yang/stratoweave-tmf', 'type'): Leaf('Service'),
           Id('http://stratoweave.org/yang/stratoweave-tmf', 'serviceSpecification'): Container({
             Id('http://stratoweave.org/yang/stratoweave-tmf', 'id'): Leaf('/edge-device/access-interface/vlan'),
-            Id('http://stratoweave.org/yang/stratoweave-tmf', 'baseType'): Leaf('ServiceSpecificationRef'),
-            Id('http://stratoweave.org/yang/stratoweave-tmf', 'schemaLocation'): Leaf('/tmf-api/schema/Service/ServiceSpecificationRef.schema.json'),
             Id('http://stratoweave.org/yang/stratoweave-tmf', 'type'): Leaf('ServiceSpecificationRef'),
             Id('http://stratoweave.org/yang/stratoweave-tmf', 'referredType'): Leaf('ServiceSpecification')
           }),
@@ -47,8 +43,6 @@ Container({
             Container({
               Id('http://stratoweave.org/yang/stratoweave-tmf', 'id'): Leaf('vlan-id'),
               Id('http://stratoweave.org/yang/stratoweave-tmf', 'name'): Leaf('vlan-id'),
-              Id('http://stratoweave.org/yang/stratoweave-tmf', 'baseType'): Leaf('Characteristic'),
-              Id('http://stratoweave.org/yang/stratoweave-tmf', 'schemaLocation'): Leaf('/tmf-api/schema/Service/Characteristic.schema.json'),
               Id('http://stratoweave.org/yang/stratoweave-tmf', 'type'): Leaf('Characteristic'),
               Id('http://stratoweave.org/yang/stratoweave-tmf', 'characteristicRelationship'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')])
             })
@@ -61,14 +55,10 @@ Container({
               Id('http://stratoweave.org/yang/stratoweave-tmf', 'id'): Leaf("/edge-device[device-name='AM-CORE-1']/access-interface[interface-name='GigabitEthernet0/1']"),
               Id('http://stratoweave.org/yang/stratoweave-tmf', 'href'): Leaf('/tmf-api/ServiceActivationAndConfiguration/v4/service/%2Fedge-device%5Bdevice-name%3D%27AM-CORE-1%27%5D%2Faccess-interface%5Binterface-name%3D%27GigabitEthernet0%2F1%27%5D'),
               Id('http://stratoweave.org/yang/stratoweave-tmf', 'name'): Leaf('GigabitEthernet0/1'),
-              Id('http://stratoweave.org/yang/stratoweave-tmf', 'baseType'): Leaf('ServiceRefOrValue'),
-              Id('http://stratoweave.org/yang/stratoweave-tmf', 'schemaLocation'): Leaf('/tmf-api/schema/Service/ServiceRefOrValue.schema.json'),
               Id('http://stratoweave.org/yang/stratoweave-tmf', 'type'): Leaf('ServiceRefOrValue'),
               Id('http://stratoweave.org/yang/stratoweave-tmf', 'referredType'): Leaf('Service'),
               Id('http://stratoweave.org/yang/stratoweave-tmf', 'serviceSpecification'): Container({
                 Id('http://stratoweave.org/yang/stratoweave-tmf', 'id'): Leaf('/edge-device/access-interface'),
-                Id('http://stratoweave.org/yang/stratoweave-tmf', 'baseType'): Leaf('ServiceSpecificationRef'),
-                Id('http://stratoweave.org/yang/stratoweave-tmf', 'schemaLocation'): Leaf('/tmf-api/schema/Service/ServiceSpecificationRef.schema.json'),
                 Id('http://stratoweave.org/yang/stratoweave-tmf', 'type'): Leaf('ServiceSpecificationRef'),
                 Id('http://stratoweave.org/yang/stratoweave-tmf', 'referredType'): Leaf('ServiceSpecification')
               }),
@@ -81,16 +71,12 @@ Container({
                 Container({
                   Id('http://stratoweave.org/yang/stratoweave-tmf', 'id'): Leaf('interface-name'),
                   Id('http://stratoweave.org/yang/stratoweave-tmf', 'name'): Leaf('interface-name'),
-                  Id('http://stratoweave.org/yang/stratoweave-tmf', 'baseType'): Leaf('Characteristic'),
-                  Id('http://stratoweave.org/yang/stratoweave-tmf', 'schemaLocation'): Leaf('/tmf-api/schema/Service/Characteristic.schema.json'),
                   Id('http://stratoweave.org/yang/stratoweave-tmf', 'type'): Leaf('Characteristic'),
                   Id('http://stratoweave.org/yang/stratoweave-tmf', 'characteristicRelationship'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')])
                 }),
                 Container({
                   Id('http://stratoweave.org/yang/stratoweave-tmf', 'id'): Leaf('speed'),
                   Id('http://stratoweave.org/yang/stratoweave-tmf', 'name'): Leaf('speed'),
-                  Id('http://stratoweave.org/yang/stratoweave-tmf', 'baseType'): Leaf('Characteristic'),
-                  Id('http://stratoweave.org/yang/stratoweave-tmf', 'schemaLocation'): Leaf('/tmf-api/schema/Service/Characteristic.schema.json'),
                   Id('http://stratoweave.org/yang/stratoweave-tmf', 'type'): Leaf('Characteristic'),
                   Id('http://stratoweave.org/yang/stratoweave-tmf', 'characteristicRelationship'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')])
                 })
@@ -103,14 +89,10 @@ Container({
                   Id('http://stratoweave.org/yang/stratoweave-tmf', 'id'): Leaf("/edge-device[device-name='AM-CORE-1']"),
                   Id('http://stratoweave.org/yang/stratoweave-tmf', 'href'): Leaf('/tmf-api/ServiceActivationAndConfiguration/v4/service/%2Fedge-device%5Bdevice-name%3D%27AM-CORE-1%27%5D'),
                   Id('http://stratoweave.org/yang/stratoweave-tmf', 'name'): Leaf('AM-CORE-1'),
-                  Id('http://stratoweave.org/yang/stratoweave-tmf', 'baseType'): Leaf('ServiceRefOrValue'),
-                  Id('http://stratoweave.org/yang/stratoweave-tmf', 'schemaLocation'): Leaf('/tmf-api/schema/Service/ServiceRefOrValue.schema.json'),
                   Id('http://stratoweave.org/yang/stratoweave-tmf', 'type'): Leaf('ServiceRefOrValue'),
                   Id('http://stratoweave.org/yang/stratoweave-tmf', 'referredType'): Leaf('Service'),
                   Id('http://stratoweave.org/yang/stratoweave-tmf', 'serviceSpecification'): Container({
                     Id('http://stratoweave.org/yang/stratoweave-tmf', 'id'): Leaf('/edge-device'),
-                    Id('http://stratoweave.org/yang/stratoweave-tmf', 'baseType'): Leaf('ServiceSpecificationRef'),
-                    Id('http://stratoweave.org/yang/stratoweave-tmf', 'schemaLocation'): Leaf('/tmf-api/schema/Service/ServiceSpecificationRef.schema.json'),
                     Id('http://stratoweave.org/yang/stratoweave-tmf', 'type'): Leaf('ServiceSpecificationRef'),
                     Id('http://stratoweave.org/yang/stratoweave-tmf', 'referredType'): Leaf('ServiceSpecification')
                   }),
@@ -123,8 +105,6 @@ Container({
                     Container({
                       Id('http://stratoweave.org/yang/stratoweave-tmf', 'id'): Leaf('device-name'),
                       Id('http://stratoweave.org/yang/stratoweave-tmf', 'name'): Leaf('device-name'),
-                      Id('http://stratoweave.org/yang/stratoweave-tmf', 'baseType'): Leaf('Characteristic'),
-                      Id('http://stratoweave.org/yang/stratoweave-tmf', 'schemaLocation'): Leaf('/tmf-api/schema/Service/Characteristic.schema.json'),
                       Id('http://stratoweave.org/yang/stratoweave-tmf', 'type'): Leaf('Characteristic'),
                       Id('http://stratoweave.org/yang/stratoweave-tmf', 'characteristicRelationship'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')])
                     })

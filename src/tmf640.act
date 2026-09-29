@@ -311,7 +311,7 @@ def _get_service_json(layer_config: ygdata.Node, top_schema: yschema.DRoot, serv
 
     services = layer_config.children[_q("tmf-store")].children[_q("tmf640")].children[_q("service")]
     if isinstance(services, ygdata.List):
-        for s in services.elements:
+        for s in services.elements.values():
             schema = top_schema
             sid = get_child_str(s, _q("id"))
             if not multiple and requested_service_id != sid:
@@ -328,7 +328,7 @@ def _get_service_json(layer_config: ygdata.Node, top_schema: yschema.DRoot, serv
                     config = config.children[fqname]
                     entry = None
                     if isinstance(config, ygdata.List):
-                        for element in config.elements:
+                        for element in config.elements.values():
                             if _list_entry_matches_xpath_keys(element, config.keys, parsed.key_values):
                                 entry = element
                                 break
@@ -344,14 +344,14 @@ def _get_service_json(layer_config: ygdata.Node, top_schema: yschema.DRoot, serv
             config = config.children[fqname]
             if isinstance(config, ygdata.List):
                 if multiple:
-                    for element in config.elements:
+                    for element in config.elements.values():
                         if _list_entry_matches_xpath_keys(element, config.keys, last_parsed.key_values):
                             add_leaf_properties_to_service_characteristics(element, service)
                             _normalize_service_hrefs(service)
                             services_json.append(service.to_json())
                             break
                 else:
-                    for element in config.elements:
+                    for element in config.elements.values():
                         if _list_entry_matches_xpath_keys(element, config.keys, last_parsed.key_values):
                             add_leaf_properties_to_service_characteristics(element, service)
                             _normalize_service_hrefs(service)
@@ -470,6 +470,10 @@ def json_to_gdata(data: dict[str, ?value], top_schema: yschema.DRoot) -> (ygdata
     root_path = []
     ret = ygdata.Container()
     current_node = ret
+    # the node holding the list that current_node is, and the list's name
+    # Where the list for the current path element is, to put its entry in
+    list_parent: ygdata.Node = ret
+    list_name: ?ygdata.Id = None
     current_path = ""
     aggregate_tmf_id = ""
 
@@ -483,8 +487,12 @@ def json_to_gdata(data: dict[str, ?value], top_schema: yschema.DRoot) -> (ygdata
             current_node = current_node.children[fqname]
             aggregate_tmf_id = _append_xpath_segment(aggregate_tmf_id, path_element)
         elif isinstance(schema, yschema.DList):
+            list_parent = current_node
+            list_name = fqname
             current_node.children[fqname] = ygdata.List(
-                ydata.fq_list_keys(schema), [], ns=schema.namespace, module=schema.module)
+                ydata.fq_list_keys(schema), ns=schema.namespace, module=schema.module)
+            list_parent = current_node
+            list_name = fqname
             current_node = current_node.children[fqname]
         else:
             raise NotImplementedError("Unexpected GData class {schema.gname} in path resolution")
@@ -493,14 +501,14 @@ def json_to_gdata(data: dict[str, ?value], top_schema: yschema.DRoot) -> (ygdata
         if ss is not None:
             gd = from_characteristic(top_schema, ss.serviceCharacteristic, ss.feature, root_path=root_path)
             if gd is not None:
-                if isinstance(current_node, ygdata.List):
-                    current_node.elements.append(gd)
+                if isinstance(current_node, ygdata.List) and list_name is not None:
+                    list_parent.children[list_name] = current_node.like([gd])
                 aggregate_tmf_id = add_key_properties_to_service(ss, gd, schema, aggregate_tmf_id)
                 current_node = gd
 
     gd = from_characteristic(top_schema, service.serviceCharacteristic, service.feature, root_path=root_path)
-    if isinstance(current_node, ygdata.List):
-        current_node.elements.append(gd)
+    if isinstance(current_node, ygdata.List) and list_name is not None:
+        list_parent.children[list_name] = current_node.like([gd])
 
     aggregate_tmf_id = add_key_properties_to_service(service, gd, schema, aggregate_tmf_id)
     ret.children[_q("tmf-store")] = ygdata.Container({
@@ -581,7 +589,7 @@ def _get_feature_gdata(gd: ygdata.Node, feature_id: ?str) -> ?ygdata.Node:
             if len(parsed.key_values) > 0:
                 if isinstance(child, ygdata.List):
                     entry = None
-                    for element in child.elements:
+                    for element in child.elements.values():
                         if _list_entry_matches_xpath_keys(element, child.keys, parsed.key_values):
                             entry = element
                             break
@@ -755,7 +763,7 @@ def get_list(val: ?value) -> list[dict[str, ?value]]:
 
 def get_yang_list_elements(yl: ?ygdata.Node) -> list[ygdata.Node]:
     if isinstance(yl, ygdata.List):
-        return yl.elements
+        return list(yl.elements.values())
     return []
 
 def get_opt_obj_to_json(obj) -> ?dict[str, ?value]:
@@ -2477,7 +2485,7 @@ def _test_json_to_gdata_netinfra_router():
     gd, _ = json_to_gdata(json_data, top_schema)
     services = gd.children[_q("tmf-store")].children[_q("tmf640")].children[_q("service")]
     if isinstance(services, ygdata.List):
-        for s in services.elements:
+        for s in services.elements.values():
             s.children.pop(_q("serviceDate"))
             s.children.pop(_q("startDate"))
     return gd.prsrc()
@@ -2541,7 +2549,7 @@ def _test_json_to_gdata_netinfra_router_identityref():
         routers = netinfra.children.get(ygdata.Id("http://example.com/netinfra", "router"))
         if isinstance(routers, ygdata.List):
             testing.assertEqual(len(routers.elements), 1)
-            router = routers.elements[0]
+            router = list(routers.elements.values())[0]
             if isinstance(router, ygdata.Container):
                 platform_leaf = router.children.get(ygdata.Id("http://example.com/netinfra", "platform-type"))
                 if isinstance(platform_leaf, ygdata.Leaf):
@@ -2700,7 +2708,7 @@ def _test_json_to_gdata_edge_device_access_interface():
     gd, _ = json_to_gdata(json_data, top_schema)
     services = gd.children[_q("tmf-store")].children[_q("tmf640")].children[_q("service")]
     if isinstance(services, ygdata.List):
-        for s in services.elements:
+        for s in services.elements.values():
             s.children.pop(_q("serviceDate"))
             s.children.pop(_q("startDate"))
     return gd.prsrc()
@@ -2795,7 +2803,7 @@ def _test_json_to_gdata_edge_device_access_interface_vlan():
     gd, _ = json_to_gdata(json_data, top_schema)
     services = gd.children[_q("tmf-store")].children[_q("tmf640")].children[_q("service")]
     if isinstance(services, ygdata.List):
-        for s in services.elements:
+        for s in services.elements.values():
             s.children.pop(_q("serviceDate"))
             s.children.pop(_q("startDate"))
     return gd.prsrc()
@@ -3017,7 +3025,7 @@ def _test_json_to_gdata_compound_router_key():
     gd, _ = json_to_gdata(json_data, top_schema)
     services = gd.children[_q("tmf-store")].children[_q("tmf640")].children[_q("service")]
     if isinstance(services, ygdata.List):
-        for s in services.elements:
+        for s in services.elements.values():
             s.children.pop(_q("serviceDate"))
             s.children.pop(_q("startDate"))
     return gd.prsrc()
@@ -3117,7 +3125,7 @@ def _test_json_to_gdata_netinfra_router_nested_features():
     gd, _ = json_to_gdata(json_data, top_schema)
     services = gd.children[_q("tmf-store")].children[_q("tmf640")].children[_q("service")]
     if isinstance(services, ygdata.List):
-        for s in services.elements:
+        for s in services.elements.values():
             s.children.pop(_q("serviceDate"))
             s.children.pop(_q("startDate"))
     return gd.prsrc()

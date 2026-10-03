@@ -951,7 +951,7 @@ class CharacteristicValueSpecification(object):
     value: ?value
     type: ?str
 
-    def __init__(self, isDefault: ?bool, rangeInterval: ?str, regex: ?str, unitOfMeasure: ?str, valueFrom: ?int, valueTo: ?int, valueType: ?str, validFor: ?TimePeriod, value: ?value, type: ?str):
+    def __init__(self, isDefault: ?bool=None, rangeInterval: ?str=None, regex: ?str=None, unitOfMeasure: ?str=None, valueFrom: ?int=None, valueTo: ?int=None, valueType: ?str=None, validFor: ?TimePeriod=None, value: ?value=None, type: ?str=None):
         self.isDefault = isDefault
         self.rangeInterval = rangeInterval
         self.regex = regex

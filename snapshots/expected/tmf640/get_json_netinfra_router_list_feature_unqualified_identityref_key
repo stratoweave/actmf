@@ -15,6 +15,14 @@
             "isBundle": true,
             "isEnabled": true,
             "name": "routing-protocols",
+            "featureRelationship": [
+                {
+                    "id": "routing-protocols/routing-protocol[type='bgp']",
+                    "name": "routing-protocols/routing-protocol[type='bgp']",
+                    "relationshipType": "composedOf",
+                    "@type": "FeatureRelationship"
+                }
+            ],
             "@type": "Feature"
         },
         {
@@ -33,9 +41,9 @@
             ],
             "featureRelationship": [
                 {
-                    "id": "routing-protocols",
-                    "name": "routing-protocols",
-                    "relationshipType": "parent",
+                    "id": "routing-protocols/routing-protocol[type='bgp']/bgp",
+                    "name": "routing-protocols/routing-protocol[type='bgp']/bgp",
+                    "relationshipType": "composedOf",
                     "@type": "FeatureRelationship"
                 }
             ],
@@ -62,14 +70,6 @@
                         "ipv4"
                     ],
                     "@type": "Characteristic"
-                }
-            ],
-            "featureRelationship": [
-                {
-                    "id": "routing-protocols/routing-protocol[type='bgp']",
-                    "name": "routing-protocols/routing-protocol[type='bgp']",
-                    "relationshipType": "parent",
-                    "@type": "FeatureRelationship"
                 }
             ],
             "@type": "Feature"

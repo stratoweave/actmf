@@ -73,14 +73,7 @@ Container({
                   Id('http://stratoweave.org/yang/stratoweave-tmf', 'characteristicRelationship'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')])
                 })
               ]),
-              Id('http://stratoweave.org/yang/stratoweave-tmf', 'featureRelationship'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')], elements=[
-                Container({
-                  Id('http://stratoweave.org/yang/stratoweave-tmf', 'id'): Leaf('routing-options'),
-                  Id('http://stratoweave.org/yang/stratoweave-tmf', 'name'): Leaf('routing-options'),
-                  Id('http://stratoweave.org/yang/stratoweave-tmf', 'relationshipType'): Leaf('parent'),
-                  Id('http://stratoweave.org/yang/stratoweave-tmf', 'type'): Leaf('FeatureRelationship')
-                })
-              ])
+              Id('http://stratoweave.org/yang/stratoweave-tmf', 'featureRelationship'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')])
             })
           ]),
           Id('http://stratoweave.org/yang/stratoweave-tmf', 'note'): List([Id('http://stratoweave.org/yang/stratoweave-tmf', 'id')]),

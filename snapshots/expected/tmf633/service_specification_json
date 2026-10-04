@@ -78,6 +78,15 @@
                         "@type": "FeatureSpecificationCharacteristic"
                     }
                 ],
+                "featureSpecRelationship": [
+                    {
+                        "name": "routing-options/neighbor-group",
+                        "relationshipType": "composedOf",
+                        "validFor": {
+                            "startDateTime": "1970-01-01T00:00:00"
+                        }
+                    }
+                ],
                 "validFor": {
                     "startDateTime": "1970-01-01T00:00:00"
                 }
@@ -118,18 +127,6 @@
                             "startDateTime": "1970-01-01T00:00:00"
                         },
                         "@type": "FeatureSpecificationCharacteristic"
-                    }
-                ],
-                "featureSpecRelationship": [
-                    {
-                        "featureId": "routing-options",
-                        "name": "routing-options",
-                        "parentSpecificationHref": "/tmf-api/serviceCatalogManagement/v4/serviceSpecification/%2Fnetinfra%2Frouter",
-                        "parentSpecificationId": "/netinfra/router",
-                        "relationshipType": "parent",
-                        "validFor": {
-                            "startDateTime": "1970-01-01T00:00:00"
-                        }
                     }
                 ],
                 "validFor": {

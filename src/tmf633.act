@@ -282,6 +282,12 @@ def _append_feature_id(path: str, segment: str) -> str:
 def _feature_spec_relationship_name(feature_id: str) -> str:
     return feature_id
 
+def _feature_specification_id(feature_specification: FeatureSpecification) -> str:
+    feature_id = feature_specification.id
+    if isinstance(feature_id, str):
+        return feature_id
+    raise ValueError("Feature specification ID is required for nested features")
+
 def _append_feature_spec_characteristics(feature_specification: FeatureSpecification, feature_schema: yschema.DNodeInner) -> None:
     for feature_child in feature_schema.children:
         if isinstance(feature_child, yschema.DLeaf):
@@ -300,7 +306,8 @@ def _has_nested_feature_specifications(feature_schema: yschema.DNodeInner) -> bo
                 return True
     return False
 
-def _append_nested_feature_specifications(sspec: ServiceSpecification, feature_schema: yschema.DNodeInner, service_specification_id: str, parent_feature_id: str) -> None:
+def _append_nested_feature_specifications(sspec: ServiceSpecification, feature_schema: yschema.DNodeInner, parent_feature_specification: FeatureSpecification) -> None:
+    parent_feature_id = _feature_specification_id(parent_feature_specification)
     for nested_child in feature_schema.children:
         if isinstance(nested_child, yschema.DContainer):
             if cfs.is_tmf_cfs_service(nested_child):
@@ -314,27 +321,25 @@ def _append_nested_feature_specifications(sspec: ServiceSpecification, feature_s
                 version="2025-11-01",
                 constraint=[],
                 featureSpecCharacteristic=[],
-                featureSpecRelationship=[
-                    FeatureSpecificationRelationship(
-                        featureId=parent_feature_id,
-                        name=_feature_spec_relationship_name(parent_feature_id),
-                        parentSpecificationHref=sspec.href,
-                        parentSpecificationId=service_specification_id,
-                        relationshipType="parent",
-                        validFor=TimePeriod(
-                            endDateTime=None,
-                            startDateTime="1970-01-01T00:00:00"
-                        )
-                    )
-                ],
+                featureSpecRelationship=[],
                 validFor=TimePeriod(
                     endDateTime=None,
                     startDateTime="1970-01-01T00:00:00"
                 )
             )
+            parent_feature_specification.featureSpecRelationship.append(
+                FeatureSpecificationRelationship(
+                    name=_feature_spec_relationship_name(feature_id),
+                    relationshipType="composedOf",
+                    validFor=TimePeriod(
+                        endDateTime=None,
+                        startDateTime="1970-01-01T00:00:00"
+                    )
+                )
+            )
             _append_feature_spec_characteristics(feature_specification, nested_child)
             sspec.featureSpecification.append(feature_specification)
-            _append_nested_feature_specifications(sspec, nested_child, service_specification_id, feature_id)
+            _append_nested_feature_specifications(sspec, nested_child, feature_specification)
         elif isinstance(nested_child, yschema.DList):
             if cfs.is_tmf_cfs_service(nested_child):
                 continue
@@ -347,27 +352,25 @@ def _append_nested_feature_specifications(sspec: ServiceSpecification, feature_s
                 version="2025-11-01",
                 constraint=[],
                 featureSpecCharacteristic=[],
-                featureSpecRelationship=[
-                    FeatureSpecificationRelationship(
-                        featureId=parent_feature_id,
-                        name=_feature_spec_relationship_name(parent_feature_id),
-                        parentSpecificationHref=sspec.href,
-                        parentSpecificationId=service_specification_id,
-                        relationshipType="parent",
-                        validFor=TimePeriod(
-                            endDateTime=None,
-                            startDateTime="1970-01-01T00:00:00"
-                        )
-                    )
-                ],
+                featureSpecRelationship=[],
                 validFor=TimePeriod(
                     endDateTime=None,
                     startDateTime="1970-01-01T00:00:00"
                 )
             )
+            parent_feature_specification.featureSpecRelationship.append(
+                FeatureSpecificationRelationship(
+                    name=_feature_spec_relationship_name(feature_id),
+                    relationshipType="composedOf",
+                    validFor=TimePeriod(
+                        endDateTime=None,
+                        startDateTime="1970-01-01T00:00:00"
+                    )
+                )
+            )
             _append_feature_spec_characteristics(feature_specification, nested_child)
             sspec.featureSpecification.append(feature_specification)
-            _append_nested_feature_specifications(sspec, nested_child, service_specification_id, feature_id)
+            _append_nested_feature_specifications(sspec, nested_child, feature_specification)
 
 def _build_service_specifications(top_schema: yschema.DRoot, sspec_id: ?str = None) -> list[ServiceSpecification]:
     tmf_spec = cfs.services_from_schema(top_schema)
@@ -535,7 +538,7 @@ def _build_service_specifications(top_schema: yschema.DRoot, sspec_id: ?str = No
                 )
                 _append_feature_spec_characteristics(feature_specification, child)
                 sspec.featureSpecification.append(feature_specification)
-                _append_nested_feature_specifications(sspec, child, k, feature_id)
+                _append_nested_feature_specifications(sspec, child, feature_specification)
             elif isinstance(child, yschema.DList):
                 if cfs.is_tmf_cfs_service(child):
                     continue
@@ -557,7 +560,7 @@ def _build_service_specifications(top_schema: yschema.DRoot, sspec_id: ?str = No
                 )
                 _append_feature_spec_characteristics(feature_specification, child)
                 sspec.featureSpecification.append(feature_specification)
-                _append_nested_feature_specifications(sspec, child, k, feature_id)
+                _append_nested_feature_specifications(sspec, child, feature_specification)
 
         sspecs.append(sspec)
 
@@ -980,16 +983,12 @@ class CharacteristicValueSpecification(object):
 class CharacteristicSpecificationRelationship(object):
     characteristicSpecificationId: ?str
     name: ?str
-    parentSpecificationHref: ?str
-    parentSpecificationId: ?str
     relationshipType: ?str
     validFor: ?TimePeriod
 
-    def __init__(self, characteristicSpecificationId: ?str, name: ?str, parentSpecificationHref: ?str, parentSpecificationId: ?str, relationshipType: ?str, validFor: ?TimePeriod):
+    def __init__(self, characteristicSpecificationId: ?str, name: ?str, relationshipType: ?str, validFor: ?TimePeriod):
         self.characteristicSpecificationId = characteristicSpecificationId
         self.name = name
-        self.parentSpecificationHref = parentSpecificationHref
-        self.parentSpecificationId = parentSpecificationId
         self.relationshipType = relationshipType
         self.validFor = validFor
 
@@ -997,8 +996,6 @@ class CharacteristicSpecificationRelationship(object):
         return {
             "characteristicSpecificationId": self.characteristicSpecificationId,
             "name": self.name,
-            "parentSpecificationHref": self.parentSpecificationHref,
-            "parentSpecificationId": self.parentSpecificationId,
             "relationshipType": self.relationshipType,
             "validFor": get_opt_obj_to_json(self.validFor),
         }
@@ -1071,27 +1068,18 @@ class EntitySpecificationRelationship(object):
         }
 
 class FeatureSpecificationRelationship(object):
-    featureId: ?str
     name: str
-    parentSpecificationHref: ?str
-    parentSpecificationId: ?str
     relationshipType: str
     validFor: ?TimePeriod
 
-    def __init__(self, featureId: ?str, name: str, parentSpecificationHref: ?str, parentSpecificationId: ?str, relationshipType: str, validFor: ?TimePeriod):
-        self.featureId = featureId
+    def __init__(self, name: str, relationshipType: str, validFor: ?TimePeriod):
         self.name = name
-        self.parentSpecificationHref = parentSpecificationHref
-        self.parentSpecificationId = parentSpecificationId
         self.relationshipType = relationshipType
         self.validFor = validFor
 
     def to_json(self) -> dict[str, ?value]:
         return {
-            "featureId": self.featureId,
             "name": self.name,
-            "parentSpecificationHref": self.parentSpecificationHref,
-            "parentSpecificationId": self.parentSpecificationId,
             "relationshipType": self.relationshipType,
             "validFor": get_opt_obj_to_json(self.validFor),
         }

@@ -24,6 +24,14 @@
                     "@type": "Characteristic"
                 }
             ],
+            "featureRelationship": [
+                {
+                    "id": "routing-options/neighbor-group[group-name='external']",
+                    "name": "routing-options/neighbor-group[group-name='external']",
+                    "relationshipType": "composedOf",
+                    "@type": "FeatureRelationship"
+                }
+            ],
             "@type": "Feature"
         },
         {
@@ -45,14 +53,6 @@
                     "valueType": "integer",
                     "value": 65001,
                     "@type": "Characteristic"
-                }
-            ],
-            "featureRelationship": [
-                {
-                    "id": "routing-options",
-                    "name": "routing-options",
-                    "relationshipType": "parent",
-                    "@type": "FeatureRelationship"
                 }
             ],
             "@type": "Feature"

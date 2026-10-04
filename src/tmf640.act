@@ -191,14 +191,26 @@ def _split_feature_id_segments(feature_id: str) -> list[str]:
         return []
     return _split_xpath_segments(feature_id)
 
-def _feature_matches_parent(feature: Feature, parent_id: str) -> bool:
-    has_parent_relationship = False
-    for relationship in feature.featureRelationship:
-        if relationship.relationshipType == "parent":
-            has_parent_relationship = True
-            if relationship.id == parent_id:
-                return True
-    return not has_parent_relationship
+def _derive_feature_relationships(features: list[Feature]) -> None:
+    # Feature paths define the hierarchy. Rebuild its links for API responses,
+    # retaining relationship types that describe something other than nesting.
+    by_path: dict[str, Feature] = {}
+    for feature in features:
+        feature.featureRelationship = [r for r in feature.featureRelationship if r.relationshipType != "parent" and r.relationshipType != "composedOf"]
+        feature_id = feature.id
+        if feature_id is not None:
+            by_path["/".join(_split_feature_id_segments(feature_id))] = feature
+    for feature in features:
+        feature_id = feature.id
+        if feature_id is not None:
+            segments = _split_feature_id_segments(feature_id)
+            if len(segments) > 1:
+                parent = by_path.get("/".join(segments[:-1]))
+                if parent is not None:
+                    parent.featureRelationship.append(FeatureRelationship(
+                        id=feature_id, name=feature_id, relationshipType="composedOf",
+                        validFor=None, type=None
+                    ))
 
 class FeatureYangData(object):
     currentPathId: str
@@ -223,8 +235,7 @@ class FeatureYangData(object):
                 parsed = _parse_xpath_segment(feature_segments[-1])
                 if parsed.name != name or len(parsed.key_values) > 0:
                     continue
-                if _feature_matches_parent(feature, self.currentPathId):
-                    return feature
+                return feature
         return None
 
     def _get_direct_list_features(self, name: str) -> list[(key: dict[str, value], feature: Feature)]:
@@ -241,8 +252,7 @@ class FeatureYangData(object):
                 parsed = _parse_xpath_segment(feature_segments[-1])
                 if parsed.name != name or len(parsed.key_values) == 0:
                     continue
-                if _feature_matches_parent(feature, self.currentPathId):
-                    direct_features.append((key=parsed.key_values, feature=feature))
+                direct_features.append((key=parsed.key_values, feature=feature))
         return direct_features
 
 
@@ -317,6 +327,7 @@ def _get_service_json(layer_config: ygdata.Node, top_schema: yschema.DRoot, serv
             if not multiple and requested_service_id != sid:
                 continue
             service = Service.from_gdata(s)
+            _derive_feature_relationships(service.feature)
             config = layer_config
             sid_segments = _split_xpath_segments(sid)
             for path_element in sid_segments[:-1]:
@@ -3030,6 +3041,37 @@ def _test_json_to_gdata_compound_router_key():
             s.children.pop(_q("startDate"))
     return gd.prsrc()
 
+def _test_feature_relationships_from_paths():
+    parent_id = "interfaces/interface[name='xe/0/0']"
+    child_id = "{parent_id}/ipv4"
+    child = Feature.from_json({
+        "id": child_id,
+        "featureRelationship": [{"id": parent_id, "relationshipType": "parent"}]
+    })
+    parent = Feature.from_json({
+        "id": parent_id,
+        "featureRelationship": [
+            {"id": "other", "relationshipType": "requires"},
+            {"id": "stale", "relationshipType": "composedOf"}
+        ]
+    })
+    sibling = Feature.from_json({"id": "{parent_id}/ipv6"})
+    other = Feature.from_json({"id": "interfaces/interface[name='xe/0/1']"})
+    root = Feature.from_json({"id": "interfaces"})
+    # Children can precede their parents, and slashes in list keys are data.
+    features = [child, parent, sibling, other, root]
+    _derive_feature_relationships(features)
+    testing.assertEqual([r.id for r in root.featureRelationship], [parent_id, other.id])
+    testing.assertEqual([r.id for r in parent.featureRelationship], ["other", child_id, sibling.id])
+    testing.assertEqual(parent.featureRelationship[0].relationshipType, "requires")
+    testing.assertEqual(parent.featureRelationship[1].relationshipType, "composedOf")
+    testing.assertEqual(parent.featureRelationship[1].name, child_id)
+    testing.assertEqual(len(child.featureRelationship), 0)
+    testing.assertEqual(len(other.featureRelationship), 0)
+    first = json.encode_list([f.to_json() for f in features])
+    _derive_feature_relationships(features)
+    testing.assertEqual(json.encode_list([f.to_json() for f in features]), first)
+
 def _test_json_to_gdata_netinfra_router_nested_features():
     json_data = {
         "serviceCharacteristic": [
@@ -3053,8 +3095,7 @@ def _test_json_to_gdata_netinfra_router_nested_features():
                         "valueType": "integer",
                         "value": 110
                     }
-                ],
-                "featureRelationship": []
+                ]
             },
             {
                 "id": "routing-options/neighbor-group[group-name='external']",
@@ -3073,13 +3114,6 @@ def _test_json_to_gdata_netinfra_router_nested_features():
                         "name": "remote-as",
                         "valueType": "integer",
                         "value": 65001
-                    }
-                ],
-                "featureRelationship": [
-                    {
-                        "id": "routing-options",
-                        "name": "routing-options",
-                        "relationshipType": "parent"
                     }
                 ]
             }
@@ -3155,8 +3189,7 @@ def _test_get_json_netinfra_router_nested_features():
                         "valueType": "integer",
                         "value": 110
                     }
-                ],
-                "featureRelationship": []
+                ]
             },
             {
                 "id": "routing-options/neighbor-group[group-name='external']",
@@ -3175,13 +3208,6 @@ def _test_get_json_netinfra_router_nested_features():
                         "name": "remote-as",
                         "valueType": "integer",
                         "value": 65001
-                    }
-                ],
-                "featureRelationship": [
-                    {
-                        "id": "routing-options",
-                        "name": "routing-options",
-                        "relationshipType": "parent"
                     }
                 ]
             }
@@ -3225,8 +3251,11 @@ def _test_get_json_netinfra_router_nested_features():
     """
     top_schema = yang.compile([tmf_yang.ietf_yang_tmf_map, yang_schema])
     layer_config, service_id = json_to_gdata(json_data, top_schema)
+    stored_before = layer_config.prsrc()
     data = get_service_json(layer_config, top_schema, service_id)
+    testing.assertEqual(layer_config.prsrc(), stored_before)
     if data is not None:
+        testing.assertEqual(json.encode_list(get_service_list_json(layer_config, top_schema)), json.encode_list([data]))
         return json.encode(data, pretty=True)
     return ""
 
@@ -3400,8 +3429,7 @@ def _test_get_json_netinfra_router_list_feature_unqualified_identityref_key():
                 "isBundle": True,
                 "isEnabled": True,
                 "name": "routing-protocols",
-                "featureCharacteristic": [],
-                "featureRelationship": []
+                "featureCharacteristic": []
             },
             {
                 "id": "routing-protocols/routing-protocol[type='bgp']",
@@ -3414,13 +3442,6 @@ def _test_get_json_netinfra_router_list_feature_unqualified_identityref_key():
                         "name": "type",
                         "valueType": "string",
                         "value": "bgp"
-                    }
-                ],
-                "featureRelationship": [
-                    {
-                        "id": "routing-protocols",
-                        "name": "routing-protocols",
-                        "relationshipType": "parent"
                     }
                 ]
             },
@@ -3441,13 +3462,6 @@ def _test_get_json_netinfra_router_list_feature_unqualified_identityref_key():
                         "name": "address-family",
                         "valueType": "stringArray",
                         "value": ["ipv4"]
-                    }
-                ],
-                "featureRelationship": [
-                    {
-                        "id": "routing-protocols/routing-protocol[type='bgp']",
-                        "name": "routing-protocols/routing-protocol[type='bgp']",
-                        "relationshipType": "parent"
                     }
                 ]
             }

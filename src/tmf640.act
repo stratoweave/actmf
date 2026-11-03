@@ -257,7 +257,7 @@ class FeatureYangData(object):
 
 
 extension FeatureYangData (ydata.YangData):
-    def take_container(self, schema: yschema.DContainer, name: str, ns_qualified: bool, path: list[ydata.PathElement]=[]) -> ?(op: ?str, val: ?value):
+    def take_container(self, schema: yschema.DContainer, ns_qualified: bool, path: list[ydata.PathElement]=[]) -> ?(op: ?str, val: ?value):
         feature = self._get_direct_feature(schema.name)
         if feature is not None:
             feature_id = feature.id
@@ -265,7 +265,7 @@ extension FeatureYangData (ydata.YangData):
                 return (op=None, val=FeatureYangData(feature_id, feature.featureCharacteristic, self.features))
         return None
 
-    def take_list(self, schema: yschema.DList, name: str, ns_qualified: bool, path: list[ydata.PathElement]=[]) -> list[(op: ?str, key: dict[str, value], val: value)]:
+    def take_list(self, schema: yschema.DList, ns_qualified: bool, path: list[ydata.PathElement]=[]) -> list[(op: ?str, key: dict[str, value], val: value)]:
         direct_features = self._get_direct_list_features(schema.name)
         list_entries: list[(op: ?str, key: dict[str, value], val: value)] = []
         for entry in direct_features:
@@ -274,7 +274,7 @@ extension FeatureYangData (ydata.YangData):
             list_entries.append((op=None, key=entry.key, val=FeatureYangData(current_path_id, entry.feature.featureCharacteristic, self.features)))
         return list_entries
 
-    def take_leaf(self, root: yschema.DRoot, schema: yschema.DLeaf, name: str, ns_qualified: bool, path: list[ydata.PathElement]=[]) -> ?(op: ?str, val: ?value):
+    def take_leaf(self, root: yschema.DRoot, schema: yschema.DLeaf, ns_qualified: bool, path: list[ydata.PathElement]=[]) -> ?(op: ?str, val: ?value):
         for entry in self.characteristics:
             leaf_value = entry.value
             if entry.name == schema.name and leaf_value is not None:
@@ -286,7 +286,7 @@ extension FeatureYangData (ydata.YangData):
                 raise ydata.YangValidationError(path, schema.type, leaf_value)
         return None
 
-    def take_leaflist(self, root: yschema.DRoot, schema: yschema.DLeafList, name: str, ns_qualified: bool, path: list[ydata.PathElement]=[]) -> list[(op: ?str, val: ?value)]:
+    def take_leaflist(self, root: yschema.DRoot, schema: yschema.DLeafList, ns_qualified: bool, path: list[ydata.PathElement]=[]) -> list[(op: ?str, val: ?value)]:
         for entry in self.characteristics:
             leaflist_data = entry.value
             entry_value_type = entry.valueType

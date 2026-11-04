@@ -274,19 +274,19 @@ extension FeatureYangData (ydata.YangData):
             list_entries.append((op=None, key=entry.key, val=FeatureYangData(current_path_id, entry.feature.featureCharacteristic, self.features)))
         return list_entries
 
-    def take_leaf(self, root: yschema.DRoot, schema: yschema.DLeaf, name: str, ns_qualified: bool, path: list[ydata.PathElement]=[]) -> ?(op: ?str, t: str, val: ?value):
+    def take_leaf(self, root: yschema.DRoot, schema: yschema.DLeaf, name: str, ns_qualified: bool, path: list[ydata.PathElement]=[]) -> ?(op: ?str, val: ?value):
         for entry in self.characteristics:
             leaf_value = entry.value
             if entry.name == schema.name and leaf_value is not None:
                 new_path = path + [ydata.PathElement(schema)]
                 if cfs.json_type_and_yang_type_match(entry.valueType, schema.type.builtin_type):
-                    tv = yjson.try_parse_json_value(leaf_value, schema, schema.type, new_path, root)
-                    if tv is not None:
-                        return (op=None, t=tv.t, val=tv.val)
+                    parsed = yjson.try_parse_json_value(leaf_value, schema, schema.type, new_path, root)
+                    if parsed is not None:
+                        return (op=None, val=parsed)
                 raise ydata.YangValidationError(path, schema.type, leaf_value)
         return None
 
-    def take_leaflist(self, root: yschema.DRoot, schema: yschema.DLeafList, name: str, ns_qualified: bool, path: list[ydata.PathElement]=[]) -> list[(op: ?str, t: str, val: ?value)]:
+    def take_leaflist(self, root: yschema.DRoot, schema: yschema.DLeafList, name: str, ns_qualified: bool, path: list[ydata.PathElement]=[]) -> list[(op: ?str, val: ?value)]:
         for entry in self.characteristics:
             leaflist_data = entry.value
             entry_value_type = entry.valueType
@@ -294,11 +294,11 @@ extension FeatureYangData (ydata.YangData):
                 if cfs.json_type_and_yang_type_match(entry_value_type[:-5] if entry_value_type.endswith("Array") else entry_value_type, schema.type.builtin_type):
                     if isinstance(leaflist_data, list):
                         new_path = path + [ydata.PathElement(schema)]
-                        values: list[(op: ?str, t: str, val: ?value)] = []
+                        values: list[(op: ?str, val: ?value)] = []
                         for item in leaflist_data:
-                            tv = yjson.try_parse_json_value(item, schema, schema.type, new_path, root)
-                            if tv is not None:
-                                values.append((op=None, t=tv.t, val=tv.val))
+                            parsed = yjson.try_parse_json_value(item, schema, schema.type, new_path, root)
+                            if parsed is not None:
+                                values.append((op=None, val=parsed))
                         return values
                 raise ydata.YangValidationError(path, schema.type, leaflist_data)
         return []

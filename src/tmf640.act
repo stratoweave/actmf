@@ -506,7 +506,7 @@ def json_to_gdata(data: dict[str, ?value], top_schema: yschema.DRoot) -> (ygdata
             list_name = fqname
             current_node = current_node.children[fqname]
         else:
-            raise NotImplementedError("Unexpected GData class {schema.gname} in path resolution")
+            raise NotImplementedError("Unexpected schema node {schema.name} in path resolution, expected a container or list")
 
         ss = find_supporting_service_by_path(service, current_path)
         if ss is not None:

@@ -334,9 +334,8 @@ def _get_service_json(layer_config: ygdata.Node, top_schema: yschema.DRoot, serv
                 parsed = _parse_xpath_segment(path_element)
                 # TODO: include namespace qualifier in service id path (like in JSON, module name)
                 schema = schema.get(parsed.name)
-                fqname = ydata.fqname(schema)
                 if len(parsed.key_values) > 0:
-                    config = config.children[fqname]
+                    config = config.children[schema.gname]
                     entry = None
                     if isinstance(config, ygdata.List):
                         for element in config.elements.values():
@@ -346,13 +345,12 @@ def _get_service_json(layer_config: ygdata.Node, top_schema: yschema.DRoot, serv
                     if entry is not None:
                         config = entry
                 else:
-                    config = config.children[fqname]
+                    config = config.children[schema.gname]
 
             last_path_element = sid_segments[-1]
             last_parsed = _parse_xpath_segment(last_path_element)
             schema = schema.get(last_parsed.name)
-            fqname = ydata.fqname(schema)
-            config = config.children[fqname]
+            config = config.children[schema.gname]
             if isinstance(config, ygdata.List):
                 if multiple:
                     for element in config.elements.values():
@@ -420,8 +418,7 @@ def _normalize_service_hrefs(service: ?object) -> None:
 def get_key_values(gd: ygdata.Node, schema: yschema.DNode) -> dict[str, str]:
     if isinstance(schema, yschema.DList):
         result = {}
-        for key_name in schema.key:
-            key = ygdata.Id(schema.namespace, key_name)
+        for key_name, key in zip(schema.key, schema.key_gnames):
             try:
                 v = gd.children[key]
                 if isinstance(v, ygdata.Leaf):
@@ -492,19 +489,18 @@ def json_to_gdata(data: dict[str, ?value], top_schema: yschema.DRoot) -> (ygdata
         current_path = cfs.append_service_specification_id(current_path, path_element)
         schema = schema.get(path_element)
         root_path.append("{schema.module}:{schema.name}")
-        fqname = ydata.fqname(schema)
         if isinstance(schema, yschema.DContainer):
-            current_node.children[fqname] = ygdata.Container(ns=schema.namespace, module=schema.module)
-            current_node = current_node.children[fqname]
+            current_node.children[schema.gname] = ygdata.Container(ns=schema.namespace, module=schema.module)
+            current_node = current_node.children[schema.gname]
             aggregate_tmf_id = _append_xpath_segment(aggregate_tmf_id, path_element)
         elif isinstance(schema, yschema.DList):
             list_parent = current_node
-            list_name = fqname
-            current_node.children[fqname] = ygdata.List(
-                ydata.fq_list_keys(schema), ns=schema.namespace, module=schema.module)
+            list_name = schema.gname
+            current_node.children[schema.gname] = ygdata.List(
+                schema.key_gnames, ns=schema.namespace, module=schema.module)
             list_parent = current_node
-            list_name = fqname
-            current_node = current_node.children[fqname]
+            list_name = schema.gname
+            current_node = current_node.children[schema.gname]
         else:
             raise NotImplementedError("Unexpected schema node {schema.name} in path resolution, expected a container or list")
 

@@ -1,8 +1,8 @@
-import base64
-import json
+import std.base64
+import std.json
 import testing
 import time
-import uri
+import std.uri
 
 import yang
 import yang.gdata as ygdata
@@ -55,7 +55,7 @@ def _xpath_unescape(v: str) -> str:
     return v.replace("\\'", "'").replace("\\\\", "\\")
 
 def _service_href(service_id: str) -> str:
-    return "/tmf-api/ServiceActivationAndConfiguration/v4/service/{uri.quote(service_id, safe='')}"
+    return "/tmf-api/ServiceActivationAndConfiguration/v4/service/{std.uri.quote(service_id, safe='')}"
 
 def _append_xpath_segment(path: str, segment: str) -> str:
     if path == "":
@@ -2646,7 +2646,7 @@ def _test_get_json_netinfra_router():
         })
     })
     data = get_service_list_json(layer_config, top_schema)
-    return json.encode_list(data, pretty=True)
+    return std.json.encode_list(data, pretty=True)
 
 def _test_json_to_gdata_edge_device_access_interface():
     json_data = {
@@ -2984,7 +2984,7 @@ def _test_get_json_edge_device_access_interface_vlan():
         })
     })
     data = get_service_list_json(layer_config, top_schema)
-    return json.encode_list(data, pretty=True)
+    return std.json.encode_list(data, pretty=True)
 
 def _test_json_to_gdata_compound_router_key():
     json_data = {
@@ -3064,9 +3064,9 @@ def _test_feature_relationships_from_paths():
     testing.assertEqual(parent.featureRelationship[1].name, child_id)
     testing.assertEqual(len(child.featureRelationship), 0)
     testing.assertEqual(len(other.featureRelationship), 0)
-    first = json.encode_list([f.to_json() for f in features])
+    first = std.json.encode_list([f.to_json() for f in features])
     _derive_feature_relationships(features)
-    testing.assertEqual(json.encode_list([f.to_json() for f in features]), first)
+    testing.assertEqual(std.json.encode_list([f.to_json() for f in features]), first)
 
 def _test_json_to_gdata_netinfra_router_nested_features():
     json_data = {
@@ -3251,8 +3251,8 @@ def _test_get_json_netinfra_router_nested_features():
     data = get_service_json(layer_config, top_schema, service_id)
     testing.assertEqual(layer_config.prsrc(), stored_before)
     if data is not None:
-        testing.assertEqual(json.encode_list(get_service_list_json(layer_config, top_schema)), json.encode_list([data]))
-        return json.encode(data, pretty=True)
+        testing.assertEqual(std.json.encode_list(get_service_list_json(layer_config, top_schema)), std.json.encode_list([data]))
+        return std.json.encode(data, pretty=True)
     return ""
 
 def _test_get_json_netinfra_router_feature_identityref():
@@ -3323,7 +3323,7 @@ def _test_get_json_netinfra_router_feature_identityref():
     layer_config, service_id = json_to_gdata(json_data, top_schema)
     data = get_service_json(layer_config, top_schema, service_id)
     if data is not None:
-        return json.encode(data, pretty=True)
+        return std.json.encode(data, pretty=True)
     return ""
 
 def _test_get_json_netinfra_router_list_feature_identityref_key():
@@ -3404,7 +3404,7 @@ def _test_get_json_netinfra_router_list_feature_identityref_key():
     layer_config, service_id = json_to_gdata(json_data, top_schema)
     data = get_service_json(layer_config, top_schema, service_id)
     if data is not None:
-        return json.encode(data, pretty=True)
+        return std.json.encode(data, pretty=True)
     return ""
 
 def _test_get_json_netinfra_router_list_feature_unqualified_identityref_key():
@@ -3512,7 +3512,7 @@ def _test_get_json_netinfra_router_list_feature_unqualified_identityref_key():
     layer_config, service_id = json_to_gdata(json_data, top_schema)
     data = get_service_json(layer_config, top_schema, service_id)
     if data is not None:
-        return json.encode(data, pretty=True)
+        return std.json.encode(data, pretty=True)
     return ""
 
 def _test_get_json_compound_router_key():
@@ -3603,5 +3603,5 @@ def _test_get_json_compound_router_key():
     })
     data = get_service_json(layer_config, top_schema, service_id)
     if data is not None:
-        return json.encode(data, pretty=True)
+        return std.json.encode(data, pretty=True)
     return ""

@@ -1,6 +1,6 @@
-import json
+import std.json
 import testing
-import uri
+import std.uri
 
 import cfs
 import tmf_yang
@@ -109,7 +109,7 @@ def _get_service_category_json(top_schema: yschema.DRoot, category_id: ?str = No
     for k, v in tmf_spec.items():
         category.serviceCandidate.append(ServiceCandidateRef(
             id=k,
-            href="/tmf-api/serviceCatalogManagement/v4/serviceCandidate/{uri.quote(k, safe='')}",
+            href="/tmf-api/serviceCatalogManagement/v4/serviceCandidate/{std.uri.quote(k, safe='')}",
             name="{v.name} Service Candidate",
             version="2025-11-01",
             type="ServiceCandidateRef",
@@ -142,7 +142,7 @@ def _get_service_candidate_json(top_schema: yschema.DRoot, candidate_id: ?str = 
 
         candidate = ServiceCandidate(
             id=k,
-            href="/tmf-api/serviceCatalogManagement/v4/serviceCandidate/{uri.quote(k, safe='')}",
+            href="/tmf-api/serviceCatalogManagement/v4/serviceCandidate/{std.uri.quote(k, safe='')}",
             description="{v.description} Service Candidate",
             lastUpdate="2025-11-01T00:00:00",
             lifecycleStatus="active",
@@ -158,7 +158,7 @@ def _get_service_candidate_json(top_schema: yschema.DRoot, candidate_id: ?str = 
             )],
             serviceSpecification=ServiceSpecificationRef(
                 id=k,
-                href="/tmf-api/serviceCatalogManagement/v4/serviceSpecification/{uri.quote(k, safe='')}",
+                href="/tmf-api/serviceCatalogManagement/v4/serviceSpecification/{std.uri.quote(k, safe='')}",
                 name="{v.name} Service Specification",
                 version="2025-11-01",
                 type="ServiceSpecificationRef",
@@ -382,7 +382,7 @@ def _build_service_specifications(top_schema: yschema.DRoot, sspec_id: ?str = No
 
         sspec = ServiceSpecification(
             id=k,
-            href="/tmf-api/serviceCatalogManagement/v4/serviceSpecification/{uri.quote(k, safe='')}",
+            href="/tmf-api/serviceCatalogManagement/v4/serviceSpecification/{std.uri.quote(k, safe='')}",
             description="{v.description} Service Specification",
             isBundle=False,
             lastUpdate="2025-11-01T00:00:00",
@@ -1400,7 +1400,7 @@ class TargetEntitySchema(object):
 
 def _test_service_catalog_json():
     data = get_service_catalog_list_json()
-    return json.encode_list(data, pretty=True)
+    return std.json.encode_list(data, pretty=True)
 
 def _test_service_category_json():
     yang_schema = r"""module netinfra {
@@ -1424,7 +1424,7 @@ def _test_service_category_json():
 }"""
     top_schema = yang.compile([tmf_yang.ietf_yang_tmf_map, yang_schema])
     data = get_service_category_list_json(top_schema)
-    return json.encode_list(data, pretty=True)
+    return std.json.encode_list(data, pretty=True)
 
 def _test_service_candidate_json():
     yang_schema = r"""module netinfra {
@@ -1448,7 +1448,7 @@ def _test_service_candidate_json():
 }"""
     top_schema = yang.compile([tmf_yang.ietf_yang_tmf_map, yang_schema])
     data = get_service_candidate_list_json(top_schema)
-    return json.encode_list(data, pretty=True)
+    return std.json.encode_list(data, pretty=True)
 
 def _test_service_specification_json():
     netinfra_schema = r"""module netinfra {
@@ -1540,7 +1540,7 @@ def _test_service_specification_json():
 }"""
     top_schema = yang.compile([tmf_yang.ietf_yang_tmf_map, netinfra_schema, edge_schema])
     data = get_service_specification_list_json(top_schema)
-    return json.encode_list(data, pretty=True)
+    return std.json.encode_list(data, pretty=True)
 
 def _test_service_specification_compound_key_json():
     netinfra_schema = r"""module netinfra {
@@ -1576,4 +1576,4 @@ def _test_service_specification_compound_key_json():
 }"""
     top_schema = yang.compile([tmf_yang.ietf_yang_tmf_map, netinfra_schema])
     data = get_service_specification_list_json(top_schema)
-    return json.encode_list(data, pretty=True)
+    return std.json.encode_list(data, pretty=True)

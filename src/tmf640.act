@@ -849,7 +849,7 @@ class Service(object):
         self.type = type if type is not None else "Service"
 
     @staticmethod
-    def from_json(data: dict[str, ?value]) -> Service:
+    mut def from_json(data: dict[str, ?value]) -> Service:
         return Service(
             get_opt_str(data, "id"),
             get_opt_str(data, "href"),
@@ -880,7 +880,7 @@ class Service(object):
             get_opt_str(data, "@type"),
         )
 
-    def to_json(self) -> dict[str, ?value]:
+    mut def to_json(self) -> dict[str, ?value]:
         return {
             "id": self.id,
             "href": self.href,
@@ -912,7 +912,7 @@ class Service(object):
         }
 
     @staticmethod
-    def from_gdata(gd: ygdata.Node) -> Service:
+    mut def from_gdata(gd: ygdata.Node) -> Service:
         if isinstance(gd, ygdata.Container):
             return Service(
                 get_child_str(gd, _q("id")),
@@ -945,7 +945,7 @@ class Service(object):
             )
         raise ValueError("Unsupported gdata node type")
 
-    def to_gdata(self) -> ygdata.Node:
+    mut def to_gdata(self) -> ygdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
             (_q("id"), self.id, "string"),
@@ -999,7 +999,7 @@ class ConstraintRef(object):
         self.referredType = referredType if referredType is not None else "Constraint"
 
     @staticmethod
-    def from_json(data: dict[str, ?value]) -> ConstraintRef:
+    mut def from_json(data: dict[str, ?value]) -> ConstraintRef:
         return ConstraintRef(
             get_opt_str(data, "id"),
             get_opt_str(data, "href"),
@@ -1009,7 +1009,7 @@ class ConstraintRef(object):
             get_opt_str(data, "@referredType"),
         )
 
-    def to_json(self) -> dict[str, ?value]:
+    mut def to_json(self) -> dict[str, ?value]:
         return {
             "id": self.id,
             "href": self.href,
@@ -1020,7 +1020,7 @@ class ConstraintRef(object):
         }
 
     @staticmethod
-    def from_gdata(gd: ygdata.Node) -> ConstraintRef:
+    mut def from_gdata(gd: ygdata.Node) -> ConstraintRef:
         if isinstance(gd, ygdata.Container):
             return ConstraintRef(
                 get_opt_child_str(gd, _q("id")),
@@ -1032,7 +1032,7 @@ class ConstraintRef(object):
             )
         raise ValueError("Unsupported gdata node type")
 
-    def to_gdata(self) -> ygdata.Node:
+    mut def to_gdata(self) -> ygdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
             (_q("id"), self.id, "string"),
@@ -1062,7 +1062,7 @@ class FeatureRelationship(object):
         self.type = type if type is not None else "FeatureRelationship"
 
     @staticmethod
-    def from_json(data: dict[str, ?value]) -> FeatureRelationship:
+    mut def from_json(data: dict[str, ?value]) -> FeatureRelationship:
         return FeatureRelationship(
             get_opt_str(data, "id"),
             get_opt_str(data, "name"),
@@ -1071,7 +1071,7 @@ class FeatureRelationship(object):
             get_opt_str(data, "@type"),
         )
 
-    def to_json(self) -> dict[str, ?value]:
+    mut def to_json(self) -> dict[str, ?value]:
         return {
             "id": self.id,
             "name": self.name,
@@ -1081,7 +1081,7 @@ class FeatureRelationship(object):
         }
 
     @staticmethod
-    def from_gdata(gd: ygdata.Node) -> FeatureRelationship:
+    mut def from_gdata(gd: ygdata.Node) -> FeatureRelationship:
         if isinstance(gd, ygdata.Container):
             return FeatureRelationship(
                 get_opt_child_str(gd, _q("id")),
@@ -1092,7 +1092,7 @@ class FeatureRelationship(object):
             )
         raise ValueError("Unsupported gdata node type")
 
-    def to_gdata(self) -> ygdata.Node:
+    mut def to_gdata(self) -> ygdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
             (_q("id"), self.id, "string"),
@@ -1118,14 +1118,14 @@ class TimePeriod(object):
         self.type = type if type is not None else "TimePeriod"
 
     @staticmethod
-    def from_json(data: dict[str, ?value]) -> TimePeriod:
+    mut def from_json(data: dict[str, ?value]) -> TimePeriod:
         return TimePeriod(
             get_opt_str(data, "endDateTime"),
             get_opt_str(data, "startDateTime"),
             get_opt_str(data, "@type"),
         )
 
-    def to_json(self) -> dict[str, ?value]:
+    mut def to_json(self) -> dict[str, ?value]:
         return {
             "endDateTime": self.endDateTime,
             "startDateTime": self.startDateTime,
@@ -1133,7 +1133,7 @@ class TimePeriod(object):
         }
 
     @staticmethod
-    def from_gdata(gd: ygdata.Node) -> TimePeriod:
+    mut def from_gdata(gd: ygdata.Node) -> TimePeriod:
         if isinstance(gd, ygdata.Container):
             return TimePeriod(
                 get_opt_child_str(gd, _q("endDateTime")),
@@ -1142,7 +1142,7 @@ class TimePeriod(object):
             )
         raise ValueError("Unsupported gdata node type")
 
-    def to_gdata(self) -> ygdata.Node:
+    mut def to_gdata(self) -> ygdata.Node:
         elements = {}
         add_opt_leafs_to_gdata(elements, [
             (_q("endDateTime"), self.endDateTime, "string"),
@@ -1173,7 +1173,7 @@ class Feature(object):
         self.type = type if type is not None else "Feature"
 
     @staticmethod
-    def from_json(data: dict[str, ?value]) -> Feature:
+    mut def from_json(data: dict[str, ?value]) -> Feature:
         return Feature(
             get_opt_str(data, "id"),
             get_opt_bool(data, "isBundle"),
@@ -1185,7 +1185,7 @@ class Feature(object):
             get_opt_str(data, "@type"),
         )
 
-    def to_json(self) -> dict[str, ?value]:
+    mut def to_json(self) -> dict[str, ?value]:
         return {
             "id": self.id,
             "isBundle": self.isBundle,
@@ -1198,7 +1198,7 @@ class Feature(object):
         }
 
     @staticmethod
-    def from_gdata(gd: ygdata.Node) -> Feature:
+    mut def from_gdata(gd: ygdata.Node) -> Feature:
         if isinstance(gd, ygdata.Container):
             return Feature(
                 get_opt_child_str(gd, _q("id")),
@@ -1212,7 +1212,7 @@ class Feature(object):
             )
         raise ValueError("Unsupported gdata node type")
 
-    def to_gdata(self) -> ygdata.Node:
+    mut def to_gdata(self) -> ygdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
             (_q("id"), self.id, "string"),
@@ -1245,7 +1245,7 @@ class Note(object):
         self.type = type if type is not None else "Note"
 
     @staticmethod
-    def from_json(data: dict[str, ?value]) -> Note:
+    mut def from_json(data: dict[str, ?value]) -> Note:
         return Note(
             get_opt_str(data, "id"),
             get_opt_str(data, "author"),
@@ -1254,7 +1254,7 @@ class Note(object):
             get_opt_str(data, "@type"),
         )
 
-    def to_json(self) -> dict[str, ?value]:
+    mut def to_json(self) -> dict[str, ?value]:
         return {
             "id": self.id,
             "author": self.author,
@@ -1264,7 +1264,7 @@ class Note(object):
         }
 
     @staticmethod
-    def from_gdata(gd: ygdata.Node) -> Note:
+    mut def from_gdata(gd: ygdata.Node) -> Note:
         if isinstance(gd, ygdata.Container):
             return Note(
                 get_opt_child_str(gd, _q("id")),
@@ -1275,7 +1275,7 @@ class Note(object):
             )
         raise ValueError("Unsupported gdata node type")
 
-    def to_gdata(self) -> ygdata.Node:
+    mut def to_gdata(self) -> ygdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
             (_q("id"), self.id, "string"),
@@ -1306,7 +1306,7 @@ class RelatedPlaceRefOrValue(object):
         self.referredType = referredType if referredType is not None else "Place"
 
     @staticmethod
-    def from_json(data: dict[str, ?value]) -> RelatedPlaceRefOrValue:
+    mut def from_json(data: dict[str, ?value]) -> RelatedPlaceRefOrValue:
         return RelatedPlaceRefOrValue(
             get_opt_str(data, "id"),
             get_opt_str(data, "href"),
@@ -1316,7 +1316,7 @@ class RelatedPlaceRefOrValue(object):
             get_opt_str(data, "@referredType"),
         )
 
-    def to_json(self) -> dict[str, ?value]:
+    mut def to_json(self) -> dict[str, ?value]:
         return {
             "id": self.id,
             "href": self.href,
@@ -1327,7 +1327,7 @@ class RelatedPlaceRefOrValue(object):
         }
 
     @staticmethod
-    def from_gdata(gd: ygdata.Node) -> RelatedPlaceRefOrValue:
+    mut def from_gdata(gd: ygdata.Node) -> RelatedPlaceRefOrValue:
         if isinstance(gd, ygdata.Container):
             return RelatedPlaceRefOrValue(
                 get_opt_child_str(gd, _q("id")),
@@ -1339,7 +1339,7 @@ class RelatedPlaceRefOrValue(object):
             )
         raise ValueError("Unsupported gdata node type")
 
-    def to_gdata(self) -> ygdata.Node:
+    mut def to_gdata(self) -> ygdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
             (_q("id"), self.id, "string"),
@@ -1371,7 +1371,7 @@ class RelatedEntityRefOrValue(object):
         self.referredType = referredType if referredType is not None else "Entity"
 
     @staticmethod
-    def from_json(data: dict[str, ?value]) -> RelatedEntityRefOrValue:
+    mut def from_json(data: dict[str, ?value]) -> RelatedEntityRefOrValue:
         return RelatedEntityRefOrValue(
             get_opt_str(data, "id"),
             get_opt_str(data, "href"),
@@ -1381,7 +1381,7 @@ class RelatedEntityRefOrValue(object):
             get_opt_str(data, "@referredType"),
         )
 
-    def to_json(self) -> dict[str, ?value]:
+    mut def to_json(self) -> dict[str, ?value]:
         return {
             "id": self.id,
             "href": self.href,
@@ -1392,7 +1392,7 @@ class RelatedEntityRefOrValue(object):
         }
 
     @staticmethod
-    def from_gdata(gd: ygdata.Node) -> RelatedEntityRefOrValue:
+    mut def from_gdata(gd: ygdata.Node) -> RelatedEntityRefOrValue:
         if isinstance(gd, ygdata.Container):
             return RelatedEntityRefOrValue(
                 get_opt_child_str(gd, _q("id")),
@@ -1404,7 +1404,7 @@ class RelatedEntityRefOrValue(object):
             )
         raise ValueError("Unsupported gdata node type")
 
-    def to_gdata(self) -> ygdata.Node:
+    mut def to_gdata(self) -> ygdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
             (_q("id"), self.id, "string"),
@@ -1436,7 +1436,7 @@ class RelatedParty(object):
         self.referredType = referredType if referredType is not None else "Party"
 
     @staticmethod
-    def from_json(data: dict[str, ?value]) -> RelatedParty:
+    mut def from_json(data: dict[str, ?value]) -> RelatedParty:
         return RelatedParty(
             get_opt_str(data, "id"),
             get_opt_str(data, "href"),
@@ -1446,7 +1446,7 @@ class RelatedParty(object):
             get_opt_str(data, "@referredType"),
         )
 
-    def to_json(self) -> dict[str, ?value]:
+    mut def to_json(self) -> dict[str, ?value]:
         return {
             "id": self.id,
             "href": self.href,
@@ -1457,7 +1457,7 @@ class RelatedParty(object):
         }
 
     @staticmethod
-    def from_gdata(gd: ygdata.Node) -> RelatedParty:
+    mut def from_gdata(gd: ygdata.Node) -> RelatedParty:
         if isinstance(gd, ygdata.Container):
             return RelatedParty(
                 get_opt_child_str(gd, _q("id")),
@@ -1469,7 +1469,7 @@ class RelatedParty(object):
             )
         raise ValueError("Unsupported gdata node type")
 
-    def to_gdata(self) -> ygdata.Node:
+    mut def to_gdata(self) -> ygdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
             (_q("id"), self.id, "string"),
@@ -1501,7 +1501,7 @@ class Characteristic(object):
         self.type = type if type is not None else "Characteristic"
 
     @staticmethod
-    def from_json(data: dict[str, ?value]) -> Characteristic:
+    mut def from_json(data: dict[str, ?value]) -> Characteristic:
         return Characteristic(
             get_str(data, "id"),
             get_str(data, "name"),
@@ -1511,7 +1511,7 @@ class Characteristic(object):
             get_opt_str(data, "@type"),
         )
 
-    def to_json(self) -> dict[str, ?value]:
+    mut def to_json(self) -> dict[str, ?value]:
         return {
             "id": self.id,
             "name": self.name,
@@ -1522,7 +1522,7 @@ class Characteristic(object):
         }
 
     @staticmethod
-    def from_gdata(gd: ygdata.Node) -> Characteristic:
+    mut def from_gdata(gd: ygdata.Node) -> Characteristic:
         if isinstance(gd, ygdata.Container):
             return Characteristic(
                 get_child_str(gd, _q("id")),
@@ -1534,7 +1534,7 @@ class Characteristic(object):
             )
         raise ValueError("Unsupported gdata node type")
 
-    def to_gdata(self) -> ygdata.Node:
+    mut def to_gdata(self) -> ygdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
             (_q("id"), self.id, "string"),
@@ -1562,14 +1562,14 @@ class CharacteristicRelationship(object):
         self.type = type if type is not None else "CharacteristicRelationship"
 
     @staticmethod
-    def from_json(data: dict[str, ?value]) -> CharacteristicRelationship:
+    mut def from_json(data: dict[str, ?value]) -> CharacteristicRelationship:
         return CharacteristicRelationship(
             get_opt_str(data, "id"),
             get_opt_str(data, "relationshipType"),
             get_opt_str(data, "@type"),
         )
 
-    def to_json(self) -> dict[str, ?value]:
+    mut def to_json(self) -> dict[str, ?value]:
         return {
             "id": self.id,
             "relationshipType": self.relationshipType,
@@ -1577,7 +1577,7 @@ class CharacteristicRelationship(object):
         }
 
     @staticmethod
-    def from_gdata(gd: ygdata.Node) -> CharacteristicRelationship:
+    mut def from_gdata(gd: ygdata.Node) -> CharacteristicRelationship:
         if isinstance(gd, ygdata.Container):
             return CharacteristicRelationship(
                 get_opt_child_str(gd, _q("id")),
@@ -1586,7 +1586,7 @@ class CharacteristicRelationship(object):
             )
         raise ValueError("Unsupported gdata node type")
 
-    def to_gdata(self) -> ygdata.Node:
+    mut def to_gdata(self) -> ygdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
             (_q("id"), self.id, "string"),
@@ -1615,7 +1615,7 @@ class ServiceSpecificationRef(object):
         self.referredType = referredType if referredType is not None else "ServiceSpecification"
 
     @staticmethod
-    def from_json(data: dict[str, ?value]) -> ServiceSpecificationRef:
+    mut def from_json(data: dict[str, ?value]) -> ServiceSpecificationRef:
         return ServiceSpecificationRef(
             get_str(data, "id"),
             get_opt_str(data, "href"),
@@ -1625,7 +1625,7 @@ class ServiceSpecificationRef(object):
             get_opt_str(data, "@referredType"),
         )
 
-    def to_json(self) -> dict[str, ?value]:
+    mut def to_json(self) -> dict[str, ?value]:
         return {
             "id": self.id,
             "href": self.href,
@@ -1636,7 +1636,7 @@ class ServiceSpecificationRef(object):
         }
 
     @staticmethod
-    def from_gdata(gd: ygdata.Node) -> ServiceSpecificationRef:
+    mut def from_gdata(gd: ygdata.Node) -> ServiceSpecificationRef:
         if isinstance(gd, ygdata.Container):
             return ServiceSpecificationRef(
                 get_child_str(gd, _q("id")),
@@ -1648,7 +1648,7 @@ class ServiceSpecificationRef(object):
             )
         raise ValueError("Unsupported gdata node type")
 
-    def to_gdata(self) -> ygdata.Node:
+    mut def to_gdata(self) -> ygdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
             (_q("id"), self.id, "string"),
@@ -1678,7 +1678,7 @@ class ResourceRef(object):
         self.referredType = referredType if referredType is not None else "Resource"
 
     @staticmethod
-    def from_json(data: dict[str, ?value]) -> ResourceRef:
+    mut def from_json(data: dict[str, ?value]) -> ResourceRef:
         return ResourceRef(
             get_opt_str(data, "id"),
             get_opt_str(data, "href"),
@@ -1687,7 +1687,7 @@ class ResourceRef(object):
             get_opt_str(data, "@referredType"),
         )
 
-    def to_json(self) -> dict[str, ?value]:
+    mut def to_json(self) -> dict[str, ?value]:
         return {
             "id": self.id,
             "href": self.href,
@@ -1697,7 +1697,7 @@ class ResourceRef(object):
         }
 
     @staticmethod
-    def from_gdata(gd: ygdata.Node) -> ResourceRef:
+    mut def from_gdata(gd: ygdata.Node) -> ResourceRef:
         if isinstance(gd, ygdata.Container):
             return ResourceRef(
                 get_child_str(gd, _q("id")),
@@ -1708,7 +1708,7 @@ class ResourceRef(object):
             )
         raise ValueError("Unsupported gdata node type")
 
-    def to_gdata(self) -> ygdata.Node:
+    mut def to_gdata(self) -> ygdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
             (_q("id"), self.id, "string"),
@@ -1741,7 +1741,7 @@ class RelatedServiceOrderItem(object):
         self.referredType = referredType if referredType is not None else "ServiceOrderItem"
 
     @staticmethod
-    def from_json(data: dict[str, ?value]) -> RelatedServiceOrderItem:
+    mut def from_json(data: dict[str, ?value]) -> RelatedServiceOrderItem:
         return RelatedServiceOrderItem(
             get_opt_str(data, "itemId"),
             get_opt_str(data, "role"),
@@ -1752,7 +1752,7 @@ class RelatedServiceOrderItem(object):
             get_opt_str(data, "@referredType"),
         )
 
-    def to_json(self) -> dict[str, ?value]:
+    mut def to_json(self) -> dict[str, ?value]:
         return {
             "itemId": self.itemId,
             "role": self.role,
@@ -1764,7 +1764,7 @@ class RelatedServiceOrderItem(object):
         }
 
     @staticmethod
-    def from_gdata(gd: ygdata.Node) -> RelatedServiceOrderItem:
+    mut def from_gdata(gd: ygdata.Node) -> RelatedServiceOrderItem:
         if isinstance(gd, ygdata.Container):
             return RelatedServiceOrderItem(
                 get_opt_child_str(gd, _q("itemId")),
@@ -1777,7 +1777,7 @@ class RelatedServiceOrderItem(object):
             )
         raise ValueError("Unsupported gdata node type")
 
-    def to_gdata(self) -> ygdata.Node:
+    mut def to_gdata(self) -> ygdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
             (_q("itemId"), self.itemId, "string"),
@@ -1806,7 +1806,7 @@ class ServiceRelationship(object):
         self.type = type if type is not None else "ServiceRelationship"
 
     @staticmethod
-    def from_json(data: dict[str, ?value]) -> ServiceRelationship:
+    mut def from_json(data: dict[str, ?value]) -> ServiceRelationship:
         return ServiceRelationship(
             get_opt_str(data, "relationshipType"),
             list(map(Characteristic.from_json, get_list(data.get("ServiceRelationshipCharacteristic")))),
@@ -1814,7 +1814,7 @@ class ServiceRelationship(object):
             get_opt_str(data, "@type"),
         )
 
-    def to_json(self) -> dict[str, ?value]:
+    mut def to_json(self) -> dict[str, ?value]:
         return {
             "relationshipType": self.relationshipType,
             "ServiceRelationshipCharacteristic": [entry.to_json() for entry in self.serviceRelationshipCharacteristic],
@@ -1823,7 +1823,7 @@ class ServiceRelationship(object):
         }
 
     @staticmethod
-    def from_gdata(gd: ygdata.Node) -> ServiceRelationship:
+    mut def from_gdata(gd: ygdata.Node) -> ServiceRelationship:
         if isinstance(gd, ygdata.Container):
             return ServiceRelationship(
                 get_opt_child_str(gd, _q("relationshipType")),
@@ -1833,7 +1833,7 @@ class ServiceRelationship(object):
             )
         raise ValueError("Unsupported gdata node type")
 
-    def to_gdata(self) -> ygdata.Node:
+    mut def to_gdata(self) -> ygdata.Node:
         elements = {}
         add_opt_leafs_to_gdata(elements, [
             (_q("relationshipType"), self.relationshipType, "string"),
@@ -1906,7 +1906,7 @@ class ServiceRefOrValue(object):
         self.referredType = referredType if referredType is not None else "Service"
 
     @staticmethod
-    def from_json(data: dict[str, ?value]) -> ServiceRefOrValue:
+    mut def from_json(data: dict[str, ?value]) -> ServiceRefOrValue:
         return ServiceRefOrValue(
             get_opt_str(data, "id"),
             get_opt_str(data, "href"),
@@ -1938,7 +1938,7 @@ class ServiceRefOrValue(object):
             get_opt_str(data, "@referredType"),
         )
 
-    def to_json(self) -> dict[str, ?value]:
+    mut def to_json(self) -> dict[str, ?value]:
         return {
             "id": self.id,
             "href": self.href,
@@ -1971,7 +1971,7 @@ class ServiceRefOrValue(object):
         }
 
     @staticmethod
-    def from_gdata(gd: ygdata.Node) -> ServiceRefOrValue:
+    mut def from_gdata(gd: ygdata.Node) -> ServiceRefOrValue:
         if isinstance(gd, ygdata.Container):
             return ServiceRefOrValue(
                 get_opt_child_str(gd, _q("id")),
@@ -2005,7 +2005,7 @@ class ServiceRefOrValue(object):
             )
         raise ValueError("Unsupported gdata node type")
 
-    def to_gdata(self) -> ygdata.Node:
+    mut def to_gdata(self) -> ygdata.Node:
         elements = {}
         add_leafs_to_gdata(elements, [
             (_q("id"), self.id, "string"),
